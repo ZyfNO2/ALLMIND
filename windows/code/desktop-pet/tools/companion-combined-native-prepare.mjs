@@ -1,0 +1,22 @@
+import {mkdirSync,mkdtempSync,readFileSync,writeFileSync,readdirSync,existsSync,copyFileSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {FileBookRepository} from '../dist/memory/file-book-repository.js';
+import {SkinStore} from '../dist/management/skin-store.js';
+import {emptyEntry} from '../dist/contracts/memory-book.js';
+import {DEFAULT_COMPANION_SETTINGS} from '../dist/contracts/book-companion.js';
+import {CHARACTER_STATES} from '../dist/contracts/character-state.js';
+import {zonedParts,addDays,zonedTime} from '../dist/core/book-proactive.js';
+const production=resolve('../../.local/memory-book'),original=JSON.parse(readFileSync(join(production,'runtime.json'),'utf8')).data;
+if(original.mainModel?.kind!=='chatgpt-web'||original.wikiModel?.kind!=='chatgpt-web'||original.chatgptWeb?.transport!=='embedded'||original.chatgptWeb?.conversationMode!=='regular'||original.chatgptWeb?.temporaryChatTests!==false||!['reply','wiki'].every(purpose=>original.chatgptWeb.authorizedPurposes.includes(purpose)))throw Error('Requires existing authorized regular embedded reply/Wiki bindings; no source switch');
+const own=resolve('.local/allmind-m01'),image=readdirSync(own).map(name=>join(own,name,'original-test-pet.png')).find(existsSync);if(!image)throw Error('Original synthetic fixture sprite missing');
+mkdirSync('.local/allmind-m4/tests',{recursive:true});const directory=resolve(mkdtempSync('.local/allmind-m4/tests/native-combined-'));
+const skins=await SkinStore.open(join(directory,'appearance-registry.json'),join(directory,'appearance-packs'),resolve('desktop'));
+await skins.import(image,{type:'sprite',skinId:'native-fixture',label:'原创合成验收图集',sprite:{rows:1,columns:14,frameCount:14,fps:8,clips:Object.fromEntries(CHARACTER_STATES.map((state,index)=>[state,{start:index*2,frameCount:2,fps:8}]))}});
+const repository=new FileBookRepository(directory),config=repository.loadConfig();repository.commitConfig({...config,characters:[{...config.characters[0],name:'AIKI 合成组合验收',appearanceSkinId:'native-fixture'},{id:'native-other',name:'隔离验收角色 B',intro:'',appearancePath:null,appearanceSkinId:'native-fixture'}],mainModel:original.mainModel,wikiModel:original.wikiModel,chatgptWeb:original.chatgptWeb,companion:{...DEFAULT_COMPANION_SETTINGS,proactive:false,autoMemory:false,extraction:'model',cloudMemoryConsent:true}},config.revision,'seed-config');
+const scope={characterId:'aika',pairingId:'local-user',sessionId:'desktop'};repository.commit(scope,{upsert:[emptyEntry('native-core','persona','合成验收角色','你是AIKI合成验收人物；所有资料是测试样例，不是账号用户真人资料。温和简洁、有依据才确认经历，未知结果保持未知。')]},0,'seed-persona');repository.close();
+const eventDate=addDays(zonedParts(Date.now(),'Asia/Singapore').date,1),at=zonedTime(eventDate,14,40,'Asia/Singapore'),wrapper=join(directory,'runner.mjs');writeFileSync(wrapper,`import {runBookBackend} from ${JSON.stringify(pathToFileURL(resolve('dist/app/book-backend.js')).href)};const start=Date.now();await runBookBackend(${JSON.stringify(directory)},{clock:()=>${at}+(Date.now()-start)});`);
+const profile=join(process.env.APPDATA,'AikaNext','desktop');
+if(!existsSync(profile))throw Error('Original profile missing');
+const savedPreferences=[];for(const name of ['windows-display.json']){const path=join(profile,name);if(existsSync(path)){const backup=join(directory,'original-'+name);copyFileSync(path,backup);savedPreferences.push({path,backup})}}
+const input={directory,profile,backend:wrapper,evidence:resolve('../../../docs/next/allmind-companion-v2/evidence/companion-combined-native.json'),eventDate,model:original.mainModel.model,wikiModel:original.wikiModel.model,startedAt:new Date().toISOString(),savedPreferences};writeFileSync(join(directory,'native-combined-input.json'),JSON.stringify(input));writeFileSync('.local/native-combined-current.json',JSON.stringify({directory}));console.log(JSON.stringify({directory,evidence:input.evidence,model:input.model}));

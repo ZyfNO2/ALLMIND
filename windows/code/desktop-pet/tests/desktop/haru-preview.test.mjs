@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { SkinStore } from '../../dist/management/skin-store.js';
+import { startPresentationPreviewFixture } from '../management/presentation-preview-fixture.mjs';
+
+test('requested Haru renders all shared states in actual Windows Electron WebGL', { timeout: 60_000 }, async t => {
+  const scratch = await mkdtemp(join(tmpdir(), 'haru-webgl-'));
+  t.after(() => rm(scratch, { recursive: true, force: true }));
+  const skins = await SkinStore.open(join(scratch, 'skins.json'), join(scratch, 'packs'), resolve('desktop'));
+  await skins.import(process.env.AIKI_HARU_SOURCE ?? 'C:/Users/Public/Downloads/haru_greeter_ja', { skinId: 'haru', entry: 'runtime/haru_greeter_t05.model3.json' });
+  const fixture = await startPresentationPreviewFixture({ skins, skinId: 'haru', scenario: new URL('./haru-preview-scenario.mjs', import.meta.url) });
+  t.after(() => fixture.close());
+  const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
+  const child = spawn(createRequire(import.meta.url)('electron'), [fileURLToPath(new URL('../management/presentation-preview-electron.mjs', import.meta.url)), fixture.url], { env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+  t.after(() => { if (child.exitCode === null) child.kill(); });
+  let output = '';
+  child.stdout.on('data', bytes => { output += bytes; });
+  child.stderr.on('data', bytes => t.diagnostic(bytes.toString()));
+  await new Promise((done, fail) => {
+    const timer = setTimeout(() => { child.kill(); fail(Error('Haru Electron preview timeout')); }, 55_000);
+    child.once('error', error => { clearTimeout(timer); fail(error); });
+    child.once('exit', code => { clearTimeout(timer); code === 0 ? done() : fail(Error('Electron exited ' + code)); });
+  });
+  const prefix = 'PRESENTATION_PREVIEW_RESULT=';
+  const line = output.split(/\r?\n/).find(value => value.startsWith(prefix));
+  assert.ok(line, 'Electron must report a result');
+  const result = JSON.parse(line.slice(prefix.length));
+  assert.equal(result.error, undefined);
+  assert.equal(result.passed, 1);
+  assert.equal(result.states.length, 8);
+  assert.ok(result.states.every(item => item.skinId === 'haru'));
+  assert.ok(result.resources.some(path => path.endsWith('.moc3')));
+  assert.equal(result.resources.filter(path => path.endsWith('.png')).length, 2);
+});

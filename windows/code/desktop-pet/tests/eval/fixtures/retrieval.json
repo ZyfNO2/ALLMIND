@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "note": "EVAL-02 frozen query set. Queries and their relevant sets were fixed before any run so the ranking is not tuned on the reported set. Language coverage: 15 Chinese, 5 English, 5 Japanese, each same-language matching only; this is not cross-lingual retrieval.",
+  "answerable": [
+    { "id": "Q01", "lang": "zh", "query": "我的职业是什么？", "relevantIds": ["m-job"] },
+    { "id": "Q02", "lang": "zh", "query": "我叫什么名字？", "relevantIds": ["m-name"] },
+    { "id": "Q03", "lang": "zh", "query": "我住在哪个城市？", "relevantIds": ["m-city"] },
+    { "id": "Q04", "lang": "zh", "query": "我喜欢喝什么？", "relevantIds": ["m-drink"] },
+    { "id": "Q05", "lang": "zh", "query": "我养了什么宠物？", "relevantIds": ["m-pet"] },
+    { "id": "Q06", "lang": "zh", "query": "我使用什么键盘？", "relevantIds": ["m-keyboard"] },
+    { "id": "Q07", "lang": "zh", "query": "我的长期目标是什么？", "relevantIds": ["m-goal"] },
+    { "id": "Q08", "lang": "zh", "query": "我最重视什么？", "relevantIds": ["m-value"] },
+    { "id": "Q09", "lang": "zh", "query": "我平时做什么运动？", "relevantIds": ["m-sport"] },
+    { "id": "Q10", "lang": "zh", "query": "我的生日是哪天？", "relevantIds": ["m-birthday"] },
+    { "id": "Q11", "lang": "zh", "query": "我喜欢什么颜色？", "relevantIds": ["m-color"] },
+    { "id": "Q12", "lang": "zh", "query": "我早上几点起床？", "relevantIds": ["m-routine"] },
+    { "id": "Q13", "lang": "zh", "query": "我最近在读什么书？", "relevantIds": ["m-book"] },
+    { "id": "Q14", "lang": "zh", "query": "我学的是什么专业？", "relevantIds": ["m-major"] },
+    { "id": "Q15", "lang": "zh", "query": "我讨厌什么食物？", "relevantIds": ["m-hatefood"] },
+    { "id": "Q16", "lang": "en", "query": "What is my job?", "relevantIds": ["m-job-en"] },
+    { "id": "Q17", "lang": "en", "query": "What is my pet's name?", "relevantIds": ["m-pet-en"] },
+    { "id": "Q18", "lang": "en", "query": "Which city do I live in?", "relevantIds": ["m-city-en"] },
+    { "id": "Q19", "lang": "en", "query": "What coffee do I prefer?", "relevantIds": ["m-drink-en"] },
+    { "id": "Q20", "lang": "en", "query": "What is my long-term goal?", "relevantIds": ["m-goal-en"] },
+    { "id": "Q21", "lang": "ja", "query": "私の職業は何ですか？", "relevantIds": ["m-job-ja"] },
+    { "id": "Q22", "lang": "ja", "query": "私の名前は何ですか？", "relevantIds": ["m-name-ja"] },
+    { "id": "Q23", "lang": "ja", "query": "どの都市に住んでいますか？", "relevantIds": ["m-city-ja"] },
+    { "id": "Q24", "lang": "ja", "query": "好きな飲み物は何ですか？", "relevantIds": ["m-drink-ja"] },
+    { "id": "Q25", "lang": "ja", "query": "飼っているペットは何ですか？", "relevantIds": ["m-pet-ja"] }
+  ],
+  "multiAnswer": [
+    { "id": "M01", "query": "我有哪些爱好？", "relevantIds": ["m-sport", "m-book"], "note": "two relevant facts; Recall@3 must use |top3 ∩ relevant| / |relevant|, not a hit count over 25" }
+  ],
+  "unanswerable": [
+    { "id": "N01", "query": "我的银行卡密码是多少？", "note": "sensitive and never stored" },
+    { "id": "N02", "query": "我昨天在公司开会说了什么？", "note": "no such record" },
+    { "id": "N03", "query": "我的护照号码是什么？", "note": "never stored" },
+    { "id": "N04", "query": "我的社保号是多少？", "note": "never stored" },
+    { "id": "N05", "query": "我搬到火星了吗？", "note": "nonsense" }
+  ]
+}

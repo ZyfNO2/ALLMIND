@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color: #23263a;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255, 200, 228, 0.35), transparent 60%),
+    radial-gradient(1000px 700px at -10% 110%, rgba(184, 177, 255, 0.28), transparent 55%),
+    linear-gradient(180deg, #f6f6ff 0%, #eef0fb 100%);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@layer components {
+  .card {
+    @apply rounded-3xl bg-white/90 shadow-card backdrop-blur-sm border border-white/80;
+  }
+
+  .glass-panel {
+    @apply bg-white/65 backdrop-blur-xl border border-white/70;
+  }
+
+  .soft-input {
+    @apply w-full rounded-2xl border border-indigo-100 bg-white/80 px-4 py-2.5 text-sm text-ink-900
+      outline-none transition placeholder:text-ink-300
+      focus:border-aika-400 focus:ring-4 focus:ring-aika-100;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium;
+  }
+}
+
+/* slim soft scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 150, 190, 0.35);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 150, 190, 0.55);
+}
+
+.font-script {
+  font-family: 'Dancing Script', 'Snell Roundhand', cursive;
+}

@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdirSync,mkdtempSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {chromium,expect} from '@playwright/test';
+import {FileBookRepository} from '../../dist/memory/file-book-repository.js';
+import {BookRuntime} from '../../dist/app/book-runtime.js';
+import {BookCredentials} from '../../dist/management/book-credentials.js';
+import {startBookServer} from '../../dist/management/book-server.js';
+test('reply range validates without losing the draft, persists per role, reports deviation and resets next-turn policy',{timeout:30000},async t=>{
+ mkdirSync('.local/ui-v4/tests',{recursive:true});const directory=resolve(mkdtempSync('.local/ui-v4/tests/length-ui-')),repository=new FileBookRepository(directory),config=repository.loadConfig();
+ repository.commitConfig({...config,characters:[...config.characters,{id:'other',name:'另一角色',intro:'',appearancePath:null}],mainModel:{baseUrl:'http://127.0.0.1:9',model:'fixture',credentialId:'local-no-auth',inputTokens:8192,outputTokens:512}},config.revision,'seed');
+ const calls=[];const runtime=new BookRuntime(repository,{async complete(_binding,messages){calls.push(JSON.stringify(messages));return '你好。'}}),server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management')});
+ const browser=await chromium.launch({headless:true});t.after(async()=>{await browser.close();await server.close();repository.close()});const page=await browser.newPage();page.setDefaultTimeout(8000);page.on('dialog',dialog=>dialog.dismiss());
+ await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();const section=page.getByRole('region',{name:'回复长度',exact:true}),min=section.getByLabel('最小回复字数'),max=section.getByLabel('最大回复字数');
+ await min.fill('150');await max.fill('50');await section.getByRole('button',{name:'保存回复长度',exact:true}).click();await page.getByRole('alert').filter({hasText:/最小字数不能大于/}).waitFor();assert.equal(await min.inputValue(),'150');assert.equal(repository.loadConfig().characters[0].replyLength,undefined);
+ await min.fill('50');await max.fill('150');await section.getByRole('button',{name:'保存回复长度',exact:true}).click();await section.getByText('当前回复长度已保存',{exact:true}).waitFor();await page.reload();await expect(min).toHaveValue('50');assert.equal(await max.inputValue(),'150');
+ await page.getByRole('link',{name:'聊天',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).fill('你好');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText(/本次回复 3 字，少于设定下限 50 字/).waitFor();assert.equal(calls.length,1);assert.match(calls[0],/50.*150/);
+ await page.getByRole('link',{name:'设置',exact:true}).click();await page.getByRole('combobox',{name:/^当前角色/}).selectOption('other');await expect(min).toHaveValue('');await expect(max).toHaveValue('');
+ await page.getByRole('combobox',{name:/^当前角色/}).selectOption('aika');await expect(min).toHaveValue('50');await section.getByRole('button',{name:'恢复自然长度',exact:true}).click();await section.getByText('当前回复长度已保存',{exact:true}).waitFor();await expect(min).toHaveValue('');
+ await page.getByRole('link',{name:'聊天',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).fill('继续');await page.getByRole('button',{name:'发送',exact:true}).click();await page.locator('.mb-user').filter({hasText:'继续'}).waitFor();assert.match(calls[1],/不沿用旧轮次/);assert.equal(calls.length,2);
+});

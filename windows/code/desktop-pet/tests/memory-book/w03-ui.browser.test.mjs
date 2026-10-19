@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync,mkdirSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {chromium} from '@playwright/test';
+import {artifactFixture} from './artifact-fixture.mjs';
+
+test('default production memory page reads rich sources, stages next-turn input and updates revoked images on desktop and narrow screens',{timeout:90000},async t=>{
+ const f=await artifactFixture(t),scope=f.runtime.scope('aika','web-chat'),signal=new AbortController().signal;
+ const picture=await f.resources.receiveUpload(scope,{name:'立绘.png',mime:'image/png'},readFileSync('../../../validation/fixtures/wiki-handoff/inputs/w02-allmind/portrait-01-original.png'),'portrait',signal);
+ const body='# 验收资料\n验收人物喜欢红茶。\n![人物参考](resource:'+picture.id+')\n[外部参考](https://example.com/)';
+ const note=await f.resources.receiveUpload(scope,{name:'资料.md',mime:'text/markdown'},Buffer.from(body),'note',signal);
+ const preview=f.runtime.wiki.preview(scope,{sourceId:'ui-source',title:'验收来源',text:body,uri:'resource:'+note.id,private:true,claims:[{subject:'验收人物',predicate:'饮品',value:'红茶',quote:'验收人物喜欢红茶。',start:body.indexOf('验收人物喜欢')}]});
+ f.runtime.repository.commit(scope,{upsert:preview.facts,wikiSources:[preview.source]},0,'seed-reader');
+ const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1280,height:1000}}),errors=[];page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(15000);
+ await page.goto(new URL('/memory-book',f.server.url).href+new URL(f.server.url).hash);
+ await page.getByRole('button',{name:'03 · 图文设定 Wiki',exact:true}).click();
+ const reader=page.getByRole('region',{name:'图文 Wiki 阅读'});await reader.getByRole('heading',{name:'图文 Wiki',exact:true}).waitFor();
+ await reader.getByRole('navigation',{name:'Wiki 主题目录'}).getByRole('button',{name:'验收人物',exact:true}).first().click();
+ await reader.getByRole('button',{name:'查看原文：验收来源',exact:true}).click();
+ await reader.getByRole('heading',{name:'验收资料',exact:true}).waitFor();
+ const image=reader.getByRole('img',{name:'人物参考',exact:true});await image.waitFor();await image.evaluate(image=>image.decode());assert.equal(await image.evaluate(image=>image.naturalWidth),1086);
+ await reader.getByRole('button',{name:'用于下一轮：资料.md',exact:true}).click();await reader.getByRole('status').filter({hasText:'已加入当前会话下一轮'}).waitFor();
+ const evidence=resolve('../../../validation/output/wiki-handoff-evidence/w03/review-20261016');mkdirSync(evidence,{recursive:true});await page.screenshot({path:join(evidence,'reader-desktop.png'),fullPage:true});
+ await reader.getByRole('button',{name:'返回上篇',exact:true}).click();await reader.getByRole('button',{name:'查看原文：验收来源',exact:true}).waitFor();
+ await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(evidence,'reader-narrow.png'),fullPage:true});const bounds=await reader.boundingBox();assert.ok(bounds.width<=390,'reader fits narrow viewport');
+ await reader.getByRole('button',{name:'查看原文：验收来源',exact:true}).click();await image.waitFor();
+ f.resources.revoke(scope,picture.id,picture.revision,'revoke-ui');await reader.getByText('人物参考：资料已撤销',{exact:true}).waitFor();assert.equal(await image.count(),0);
+ await page.getByRole('link',{name:'聊天',exact:true}).click();await page.locator('summary').filter({hasText:'本轮资料与图片'}).click();await page.getByText('正文资料 · '+note.id,{exact:false}).first().waitFor();assert.equal(f.prompts.length,0,'staging does not send a model request');
+ assert.deepEqual(errors,[]);
+});

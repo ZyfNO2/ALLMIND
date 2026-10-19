@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const session = JSON.parse(readFileSync('../../.local/memory-book/management-session.json', 'utf8'));
+const address = new URL(session.url);
+const headers = { Authorization: 'Bearer ' + new URLSearchParams(address.hash.slice(1)).get('token'), 'Content-Type': 'application/json' };
+const root = address.origin + '/api/memory-book/v1';
+const response = await fetch(root + '/runtime', { headers }); assert.ok(response.ok);
+const { config } = await response.json();
+assert.equal(config.mainModel.kind, 'chatgpt-web'); assert.equal(config.wikiModel.kind, 'chatgpt-web'); assert.equal(config.fastModel, null);
+const result = await fetch(root + '/models/test', { method: 'POST', headers, body: JSON.stringify({ binding: config.mainModel, prompt: '请只回复 AIKI-APP-OK。' }), signal: AbortSignal.timeout(180000) });
+const data = await result.json(); assert.ok(result.ok, JSON.stringify(data)); assert.equal(data.ok, true, JSON.stringify(data)); assert.equal(data.reply.trim(), 'AIKI-APP-OK');
+console.log(JSON.stringify({ ok: true, reply: data.reply, revision: config.revision, purpose: 'test', source: 'chatgpt-web' }));

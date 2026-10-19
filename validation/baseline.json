@@ -1,0 +1,609 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-17",
+  "generatedBy": "allmind-release-worker（P2 基线；除注明“修复人”外均为 worker 第一方在本机非沙箱环境实测）",
+  "sourceSnapshot": {
+    "sourceRepository": "Aika-Next（只读；本机路径不记录）",
+    "branch": "aika-next",
+    "head": "311eb0dbf468105f460b44be960ea8813809eefd",
+    "worktreeDirtyEntries": 379,
+    "snapshotSemantics": "交付=磁盘当前字节（含未跟踪与被源 data/ 规则误伤的源码），逐文件哈希见 source-manifest.json；P0 源快照见 allmind-worker/p0-keep-manifest.json",
+    "releaseTreeHotfix": "5 个文件在发布树热修（memory/file-book-repository.ts、memory/file-resource-store.ts、app/book-backend.ts、tests/memory-book/repository-safety.test.ts、tests/memory-book/artifact-recovery.test.mjs）；差异哈希见 allmind-worker/eraseTurns-fix-delta.json；源仓库保持原 RED 状态，这五个文件不与源字节相同"
+  },
+  "environment": {
+    "os": "Windows（本机）",
+    "node": "v24.18.0",
+    "npm": "11.16.0",
+    "electron": "44.4.1",
+    "playwright": "1.63.0",
+    "typescript": "5.9.3",
+    "vite": "5.4.21",
+    "npmCache": "本机用户 profile 下的默认 npm-cache（首次安装使用网络，registry npmmirror）"
+  },
+  "results": [
+    {
+      "id": "L0-1",
+      "level": "L0",
+      "cwd": "windows/code/desktop-pet",
+      "command": "npm.cmd ci",
+      "exitCode": 0,
+      "notes": "96 包（本机暖缓存）；npm 11.16.0 allowScripts 机制未落地 electron 二进制，见 L0-2",
+      "status": "PASS",
+      "runBy": "worker"
+    },
+    {
+      "id": "L0-2",
+      "level": "L0",
+      "cwd": "windows/code/desktop-pet",
+      "command": "node node_modules/electron/install.js",
+      "exitCode": 0,
+      "notes": "条件步骤：补齐 node_modules/electron/dist/electron.exe；标准 npm 无需此步（CI 不含）",
+      "status": "PASS",
+      "runBy": "worker"
+    },
+    {
+      "id": "L0-3",
+      "level": "L0",
+      "cwd": "windows/code/desktop-pet",
+      "command": "npm.cmd --prefix management/character-ui ci",
+      "exitCode": 0,
+      "notes": "含 allow-scripts 对 esbuild@0.21.5 postinstall 的警告，esbuild 二进制存在、构建正常",
+      "status": "PASS",
+      "runBy": "worker"
+    },
+    {
+      "id": "L0-4",
+      "level": "L0",
+      "cwd": "windows/code/desktop-pet",
+      "command": "npm.cmd run check",
+      "exitCode": 0,
+      "notes": "tsc -p tsconfig.json --noEmit 全量（含 tests/**/*.ts）",
+      "status": "PASS",
+      "runBy": "worker"
+    },
+    {
+      "id": "L0-5",
+      "level": "L0",
+      "cwd": "windows/code/desktop-pet",
+      "command": "npm.cmd run build",
+      "exitCode": 0,
+      "notes": "dist/ 全量 + dist/wechat/{qr.js,voice.js,silk.wasm} + desktop/chatgpt-extension/page.js 重建",
+      "status": "PASS",
+      "runBy": "worker"
+    },
+    {
+      "id": "L0-6",
+      "level": "L0",
+      "cwd": "windows/code/desktop-pet",
+      "command": "npm.cmd run build:desktop",
+      "exitCode": 0,
+      "notes": "desktop/build/renderer.js + management/preview-runtime/presentation-preview.js + vite SPA（1635 模块 → management/character-app/）",
+      "status": "PASS",
+      "runBy": "worker"
+    },
+    {
+      "id": "L0-7",
+      "level": "L0",
+      "cwd": "windows/code/desktop-pet",
+      "command": "npx.cmd playwright install chromium",
+      "exitCode": 0,
+      "notes": "npx.cmd playwright --version = 1.63.0；Chromium 就位",
+      "status": "PASS",
+      "runBy": "worker"
+    },
+    {
+      "id": "L1-1",
+      "level": "L1",
+      "cwd": "windows/code/desktop-pet",
+      "command": "node --test dist/tests/memory-book/*.test.js",
+      "exitCode": 1,
+      "tests": 345,
+      "pass": 344,
+      "fail": 1,
+      "notes": "热修前首错：repository-safety「forgetting cannot persist an overflowing ledger or a partial erasure journal」，断言 'validation failures must precede durable erasure intent' 失败（erasure.json 在校验失败后残留）；单文件复跑确定性 exit 1；根因与修复交接见 allmind-worker/L1-FIRST-ERROR-FIX-HANDOVER.md",
+      "status": "FAIL(已处置)",
+      "runBy": "worker"
+    },
+    {
+      "id": "L1-2",
+      "level": "L1",
+      "cwd": "windows/code/desktop-pet",
+      "command": "npm.cmd run build && node --test dist/tests/memory-book/*.test.js",
+      "exitCode": 0,
+      "tests": 345,
+      "pass": 345,
+      "fail": 0,
+      "notes": "eraseTurns 发布树热修后 worker 第一方复跑（重建+全量），59.4s；修复人另在非沙箱环境全量复跑 345/345（日志 allmind-worker/eraseTurns-l1-unsandboxed.log），两方一致",
+      "status": "PASS",
+      "runBy": "worker（另注修复人结果）"
+    },
+    {
+      "id": "L2-1",
+      "level": "L2",
+      "cwd": "windows/code/desktop-pet",
+      "command": "node --test tests/memory-book/w02-release.test.mjs tests/memory-book/character-client.browser.test.mjs tests/memory-book/w02-ui.browser.test.mjs tests/memory-book/w03-ui.browser.test.mjs tests/memory-book/zip-import.test.mjs",
+      "exitCode": 1,
+      "tests": 8,
+      "pass": 7,
+      "fail": 1,
+      "notes": "首轮唯一失败：zip-import UI 用例 Playwright strict-mode violation（页面现有两个 input[type=file]，历史裸定位器歧义；与合成交付无关，zip 生产导入两用例已通过）",
+      "status": "FAIL(已处置)",
+      "runBy": "worker"
+    },
+    {
+      "id": "L2-2",
+      "level": "L2",
+      "cwd": "windows/code/desktop-pet",
+      "command": "node --test tests/memory-book/zip-import.test.mjs",
+      "exitCode": 0,
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "notes": "定位器适配（input[type=file][accept=\".md,.markdown,.json,.zip\"]，断言集不变）后复跑；其余 4 文件在 L2-1 已绿（2+1+1+1），净结果 8/8",
+      "status": "PASS",
+      "runBy": "worker"
+    },
+    {
+      "id": "L3-1",
+      "level": "L3",
+      "cwd": "windows/code/desktop-pet",
+      "command": "node --test tests/memory-book/desktop.integration.test.mjs",
+      "exitCode": 0,
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "notes": "真实 Electron book-launcher --book-smoke-test + embedded 文件后端两轮（本机 HTTP fixture 模型）+ 禁原生依赖解析；修复人复跑亦 2/2",
+      "status": "PASS",
+      "runBy": "worker（另注修复人结果）"
+    },
+    {
+      "id": "L3-2",
+      "level": "L3",
+      "cwd": "windows/code/desktop-pet",
+      "command": "npm.cmd start（脚本链 p2-l3-first-launch.ps1）",
+      "exitCode": 0,
+      "notes": "真实首启（全新临时 AIKI_BOOK_DATA）：窗口标题 ALLMIND；writer.lock 运行期持有；stderr 确认「未配置私人默认模型，使用随包静态标志」「私人 Live2D 默认模型未安装」「Memory Book backend ready」；CloseMainWindow 优雅退出，进程全部退出，writer.lock 释放",
+      "status": "PASS",
+      "runBy": "worker"
+    },
+    {
+      "id": "L3-3",
+      "level": "L3",
+      "cwd": "windows/code/desktop-pet",
+      "command": "npm.cmd start（同一 AIKI_BOOK_DATA 重启；先 1.5s 间歇，后 10s 间歇复测 p2-l3-restart-retest.ps1）",
+      "exitCode": 0,
+      "notes": "同数据目录重启：1.5s 间歇轮出现一次瞬态 pet://app/index.html 加载 ERR_FAILED(-2)、后端未就绪（首错如实记录，未删除）；等待完整退出后 10s 间歇复测：窗口/锁/backend ready/静态标记/优雅退出/锁释放全部通过，book-*.json 持久并在重启后复用",
+      "status": "PASS(含瞬态观察)",
+      "runBy": "worker"
+    },
+    {
+      "id": "L4-1",
+      "level": "L4",
+      "command": "（真实服务登录/回复/展示素材体验）",
+      "exitCode": null,
+      "notes": "需用户另行授权真实账号/凭据；本轮未运行，不以 fixture 冒充",
+      "status": "NOT_RUN",
+      "runBy": "-"
+    }
+  ],
+  "adaptationsAffectingTests": [
+    "docs fixture 读取迁移至 validation/fixtures/ 并更新消费者（38 处精确替换，11 个 aiki.md 消费者 + 5 个 IMPORT_TEMPLATE + 2 个 portrait PNG + 1 个 perf-thresholds 模板）",
+    "测试截图/日志输出重定向至被 ignore 的 validation/output/",
+    "zip-import.test.mjs：外部工程真实交付 ZIP 替换为文件内可生成合成交付；UI 用例定位器按当前 DOM 收窄（断言集不变）",
+    "eraseTurns 发布树热修（五文件，见 eraseTurns-fix-delta.json）"
+  ],
+  "interpretation": "自动门槛 L0/L1/L2/L3 均已通过（含处置后复验）；L4 真实服务 NOT_RUN。本基线不复用任何历史通过数字；每条结果标注运行者与来源。",
+  "postHandoffUiRepair": {
+    "date": "2026-10-17",
+    "scope": "ALLMIND release tree only; Aika-Next not modified by this UI task",
+    "changes": [
+      "Reserve the reply-style preview row so typing/policy responses do not move the composer",
+      "Remove floating chat button; open chat by right-clicking the pet, including native rightClickRestore",
+      "Remove synthetic vertical bobbing and resting scale; retain drag and explicit interaction feedback",
+      "Adapt native smoke commands, affected browser tests and optional probe entry selectors without executing real-account probes"
+    ],
+    "validation": {
+      "desktopBuild": "PASS",
+      "browser": {
+        "pass": 7,
+        "fail": 0,
+        "includes": "1440px and 390px slow typing: textarea top varies less than 1 CSS px"
+      },
+      "electron": {
+        "pass": 2,
+        "fail": 0,
+        "model": "local HTTP fixture"
+      },
+      "bubbleRegression": {
+        "pass": 1,
+        "fail": 0
+      },
+      "stationaryRecheck": {
+        "pass": 1,
+        "fail": 0,
+        "note": "Overlaps browser menu test; walking has no vertical translation across 20 frames; resting transform is none."
+      }
+    },
+    "notRun": [
+      "Manual hardware right-click in the personal running instance",
+      "Fresh dependency reinstall and full cold reproduction for this UI revision",
+      "Real-model L4"
+    ],
+    "evidence": "UI-CHAT-REPAIR-20261017.md in local worker handover"
+  },
+  "trayRepair": {
+    "date": "2026-10-17",
+    "scope": "ALLMIND release tree only",
+    "changes": [
+      "Native window close hides to the system tray without destroying the window or stopping the backend/model page",
+      "Double-click tray restores the existing window",
+      "Only tray context-menu Exit ALLMIND exposes real application exit; old renderer quit intent also hides",
+      "before-quit bypasses close-to-hide while preserving the existing backend drain"
+    ],
+    "verification": {
+      "trayContract": {
+        "pass": 10,
+        "fail": 0
+      },
+      "nativeElectron": {
+        "pass": 2,
+        "fail": 0,
+        "includes": "Actual win.close hides; tray.show restores same BrowserWindow; app.quit exits and repository reopens without stale lock; local HTTP model fixture"
+      },
+      "rendererBuild": "PASS",
+      "hostSyntaxCheck": "PASS"
+    },
+    "notRun": [
+      "Manual interaction with the user personal instance",
+      "New full cold reproduction",
+      "L4 real model"
+    ],
+    "evidence": "TRAY-REPAIR-20261017.md (local worker handover)"
+  },
+  "menuCleanup": {
+    "date": "2026-10-17",
+    "scope": "ALLMIND release tree only",
+    "quickMenu": [
+      "免打扰",
+      "本地无痕",
+      "自主活动",
+      "Memory Book",
+      "打开管理",
+      "设置",
+      "收起到系统托盘"
+    ],
+    "settingsGroups": [
+      "AI 与对话",
+      "陪伴与行为",
+      "感知与记忆",
+      "外观与显示",
+      "隐私与系统"
+    ],
+    "behavior": [
+      "Appearance controls moved to a header popover, closed by default; host still persists size and full/half mode",
+      "Focus pauses autonomous activity and proactive output, preserves original enabled/quiet preferences, and permits manual chat",
+      "Interaction history is viewed in Memory Book and cleared only after confirmation under privacy/system",
+      "Default visible AIKI/Aika alias displays ALLMIND; custom names and internal IDs/namespaces remain compatible"
+    ],
+    "validation": {
+      "backendBuild": "PASS",
+      "desktopBuildAndUiTypecheck": "PASS",
+      "bookCore": {
+        "pass": 345,
+        "fail": 0
+      },
+      "expandedL2": {
+        "pass": 11,
+        "fail": 0
+      },
+      "settingsAndConversation": {
+        "pass": 8,
+        "fail": 0
+      },
+      "nativeAndFocus": {
+        "pass": 3,
+        "fail": 0
+      },
+      "lastSettingsAndMenu": {
+        "pass": 2,
+        "fail": 0,
+        "notes": "Includes real production owner writes, auth/revision/confirmation checks, and 390/320 CSS px no-overflow assertions"
+      },
+      "focusChat": {
+        "pass": 1,
+        "fail": 0
+      },
+      "countsOverlap": true
+    },
+    "notRun": [
+      "New full cold installation/reproduction",
+      "Physical device/manual personal-instance acceptance",
+      "Screen-reader and native 200% zoom acceptance",
+      "L4 real model",
+      "Historical optional native probes targeting retired menu items"
+    ],
+    "evidence": "MENU-SETTINGS-20261017.md (local worker handover)"
+  },
+  "uxRedesign": {
+    "date": "2026-10-17",
+    "scope": "Release tree only; no original workspace or Git history writes",
+    "reference": {
+      "name": "ALLMIND-UX-Redesign-Prototype.html",
+      "sha256": "19f92c2be0653b7a35cb7fa6cca17d7c5cf4ee9a1da93f07029813290abda34c"
+    },
+    "changes": [
+      "Reference-inspired production home, sidebar, typography, palette, settings category switching, model connection dialog and narrow-screen composer",
+      "Explicit one-click chat model binding and persistence; API model credentials continue through existing save/test routes",
+      "First-login native window visible before network navigation, reachable through taskbar during login; navigation/probe host budget 65 seconds",
+      "Known DesktopHostError returns its typed error and actionable message instead of generic internal_error",
+      "Original MemoryGraph implementation hash unchanged; custom names and internal namespaces retained"
+    ],
+    "validation": {
+      "backendBuild": "PASS",
+      "desktopBuild": "PASS",
+      "L1": {
+        "pass": 345,
+        "fail": 0
+      },
+      "L2": {
+        "pass": 14,
+        "fail": 0
+      },
+      "uxAndNative": {
+        "pass": 12,
+        "fail": 0
+      },
+      "countsOverlap": true,
+      "viewports": [
+        1440,
+        740,
+        390,
+        320
+      ],
+      "screenshots": "Local ignored .local/ui-v4/tests/ux-binding-*; copies linked in worker report"
+    },
+    "notRun": [
+      "Personal account login and actual online model/L4",
+      "New complete cold installation/P3",
+      "Screen-reader and native 200% zoom acceptance"
+    ],
+    "report": "UX-REDESIGN-20261017.md (local worker handover)"
+  },
+  "betaEngineeringAcceptance": {
+    "date": "2026-10-18",
+    "status": "PASS",
+    "scope": "Current release code cold-copied with per-file SHA-256 verification; independent npm ci in both projects, no original workspace writes",
+    "changes": [
+      "Home inline 25/45 minute focus timer with persisted pause/resume/reset using production Book HTTP",
+      "README and RUNBOOK current 14-test gate unified"
+    ],
+    "validation": {
+      "cleanInstall": "PASS",
+      "check": "PASS",
+      "backendBuild": "PASS",
+      "desktopBuild": "PASS",
+      "L1": {
+        "pass": 345,
+        "fail": 0,
+        "skipped": 0
+      },
+      "L2": {
+        "pass": 14,
+        "fail": 0,
+        "skipped": 0
+      },
+      "uxAndNative": {
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      },
+      "countsOverlap": true,
+      "nativeSameDataDirectoryRounds": 2,
+      "nativeChain": "Real Electron, isolated account/data directories; close hides and keeps writer lock, production tray double-click restores, production tray exit callback drains and releases lock",
+      "viewports": [
+        1440,
+        740,
+        390,
+        320
+      ],
+      "graphUnchanged": true
+    },
+    "remaining": [
+      "User-provided asset provenance/distribution evidence",
+      "Personal-account real-service login, binding, reply and restart reuse (L4 NOT_RUN)"
+    ],
+    "notClaimed": [
+      "Pixel-identical reproduction of every prototype screen",
+      "Screen-reader/native 200% acceptance",
+      "Remote GitHub Actions execution",
+      "Installer or public release"
+    ],
+    "coldInputFiles": 1440,
+    "postTestChanges": "README, RUNBOOK and validation metadata only; final manifest synced and verified separately",
+    "report": "BETA-ENGINEERING-ACCEPTANCE-20261018.md (local worker handover)"
+  },
+  "connectionSetupRepair": {
+    "date": "2026-10-18",
+    "status": "PASS",
+    "trigger": "User could not find API Key setup, could not understand independent-page binding, and pending web receipt blocked browser changes. Prior engineering checks did not establish real usability acceptance.",
+    "changes": [
+      "Explicit API Key and ChatGPT entry points in settings and dialog",
+      "Production API key/model list/test/save/chat path available from existing web binding without discarding pending web receipt",
+      "Readiness-checked independent login/binding steps and saved-source test",
+      "Authenticated local active-request status and automatic top-level resume/stop controls; source-switch guards retained",
+      "Web setup does not disable whole management UI; late bind result rejected after choosing API"
+    ],
+    "validation": {
+      "backendBuild": "PASS",
+      "managementUiBuild": "PASS",
+      "typecheck": "PASS",
+      "L1": {
+        "pass": 345,
+        "fail": 0
+      },
+      "L2": {
+        "pass": 16,
+        "fail": 0
+      },
+      "connectionAndSettings": {
+        "pass": 10,
+        "fail": 0
+      },
+      "lateResultAndAuthenticationRecheck": {
+        "pass": 2,
+        "fail": 0
+      },
+      "countsOverlap": true,
+      "apiModel": "Production BookHttpModel and credentials, local synthetic OpenAI-compatible HTTP server",
+      "independentPage": "Fixture login/readiness/model; no personal account",
+      "graphUnchanged": true
+    },
+    "notRun": [
+      "New dependency cold install after this repair",
+      "Personal-account real ChatGPT/API-service acceptance (L4 NOT_RUN)",
+      "New native tray test; tray code unchanged"
+    ],
+    "firstErrors": "Local worker logs connection-first-tests and connection-native-tests retained; fixed route collision and stop-status timing, no weakened assertions",
+    "report": "CONNECTION-SETUP-REPAIR-20261018.md (local worker handover)"
+  },
+  "closedTabRecovery": {
+    "date": "2026-10-18",
+    "status": "PASS",
+    "cause": "Live release-tree log: authenticated extension returned No tab with id; persisted active web request blocked all web source changes. Previous UI repair did not handle this recovery boundary.",
+    "changes": [
+      "Explicit stop of proven-closed bridge tab releases local lease, keeps used ID and persisted abandoned/unknown receipt; no old-message replay",
+      "Reject timeout/lookalike errors/non-bridge release; late read isolated",
+      "Ready independent-page binding button performs explicit old-request stop, readiness verification and source save",
+      "Actionable resume/stop errors and readable recovery banner"
+    ],
+    "validation": {
+      "backendBuild": "PASS (includes TypeScript)",
+      "managementUiBuild": "PASS (includes TypeScript)",
+      "L1": {
+        "pass": 347,
+        "fail": 0,
+        "skipped": 0
+      },
+      "fixedL2": {
+        "pass": 17,
+        "fail": 0
+      },
+      "combinedUiAndSettings": {
+        "pass": 21,
+        "fail": 0,
+        "skipped": 0
+      },
+      "countsOverlap": true,
+      "reproduction": "Persisted old receipt + production authenticated extension HTTP returning exact logged missing-tab error + production bridge/model + real browser UI + ready independent fixture + one new synthetic chat",
+      "personalService": "NOT_RUN"
+    },
+    "userRetest": "Pending: quit old tray instance and launch rebuilt release, inspect independent status, bind ready independent page. Existing user process/data not forcibly modified.",
+    "report": "DEAD-TAB-RECOVERY-20261018.md (local worker)"
+  },
+  "liveCurrentModelAcceptance": {
+    "date": "2026-10-18",
+    "status": "PASS",
+    "scope": "Existing user instance/account: independent embedded page, explicitly configured current webpage model; production API calls, not manual UI clicking",
+    "cause": [
+      "Persisted bridge request belonged to closed Chrome tab; actual local lease released without replay",
+      "Hard-coded GPT-6 required a model picker absent from the actual page; first real test failed, then configuration explicitly changed to current"
+    ],
+    "actual": {
+      "modelTest": {
+        "status": "PASS",
+        "reply": "连接正常。",
+        "durationMs": 8816
+      },
+      "productionChat": {
+        "status": "PASS",
+        "httpStatus": 200,
+        "reply": "聊天正常。",
+        "turnPersisted": true
+      },
+      "managedBackendRestart": {
+        "status": "PASS",
+        "differentPid": true,
+        "configPreserved": true,
+        "reply": "重启正常。",
+        "entireElectronRestart": false
+      },
+      "activeRequestAfter": null,
+      "transport": "embedded",
+      "model": "current",
+      "configRevision": 11
+    },
+    "knownFailures": [
+      {
+        "scope": "Explicit GPT-6 model picker selection",
+        "status": "FAIL",
+        "message": "DesktopHostError: 无法确认唯一模型按钮。"
+      }
+    ],
+    "regression": {
+      "backendAndUiBuild": "PASS",
+      "L2": 17,
+      "modelAndSettings": 9,
+      "countsOverlap": true,
+      "latestL1": "347/347 from earlier same-day dead-tab repair; not rerun for this default/text-only revision"
+    },
+    "notRun": [
+      "External API Key service",
+      "Manual native UI click-through",
+      "Voice/Live2D or other accounts/devices"
+    ],
+    "report": "LIVE-ACCEPTANCE-20261018.md (local worker handover)"
+  },
+  "acceptanceDefectRepair": {
+    "date": "2026-10-18",
+    "status": "PASS_SCOPED",
+    "scope": "DEF-01 browser draft fix plus model-trigger compatibility; current running instance named-model live test separately confirmed",
+    "changes": [
+      "Browsing API/web entry points does not create a mainModel draft; edits create drafts, switching preserves them, discard restores saved configuration",
+      "Incomplete API fields are validated before credentials are written; blank models never show an already-bound label",
+      "Known model selector testIds no longer require aria-haspopup; explicit accessible-name variants supported, disabled/hidden/ambiguous triggers rejected; exact option and checked-state confirmation retained"
+    ],
+    "validation": {
+      "backendBuild": "PASS",
+      "desktopAndUiBuild": "PASS",
+      "L1": {
+        "pass": 347,
+        "fail": 0
+      },
+      "L2WithModelMenuAndThinking": {
+        "pass": 22,
+        "fail": 0
+      },
+      "connectionOnly": {
+        "pass": 4,
+        "fail": 0,
+        "overlapsL2": true
+      }
+    },
+    "liveNamedModel": {
+      "status": "PASS",
+      "requestedModel": "GPT-6",
+      "reply": "指定型号连接正常。",
+      "durationMs": 11618,
+      "activeAfter": null,
+      "configRevisionBefore": 11,
+      "configRevisionAfter": 11,
+      "savedModel": "current",
+      "configWritten": false,
+      "historySent": false,
+      "silentFallback": false,
+      "scope": "Existing running Electron host production model-test endpoint; no full Electron restart or independent live adapter-byte attestation"
+    },
+    "notRun": [
+      "New-candidate complete native/tray restart journey",
+      "P7 real character five-question evaluation",
+      "Clean-machine reinstall",
+      "Independent external API-key service"
+    ],
+    "earlierDiagnostics": [
+      "Model inspection HTTP503 UnknownVizError",
+      "Thinking inspection HTTP503 independent page timeout; no assumption of logged-out state"
+    ],
+    "firstErrors": "Sandbox image/temp-file and browser-launch errors retained; normal-permission same assertions passed. Test seed and global script declaration mistakes corrected without weakening assertions.",
+    "report": "ACCEPTANCE-DEFECT-FIX-20261018.md (local worker)"
+  }
+}

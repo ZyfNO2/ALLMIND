@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 1,
+  "name": "ALLMIND Beta 初始验证固定用例（P2/P3 门槛）",
+  "fixedSelection": true,
+  "notes": "本文件固定验证门槛的用例选择；不得为消除失败而删改选择，变更须重新基线化。通配符只用于 L1 编译用例全量；真实服务/本机资源用例一律不混入自动门槛。",
+  "source": {
+    "repository": "Aika-Next（只读源仓库；本机路径不记录）",
+    "branch": "aika-next",
+    "head": "311eb0dbf468105f460b44be960ea8813809eefd",
+    "worktreeState": "main 唯一根提交 Init，包含当前验收修复与 UI/图谱改动，无 remote、未推送；清单记录发布源码字节。",
+    "hotfix": "5 个文件在发布树内热修（eraseTurns 持久化顺序，修复 L1 首错）；其 SHA-256 与源快照的差异记录于 allmind-worker/eraseTurns-fix-delta.json，不以任何方式声称这五个文件仍与源字节相同"
+  },
+  "environment": {
+    "nodeEngines": ">=22.12.0",
+    "validatedWith": {
+      "node": "v24.18.0",
+      "npm": "11.16.0",
+      "electron": "44.4.1",
+      "playwright": "1.63.0"
+    },
+    "platform": "Windows（首批仅承诺 Windows）"
+  },
+  "levels": {
+    "L0_clean_install_build": {
+      "cwd": "windows/code/desktop-pet",
+      "commands": [
+        {
+          "cmd": "npm.cmd ci",
+          "purpose": "主工程依赖按 lockfile 安装",
+          "conditionalFollowUp": "node node_modules/electron/install.js —— 仅当 npm 的 allowScripts 机制跳过 electron postinstall 时需要（验证 node_modules/electron/dist/electron.exe 存在）；标准 npm 无此步骤"
+        },
+        {
+          "cmd": "npm.cmd --prefix management/character-ui ci",
+          "purpose": "管理 UI 子工程依赖安装"
+        },
+        {
+          "cmd": "npm.cmd run check",
+          "purpose": "TypeScript 全量类型检查（含 tests/**/*.ts）"
+        },
+        {
+          "cmd": "npm.cmd run build",
+          "purpose": "tsc 产物 + WeChat bundle + ChatGPT 扩展 page.js 生成"
+        },
+        {
+          "cmd": "npm.cmd run build:desktop",
+          "purpose": "renderer + presentation preview + React SPA 三路构建"
+        },
+        {
+          "cmd": "npx.cmd playwright install chromium",
+          "purpose": "L2 浏览器用例所需 Chromium（先记录 npx.cmd playwright --version）"
+        }
+      ],
+      "expectedArtifacts": [
+        "dist/app/book-launcher.js",
+        "dist/app/book-backend.js",
+        "dist/wechat/qr.js",
+        "dist/wechat/voice.js",
+        "dist/wechat/silk.wasm",
+        "desktop/chatgpt-extension/page.js",
+        "desktop/build/renderer.js",
+        "management/preview-runtime/presentation-preview.js",
+        "management/character-app/index.html"
+      ]
+    },
+    "L1_book_core": {
+      "cwd": "windows/code/desktop-pet",
+      "command": "node --test dist/tests/memory-book/*.test.js",
+      "compiledTestFiles": 58,
+      "scope": "仓库读写、配置/会话持久化、角色隔离、记忆/Wiki 读写与召回、取消/失败、删除/撤销、擦除与恢复安全（生产模块 + 合成 fixture，含 validation/fixtures 迁移件）",
+      "expected": "2026-10-19 本轮工作树：392/392，0 failed / 0 skipped，58 个编译测试文件；历史计数独立保留，不删改失败用例。"
+    },
+    "L2_ui_protocol": {
+      "cwd": "windows/code/desktop-pet",
+      "command": "node --test tests/memory-book/w02-release.test.mjs tests/memory-book/character-client.browser.test.mjs tests/memory-book/w02-ui.browser.test.mjs tests/memory-book/w03-ui.browser.test.mjs tests/memory-book/zip-import.test.mjs tests/memory-book/local-pet-menu.browser.test.mjs tests/memory-book/incognito-renderer.browser.test.mjs tests/memory-book/companion-lifecycle.browser.test.mjs tests/memory-book/ux-binding.browser.test.mjs tests/memory-book/chatgpt-page-host.test.mjs tests/memory-book/connection-setup.browser.test.mjs tests/memory-book/chatgpt-model-menu.browser.test.mjs tests/memory-book/chatgpt-thinking.browser.test.mjs tests/memory-book/prompt-presets.browser.test.mjs tests/memory-book/wiki-compilation.browser.test.mjs tests/memory-book/wiki-maintenance.browser.test.mjs tests/memory-book/ui-v4-acceptance.browser.test.mjs tests/memory-book/role-onboarding.browser.test.mjs",
+      "sourceOfTruth": ".github/workflows/verify.yml 的 L2 run 行（18 个文件）；新增空白用户角色配置旅程，保留全部原选择",
+      "cases": [
+        {
+          "file": "tests/memory-book/w02-release.test.mjs",
+          "tests": 2,
+          "covers": "干净发布门槛：无私有模型时默认静态 ALLMIND 标志；无 Cubism SDK 构建显式拒绝 Live2D"
+        },
+        {
+          "file": "tests/memory-book/character-client.browser.test.mjs",
+          "tests": 1,
+          "covers": "聊天 UI：失败保留输入、重试同 turn 标识、会话切换/刷新恢复、停止、模型设置草稿测试连接、召回失效提示（模型响应为本机 HTTP fixture）"
+        },
+        {
+          "file": "tests/memory-book/w02-ui.browser.test.mjs",
+          "tests": 1,
+          "covers": "形象：立绘上传/预览/选用/重命名 + 换装生成与应用（fixture 模型）"
+        },
+        {
+          "file": "tests/memory-book/w03-ui.browser.test.mjs",
+          "tests": 1,
+          "covers": "Wiki 阅读：富来源渲染、图片撤销传播、下一轮暂存不发请求、窄屏适配"
+        },
+        {
+          "file": "tests/memory-book/zip-import.test.mjs",
+          "tests": 3,
+          "covers": "ZIP 导入：合成交付走生产导入（manifest 完整性、optional/ 排除、推荐知识视角不自动应用、roundtrip noop、手工冲突保留）、非法输入拒绝、鉴权 HTTP UI 上传应用"
+        },
+        {
+          "file": "tests/memory-book/local-pet-menu.browser.test.mjs",
+          "tests": 1,
+          "covers": "七项快捷菜单、三项实际开关语义、键盘操作、外观浮层默认收起、窄屏、静止与 ALLMIND 标签"
+        },
+        {
+          "file": "tests/memory-book/incognito-renderer.browser.test.mjs",
+          "tests": 1,
+          "covers": "无痕独立快捷开关，隐私回执与进行中禁用"
+        },
+        {
+          "file": "tests/memory-book/companion-lifecycle.browser.test.mjs",
+          "tests": 1,
+          "covers": "专注暂停活动但保持聊天，生命周期及过期/外来消息拒绝"
+        },
+        {
+          "file": "tests/memory-book/ux-binding.browser.test.mjs",
+          "tests": 1,
+          "covers": "参考页导航与真实绑定保存、宿主错误反馈、合成聊天、740/390/320px布局"
+        },
+        {
+          "file": "tests/memory-book/chatgpt-page-host.test.mjs",
+          "tests": 2,
+          "covers": "独立页隔离、账号边界、首启登录窗口在慢导航前可见、网络错误传播"
+        },
+        {
+          "file": "tests/memory-book/connection-setup.browser.test.mjs",
+          "tests": 4,
+          "covers": "Existing web binding with pending receipt → API Key discovery/test/save/chat/reload via production HTTP; independent login/readiness-gated binding/test; local receipt recovery without remote probe; synthetic services only; persisted Chrome No tab error through authenticated extension protocol → explicit local lease release with unknown outcome → ready independent page binding → one new chat, no old replay; browsing empty/web/API bindings does not dirty configuration, edits persist across tabs and discard restores saved values"
+        },
+        {
+          "file": "tests/memory-book/chatgpt-model-menu.browser.test.mjs",
+          "tests": 3,
+          "covers": "Known model trigger variants, click-only activation, delayed exact options, hidden/disabled/ambiguous trigger rejection, no silent current fallback, stream handoff boundary"
+        },
+        {
+          "file": "tests/memory-book/chatgpt-thinking.browser.test.mjs",
+          "tests": 1,
+          "covers": "Exact nested family match and verified thinking enumeration/restoration"
+        },
+        {
+          "file": "tests/memory-book/prompt-presets.browser.test.mjs",
+          "covers": "酒馆 Chat Completion 预设导入/Order block 选择/编译与 Prompt 预览的浏览器路径（模型为 fixture）"
+        },
+        {
+          "file": "tests/memory-book/wiki-compilation.browser.test.mjs",
+          "covers": "Wiki 编纂 UI 的任务准备、预算拆分与校验/审核/应用路径（模型为 fixture）"
+        },
+        {
+          "file": "tests/memory-book/wiki-maintenance.browser.test.mjs",
+          "covers": "Wiki 维护编译（批量页/关系更新）的浏览器路径与限额（模型为 fixture）"
+        },
+        {
+          "file": "tests/memory-book/ui-v4-acceptance.browser.test.mjs",
+          "covers": "管理界面四视图（记忆条目/知识图谱/设定 Wiki/编纂工具）与窄屏、上下文侧栏的浏览器断言"
+        },
+        {
+          "file": "tests/memory-book/role-onboarding.browser.test.mjs",
+          "tests": 1,
+          "covers": "空白首页、创建/切换角色、人设保存/取消与离开保护、角色包预览/取消/应用、API 获取模型/错误保留/测试不保存/保存聊天、原角色隔离与320/390px；生产HTTP+fixture模型"
+        }
+      ],
+      "expected": "2026-10-19 本轮工作树：28/28，18 个文件，0 failed / 0 skipped；fixture 不代表真实模型验收。"
+    },
+    "L3_native_first_launch": {
+      "cwd": "windows/code/desktop-pet",
+      "automated": {
+        "command": "node --test tests/memory-book/desktop.integration.test.mjs",
+        "tests": 2,
+        "covers": "真实 Electron book-launcher --book-smoke-test：embedded 文件后端两轮对话（本机 HTTP fixture 模型）、退出码 0；生产根禁原生依赖解析"
+      },
+      "manualChain": {
+        "steps": "新建临时 AIKI_BOOK_DATA → npm start → 验证窗口/后端就绪与 writer.lock → 关闭窗口：仅隐藏，进程/写锁仍在 → 双击托盘图标恢复同一窗口 → 托盘右键选择退出 ALLMIND：进程排空与 writer.lock 释放 → 同数据目录再次启动并从托盘退出",
+        "note": "前实例完全退出后数秒内立即重启可能出现一次瞬态 pet:// 加载 ERR_FAILED(-2)（见 baseline.json 观察记录）；等待完整退出后再重启即可"
+      }
+    },
+    "L4_real_services": {
+      "status": "PASS_WITH_LIMITS_AND_DEFERRED",
+      "scope": "2026-10-18：现有账号独立页 current 生产模型测试、正常聊天与受管后台重启；2026-10-19：隔离实例登录/绑定/High 读取与两轮真实预设聊天（SavedTurn 带 presetId/版本/documentHash），首轮出现“你我这两个真人”错误措辞并保留；真实网页单次 Wiki 编纂曾完成一次（192 材料 → 23 页/19 关系，含应用、图谱与后台重启）。以上都不是全服务、全流程图谱召回或人工 UI 遍历验收。",
+      "knownFailure": "Explicit GPT-6 picker selection FAIL（首次）；current 为显式配置，绝无静默回退。真实预设聊天首轮身份措辞错误，第二轮纠正。",
+      "deferred": "真实 API（DeepSeek 等）本轮最小连接与分批请求均 HTTP 403，用户已决定暂停排障，记 DEFERRED，不得以网页或 fixture 结果替代",
+      "notRun": [
+        "External API-key service（DEFERRED）",
+        "本轮 189 条目标材料的真实分批 Wiki 编纂",
+        "Voice/Live2D",
+        "Manual native UI click-through",
+        "Desk pet/tray journey this round（OUT_OF_SCOPE）"
+      ],
+      "evidence": "baseline.liveCurrentModelAcceptance；release-status.wikiSynthesis 与 docsReleaseCleanup20261019"
+    }
+  },
+  "gateExclusions": [
+    {
+      "files": [
+        "tests/ui-rework/cux-07-d-candidates.test.mjs",
+        "tests/ui-rework/cux-07-d-repro.test.mjs",
+        "tests/ui-rework/cux-07-real-instance.browser.test.mjs"
+      ],
+      "reason": "引用源仓库绝对路径证据与 .local 真实账号描述符（机器绑定）"
+    },
+    {
+      "files": [
+        "tests/tools/resume-answer-scoring.test.mjs"
+      ],
+      "reason": "读取未迁移的历史 eval 报告（docs/next/eval/reports/RPD-RESUME-v3）"
+    },
+    {
+      "files": [
+        "tests/ui-rework/diagnose-renders.mjs",
+        "tests/ui-rework/diagnose-playground-stall.mjs"
+      ],
+      "reason": "诊断脚本，硬编码本机 playwright chrome.exe 路径"
+    },
+    {
+      "files": [
+        "tests/desktop/haru-import.test.mjs",
+        "tests/desktop/haru-preview.test.mjs",
+        "tests/desktop/live2d-idle.test.mjs",
+        "tests/role-repair/asset-import.test.ts",
+        "tests/next61/fix61-05.renderer.test.ts",
+        "tests/next65/baselineBehavior.test.ts",
+        "tests/next/real/realAsr.test.ts"
+      ],
+      "reason": "需要私有 Live2D 模型/本机工具链资产（多为 env 可覆盖默认）；首批静态形象模式不宣称 Live2D 验证"
+    },
+    {
+      "files": [
+        "tools/ 内其余外部前置工具（chatgpt-app-smoke、chatgpt-bridge-*、chatgpt-project-*、chatgpt-web-login、allmind-real-*、ui-v4-*、w02/w03 real、companion-*-native-*、acceptance-* 等）"
+      ],
+      "reason": "可选工具，外部前置明确（登录态/工具链/其他工程），不是公共验证入口。2026-10-19 已把其中带个人 Chrome 档案、私人硬编码路径或私有角色包的脚本移出发布树（chatgpt-configure-mvp / ui-check / mvp-smoke / runtime-smoke、self-accept、character-smoke-data、character-live-smoke、tests/memory-book/character-import-appearance.test.mjs），原件归档在 worker 目录；构建与回归必需入口未动"
+    }
+  ],
+  "releaseCleanup20261019": {
+    "removedCases": [
+      "tests/memory-book/character-import-appearance.test.mjs（改为引用私有角色包，删除；不属任何门禁用例）"
+    ],
+    "removedTools": 7,
+    "note": "删除前对全仓 grep import 与 package.json scripts；构建必需 tools（build-*、run-tests、release-doctor、run-eval 等）保留。删除后 source-manifest 需重新生成。"
+  },
+  "ci": ".github/workflows/verify.yml 在 windows-latest 执行 L0 + L1 + L2（浏览器用例，Chromium 显式安装并记录版本）；L3 手动链与 L4 保持本地/人工。",
+  "menuCleanupLocalCheck": {
+    "command": "node --test tests/memory-book/focus-backend.test.mjs tests/memory-book/desktop.integration.test.mjs",
+    "purpose": "Actual backend ownership and authenticated life controls, settings UI, focus deadline and native window/tray behavior; local isolated fixture check."
+  },
+  "uxRedesignLocalCheck": {
+    "command": "node --test tests/memory-book/chatgpt-page-host.test.mjs tests/memory-book/chatgpt-settings.browser.test.mjs tests/memory-book/ui-v4.browser.test.mjs tests/memory-book/ux-binding.browser.test.mjs tests/memory-book/focus-backend.test.mjs tests/memory-book/desktop.integration.test.mjs",
+    "expected": "12 tests, including native Electron and local fixture model checks; no personal account/L4."
+  },
+  "connectionSetupLocalCheck": {
+    "command": "node --test tests/memory-book/connection-setup.browser.test.mjs tests/memory-book/chatgpt-settings.browser.test.mjs tests/memory-book/ux-binding.browser.test.mjs tests/memory-book/character-client.browser.test.mjs tests/memory-book/ui-v4.browser.test.mjs",
+    "expected": "11 tests; includes persisted closed-tab recovery through authenticated extension protocol. Synthetic services only, no personal-account/L4."
+  },
+  "acceptanceDefectRepair": "See baseline.acceptanceDefectRepair; historical observations retained."
+}

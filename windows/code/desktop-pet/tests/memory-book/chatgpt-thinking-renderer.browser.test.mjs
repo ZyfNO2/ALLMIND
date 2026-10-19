@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {resolve,extname,sep} from 'node:path';
+import {createServer} from 'node:http';
+import {chromium} from '@playwright/test';
+test('desktop quick menu routes model configuration to settings without querying thinking options',{timeout:25000},async t=>{
+  const root=resolve('desktop'),server=createServer(async(request,response)=>{const path=resolve(root,'.'+new URL(request.url,'http://127.0.0.1').pathname);if(!path.startsWith(root+sep)){response.writeHead(403);response.end();return;}try{response.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');response.end(await readFile(path));}catch{response.writeHead(404);response.end();}});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(async()=>{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));});
+  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:800,height:950}}),errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.addInitScript(()=>{window.hostMessages=[];window.desktopHost={postMessage(name,value){window.hostMessages.push({name,value});},subscribe(){}};});
+  await page.goto('http://127.0.0.1:'+server.address().port+'/index.html');await page.waitForFunction(()=>!!window.petBridge);
+  await page.evaluate(()=>{window.petBridge.connectionChanged({generation:1,state:'connecting'});window.petBridge.receive({channel:'backend_ready',bridgeVersion:'0.8.0',characterId:'aika',characterLabel:'测试角色',sessionId:'desktop',productMode:'memory-book'},1);});
+  await page.locator('#model').click({button:'right'});await page.getByRole('button',{name:'更多操作',exact:true}).click();
+  assert.equal(await page.getByRole('menuitem',{name:'ChatGPT 思考强度',exact:true}).count(),0);
+  await page.getByRole('menuitem',{name:'设置',exact:true}).click();
+  assert.ok(await page.evaluate(()=>window.hostMessages.some(row=>row.value?.type==='open_management'&&row.value.path==='/settings')));
+  assert.equal(await page.evaluate(()=>window.hostMessages.filter(row=>row.value?.message?.channel==='book_thinking').length),0,'opening the shortcut must not query a model setting');
+  assert.deepEqual(errors,[]);
+});

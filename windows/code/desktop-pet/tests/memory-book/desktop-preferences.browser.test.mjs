@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdirSync,mkdtempSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {chromium,expect} from '@playwright/test';
+import {FileBookRepository} from '../../dist/memory/file-book-repository.js';
+import {BookRuntime} from '../../dist/app/book-runtime.js';
+import {BookCredentials} from '../../dist/management/book-credentials.js';
+import {startBookServer} from '../../dist/management/book-server.js';
+import {DesktopHostError} from '../../dist/app/desktop-host-bridge.js';
+import {defaultHostPreferences,applyHostPatch,toHostPreferencesPayload} from '../../desktop/electron/host-preferences.ts';
+test('Book desktop settings use the existing host owner, read back, and retain a conflicting draft',{timeout:30000},async t=>{
+ mkdirSync('.local/ui-v4/tests',{recursive:true});const directory=resolve(mkdtempSync('.local/ui-v4/tests/desktop-prefs-')),repository=new FileBookRepository(directory),runtime=new BookRuntime(repository,{async complete(){throw Error('No model calls')}});
+ let state=defaultHostPreferences(),patches=0;
+ const payload=()=>toHostPreferencesPayload(state,{mode:state.mode,preferredWidth:state.width,modelWidth:state.width,modelHeight:400,drawerHeight:300},{hotkey:'window-only',filePicker:false,display:true,preferences:true});
+ const host={async request(method,input){if(method==='preferences.get')return payload();assert.equal(method,'preferences.patch');patches++;const result=applyHostPatch(state,input.expectedRevision,input.patch);if(!result.ok)throw new DesktopHostError(result.code,result.message);state=result.next;return {revision:state.revision,applied:result.applied,preferences:payload()}}};
+ const server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management'),appearance:{skins:{state:()=>({revision:0,skins:[]})},host}});
+ const browser=await chromium.launch({headless:true});t.after(async()=>{await browser.close();await server.close();repository.close()});const page=await browser.newPage();page.setDefaultTimeout(8000);await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();const panel=page.getByRole('region',{name:'桌面形态',exact:true});
+ await expect(panel.getByLabel('展示形态',{exact:true})).toHaveValue('full');await panel.getByLabel('展示形态',{exact:true}).selectOption('half');await panel.getByLabel('期望宽度',{exact:true}).fill('420');await panel.getByRole('button',{name:'保存桌面偏好',exact:true}).click();await panel.getByText('桌面偏好已由宿主保存并生效。',{exact:true}).waitFor();assert.equal(state.mode,'half');assert.equal(state.width,420);assert.equal(patches,1);
+ await panel.getByLabel('期望宽度',{exact:true}).fill('500');state={...state,revision:state.revision+1};await panel.getByRole('button',{name:'保存桌面偏好',exact:true}).click();await panel.getByRole('alert').filter({hasText:/其他窗口修改/}).waitFor();await expect(panel.getByLabel('期望宽度',{exact:true})).toHaveValue('500');assert.equal(state.width,420);
+ const url=new URL(server.url),endpoint=url.origin+'/api/memory-book/v1/desktop/preferences';assert.equal((await fetch(endpoint)).status,401);const headers={Authorization:'Bearer '+new URLSearchParams(url.hash.slice(1)).get('token'),'Content-Type':'application/json'},before=patches;assert.equal((await fetch(endpoint,{method:'PUT',headers,body:JSON.stringify({expectedRevision:state.revision,operationId:'invalid-patch',patch:{alwaysOnTop:true}})})).status,400);assert.equal(patches,before);
+ await panel.getByRole('button',{name:'重新读取桌面偏好（放弃草稿）',exact:true}).click();await expect(panel.getByLabel('期望宽度',{exact:true})).toHaveValue('420');
+});

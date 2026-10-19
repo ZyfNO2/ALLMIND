@@ -1,0 +1,62 @@
+name: verify
+
+# Single verification entry for the ALLMIND Beta source tree (Windows first batch).
+# Covers: both dependency installs, type check, backend build, desktop three-way build,
+# L1 Book core compiled tests, and the fixed L2 representative browser/protocol cases.
+# The native Electron first-launch chain (L3) and real-service checks (L4) are local /
+# manual items - see validation/RUNBOOK.md and validation/CASES.json.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows-verify:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: windows/code/desktop-pet
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # package.json engines: >=22.12.0; validated locally on Node 24.
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            windows/code/desktop-pet/package-lock.json
+            windows/code/desktop-pet/management/character-ui/package-lock.json
+
+      - name: Record tool versions
+        run: |
+          node --version
+          npm.cmd --version
+
+      - name: Install main dependencies (npm ci)
+        run: npm.cmd ci
+
+      - name: Install management UI dependencies (npm ci)
+        run: npm.cmd --prefix management/character-ui ci
+
+      - name: Type check (npm run check)
+        run: npm.cmd run check
+
+      - name: Build backend, WeChat bundle and ChatGPT extension (npm run build)
+        run: npm.cmd run build
+
+      - name: Build desktop renderer, presentation preview and management SPA (npm run build:desktop)
+        run: npm.cmd run build:desktop
+
+      - name: Install and record Chromium for browser tests
+        run: |
+          npx.cmd playwright --version
+          npx.cmd playwright install chromium
+
+      - name: L1 - Book core compiled tests
+        run: node --test dist/tests/memory-book/*.test.js
+
+      - name: L2 - representative UI/protocol tests
+        run: node --test tests/memory-book/w02-release.test.mjs tests/memory-book/character-client.browser.test.mjs tests/memory-book/w02-ui.browser.test.mjs tests/memory-book/w03-ui.browser.test.mjs tests/memory-book/zip-import.test.mjs tests/memory-book/local-pet-menu.browser.test.mjs tests/memory-book/incognito-renderer.browser.test.mjs tests/memory-book/companion-lifecycle.browser.test.mjs tests/memory-book/ux-binding.browser.test.mjs tests/memory-book/chatgpt-page-host.test.mjs tests/memory-book/connection-setup.browser.test.mjs tests/memory-book/chatgpt-model-menu.browser.test.mjs tests/memory-book/chatgpt-thinking.browser.test.mjs tests/memory-book/prompt-presets.browser.test.mjs tests/memory-book/wiki-compilation.browser.test.mjs tests/memory-book/wiki-maintenance.browser.test.mjs tests/memory-book/ui-v4-acceptance.browser.test.mjs tests/memory-book/role-onboarding.browser.test.mjs

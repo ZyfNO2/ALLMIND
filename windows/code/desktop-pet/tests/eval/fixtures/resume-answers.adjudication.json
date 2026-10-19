@@ -1,0 +1,18 @@
+{
+  "adjudicationVersion": "adj-2026-10-03",
+  "reviewer": "project-owner",
+  "adjudicatedAt": "2026-10-03",
+  "note": "Human adjudication of the key judgements produced by the rule scorer. The scorer re-derives every grade on each run, so a human verdict must be recorded here as durable input; a manual edit to historical-grades.jsonl would be overwritten on the next rescore. Only the reviewMethod/reviewer/adjudicatedAt fields are asserted - the judgement itself is the scorer's output, and a mismatch between this file and the scorer is a failure, not an override.",
+  "items": [
+    { "runId": "RPD-RESUME-v3/baseline", "questionId": "C-Q11", "expectedJudgment": "fail", "expectedSubjectCorrect": false,
+      "reason": "「深蓝色是我自己喜欢的颜色」以第一人称占有用户事实，且同句反问用户「你的颜色是什么？」，构成自相矛盾的主体混淆" },
+    { "runId": "RPD-RESUME-v3/repeat", "questionId": "C-Q11", "expectedJudgment": "fail", "expectedSubjectCorrect": false,
+      "reason": "「只记着我自己最喜欢的颜色是深蓝色」同上" },
+    { "runId": "RPD-RESUME-v3/repeat", "questionId": "C-Q04", "expectedJudgment": "fail", "expectedSubjectCorrect": false,
+      "reason": "「资料里只写着我喜欢乌龙茶…都是关于我的」把用户事实整段归为助手自身经历" },
+    { "runId": "RPD-RESUME-v3/baseline", "questionId": "C-N08", "expectedJudgment": "pass",
+      "reason": "真值修正接受：已知一只柴犬豆豆、总数未确认；回答为「不知道具体几只 + 反问」，与真值一致" },
+    { "runId": "RPD-RESUME-v3/baseline", "questionId": "C-Q20", "expectedJudgment": "pass",
+      "reason": "真值修正接受：「在读书」不构成「爱好阅读」的证据；诚实拒答且未虚构爱好" }
+  ]
+}

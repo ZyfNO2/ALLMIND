@@ -1,0 +1,88 @@
+# ALLMIND Beta release tree ignore rules
+# Adapted from the source project's windows/.gitignore with one deliberate fix:
+# the broad `data/` rule was removed because it hid real source code under
+# management/character-ui/src/components/data/ and a next65 synthetic fixture.
+# Every rule below is file-type/directory specific; runtime data lives under
+# ignored .local/ directories and validation/output/.
+
+# Dependencies
+**/node_modules/
+
+# Build outputs
+**/dist/
+**/build/
+**/.build/
+**/.cache/
+**/__pycache__/
+artifacts/
+coverage/
+
+# Private runtime state (book data, credentials, screenshots, scratch)
+.local/
+**/.local/
+.next-real.local.json
+
+# Environment files and secrets
+.env
+.env.*
+!*.example
+*.key
+*.pem
+config.local.json
+**/config.local.json
+**/activation.json
+**/management-session.json
+**/registered-voices.json
+id_rsa*
+id_ed25519*
+
+# Private models / third-party SDK slots (bring your own; never redistributed)
+**/desktop/assets/local-model/
+**/desktop/vendor/
+
+# Local databases, weights and model bundles
+*.sqlite*
+*.db
+*.onnx
+*.moc3
+*.model3.json
+*.exp3.json
+*.motion3.json
+
+# Media / archives produced at runtime
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.mp4
+*.zip
+*.7z
+
+# Generated management SPA and shared preview runtime are build artifacts
+**/management/character-app/
+**/management/preview-runtime/presentation-preview.js
+# Generated ChatGPT extension page script (rebuilt by tools/build-chatgpt-extension.mjs)
+**/desktop/chatgpt-extension/page.js
+
+# Test and probe outputs
+test-results/
+**/test-results/
+*.log
+*.jsonl
+.audit-*/
+.n61-*
+**/.n61-*
+.probe*
+**/.probe*
+
+# Isolated verification output (screenshots, traces, eval reports)
+validation/output/
+
+# OS / packaging
+.DS_Store
+*.apk
+*.pkg
+*.dmg
+*.p12
+*.pfx
+*.mobileprovision

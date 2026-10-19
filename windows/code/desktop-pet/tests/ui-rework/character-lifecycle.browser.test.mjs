@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { chromium, expect } from '@playwright/test';
+import { roleConsoleFixture } from '../management/role-console-fixture.mjs';
+
+test('React whole-role replacement creates a fresh configuration and whole-role removal leaves the running role intact', { timeout: 60_000 }, async t => {
+  const f = await roleConsoleFixture(t), browser = await chromium.launch();
+  t.after(() => browser.close());
+  const page = await browser.newPage(), errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('dialog', dialog => dialog.accept());
+  const roster = await f.request('/api/characters'), old = roster.characters.find(role => role.id === 'role-b');
+  await page.goto(f.server.origin + '/characters#token=' + f.server.token);
+  await page.getByRole('group', { name: '角色：' + old.label, exact: true }).getByRole('button', { name: '删除 / 替换整个角色', exact: true }).click();
+  await page.getByLabel('替换后的角色名称', { exact: true }).fill('Replacement browser');
+  await page.getByRole('button', { name: '替换整个角色', exact: true }).click();
+  await expect(page).toHaveURL(/\/characters\/[^/]+\/config$/);
+  assert.equal(f.store.registry.exists(old.id), false);
+  const replaced = (await f.request('/api/characters')).characters.find(role => role.label === 'Replacement browser');
+  assert.ok(replaced);
+  assert.equal(f.roles.get(replaced.id).persona.text, '');
+  await page.goto(f.server.origin + '/characters');
+  const card = page.getByRole('group', { name: '角色：Replacement browser', exact: true });
+  await card.getByRole('button', { name: '删除 / 替换整个角色', exact: true }).click();
+  await page.getByRole('button', { name: '删除整个角色', exact: true }).click();
+  await expect(card).toHaveCount(0);
+  assert.equal(f.store.registry.exists('companion'), true);
+  assert.equal(f.store.registry.exists(replaced.id), false);
+  assert.deepEqual(errors, []);
+});

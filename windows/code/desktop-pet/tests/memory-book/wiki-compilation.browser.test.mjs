@@ -1,0 +1,47 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdirSync,mkdtempSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {chromium} from '@playwright/test';
+import {FileBookRepository} from '../../dist/memory/file-book-repository.js';
+import {FactWikiService} from '../../dist/memory/fact-wiki.js';
+import {BookRuntime} from '../../dist/app/book-runtime.js';
+import {BookCredentials} from '../../dist/management/book-credentials.js';
+import {startBookServer} from '../../dist/management/book-server.js';
+
+test('Wiki compilation UI generates, reviews sources and applies only after confirmation',{timeout:45000},async t=>{
+  mkdirSync('.local/allmind-m4/tests',{recursive:true});const directory=resolve(mkdtempSync('.local/allmind-m4/tests/compile-ui-')),repository=new FileBookRepository(directory);
+  const scope={characterId:'aika',pairingId:'local-user',sessionId:'web-chat'},wiki=new FactWikiService(repository),preview=wiki.preview(scope,{sourceId:'ui-source',title:'用户',text:'称呼：小林',private:true});wiki.apply(scope,preview.id,'ui-seed');
+  const config=repository.loadConfig();repository.commitConfig({...config,characters:[...config.characters,{id:'other',name:'隔离角色',intro:'',appearancePath:null}],wikiModel:{baseUrl:'http://127.0.0.1:9999/v1',model:'fixture',credentialId:'fixture',inputTokens:8192,outputTokens:512}},config.revision,'ui-config');
+  const otherScope={...scope,characterId:'other'},otherPreview=wiki.preview(otherScope,{sourceId:'other-source',title:'用户',text:'称呼：小周',private:true});wiki.apply(otherScope,otherPreview.id,'other-seed');
+  let calls=0,release,markStarted;const started=new Promise(resolve=>markStarted=resolve);
+  let releaseRole,markRoleStarted;const roleStarted=new Promise(resolve=>markRoleStarted=resolve);
+  const runtime=new BookRuntime(repository,{async complete(_binding,messages){calls++;if(calls===2){markStarted();await new Promise(resolve=>release=resolve)}if(calls===3){markRoleStarted();await new Promise(resolve=>releaseRole=resolve)}const input=JSON.parse(messages[1].content);return JSON.stringify({pages:input.pages.map(page=>({pageId:page.pageId,paragraphs:[{text:'用户指定称呼为小林，其他身份信息尚未提供。',entryIds:page.facts.map(fact=>fact.id)}]}))});}});
+  const server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management')});let browser;
+  t.after(async()=>{release?.();releaseRole?.();await browser?.close();await server.close();repository.close()});browser=await chromium.launch({headless:true});const page=await browser.newPage();page.setDefaultTimeout(10000);const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(server.url);await page.getByRole('link',{name:'我们的回忆',exact:true}).click();
+  // V4 nests Wiki compilation inside the collapsed 高级工具与来源 panel on the memory page.
+  await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源',{exact:true}).click();
+  await page.getByText('综合编纂任务',{exact:true}).click();const panel=page.locator('details').filter({has:page.locator('summary').filter({hasText:'综合编纂任务'})}).first();
+  await panel.getByRole('checkbox').first().check();await panel.getByRole('button',{name:'加入编纂批次',exact:true}).click();
+  await panel.getByRole('button',{name:'生成／重试',exact:true}).click();await panel.getByText('用户指定称呼为小林，其他身份信息尚未提供。',{exact:false}).waitFor();
+  const apply=panel.getByRole('button',{name:'应用草稿',exact:true});assert.equal(await apply.isEnabled(),false);
+  await panel.getByText('核对来源与固定内容',{exact:true}).click();assert.match(await panel.textContent(),/小林/);
+  await panel.getByLabel('已核对综合正文与全部依据',{exact:true}).check();await apply.click();await panel.getByText(/已应用 · 尝试/).waitFor();
+  assert.equal(calls,1);assert.match(JSON.stringify(repository.snapshot(scope).wikiPages),/用户指定称呼为小林/);assert.deepEqual(errors,[]);
+  await panel.getByRole('checkbox').first().check();await panel.getByRole('button',{name:'加入编纂批次',exact:true}).click();
+  await panel.getByRole('button',{name:'生成／重试',exact:true}).click();await started;
+  const cancelled=page.waitForResponse(response=>response.url().endsWith('/wiki/compilation/cancel'));
+  await panel.getByRole('button',{name:'取消任务',exact:true}).click();assert.equal((await cancelled).status(),200);
+  await panel.getByText(/已取消 · 尝试/).waitFor();release();await runtime.wikiMaintenance.stopActive();
+  const jobs=runtime.wikiMaintenance.list(scope);assert.equal(jobs.at(-1).status,'cancelled');assert.deepEqual(jobs.at(-1).results,[]);assert.equal(calls,2);assert.deepEqual(errors,[]);
+  await panel.getByRole('checkbox').first().check();await panel.getByRole('button',{name:'加入编纂批次',exact:true}).click();
+  await panel.getByRole('button',{name:'生成／重试',exact:true}).click();await roleStarted;
+  await page.getByLabel(/当前角色/).selectOption('other');
+  await page.getByText('综合编纂任务',{exact:true}).click();
+  await panel.getByRole('checkbox').first().waitFor();releaseRole();await runtime.wikiMaintenance.stopActive();
+  assert.equal(repository.loadConfig().currentCharacterId,'other');assert.equal(runtime.wikiMaintenance.list(scope).at(-1).status,'cancelled');
+  assert.deepEqual(runtime.wikiMaintenance.list(scope).at(-1).results,[]);assert.deepEqual(runtime.wikiMaintenance.list(otherScope),[]);
+  assert.match(JSON.stringify(repository.snapshot(otherScope).wikiPages),/小周/);assert.doesNotMatch(JSON.stringify(repository.snapshot(otherScope).wikiPages),/小林/);
+  assert.doesNotMatch(await panel.textContent(),/用户指定称呼为小林|已核对综合正文与全部依据/);assert.equal(calls,3);assert.deepEqual(errors,[]);
+});

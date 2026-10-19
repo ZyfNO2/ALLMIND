@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "note": "EVAL-04 frozen robustness fixtures. Arbitration scenarios drive the real InvitationStore. Anti-echo scenarios describe the positive and negative controls that a real capture/OCR chain must satisfy; they are only executable when native hooks are wired.",
+  "arbitration": {
+    "candidatesInCooldown": 100,
+    "expectShownFirst": 1,
+    "policy": { "quotaScope": "all_characters", "dailyMax": 2, "minIntervalMs": 10800000, "timezone": "Asia/Shanghai" }
+  },
+  "boundaries": {
+    "intervalMs": 10800000,
+    "offsets": [-1, 0, 1],
+    "crossMidnightLocal": "2026-09-06T15:59:59.000Z",
+    "afterMidnightLocal": "2026-09-06T16:00:01.000Z",
+    "note": "Asia/Shanghai is UTC+8, so local midnight is 16:00Z on the previous UTC day."
+  },
+  "antiEcho": {
+    "selfMarker": "AIKI-SELF-BUBBLE-MARKER",
+    "externalMarker": "AIKI-EXTERNAL-WINDOW-MARKER",
+    "replayScenarios": [
+      { "id": "E1-self-only", "selfMarkerVisible": true, "externalMarkerVisible": false, "expectSelfBlocked": true },
+      { "id": "E2-self-and-external", "selfMarkerVisible": true, "externalMarkerVisible": true, "expectSelfBlocked": true, "expectExternalAccepted": true },
+      { "id": "E3-bubble-moved", "selfMarkerVisible": true, "externalMarkerVisible": false, "moved": true, "expectSelfBlocked": true },
+      { "id": "E4-occluded", "selfMarkerVisible": true, "externalMarkerVisible": true, "occluded": true, "expectSelfBlocked": true },
+      { "id": "E5-content-repeated", "selfMarkerVisible": true, "externalMarkerVisible": false, "repeated": true, "expectSelfBlocked": true }
+    ],
+    "invalidExperiment": "all OCR empty, all frames filtered, or the proactive feature disabled"
+  }
+}

@@ -1,0 +1,13 @@
+import {useEffect,useRef,useState} from 'react'
+import type {BookSnapshot} from '../../../../contracts/memory-book'
+import type {previewTopicForget} from '../../../../memory/topic-forget'
+import {api} from '../book-api'
+type Preview=ReturnType<typeof previewTopicForget>
+export default function TopicForget({characterId,sessionId,revision,update}:{characterId:string;sessionId:string;revision:number;update:(book:BookSnapshot)=>void}){
+  const [topic,setTopic]=useState(''),[preview,setPreview]=useState<Preview|null>(null),[confirmed,setConfirmed]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false),alive=useRef(true),operationId=useRef('')
+  useEffect(()=>{alive.current=true;return()=>{alive.current=false}},[])
+  useEffect(()=>{setPreview(null);setConfirmed(false)},[revision])
+  async function work(action:()=>Promise<void>){setBusy(true);setError('');try{await action()}catch(error){if(alive.current)setError(error instanceof Error?error.message:String(error))}finally{if(alive.current)setBusy(false)}}
+  return <details className="mb-card"><summary>按话题核对与遗忘</summary><p>按字面匹配当前实例的私人Wiki与共同记忆；先列出全部范围，再明确确认。包括固定条目，不删除作者设定。聊天原文和云端历史仍保留，擦除原文使用专门入口。</p>{error&&<p role="alert">{error}</p>}<fieldset disabled={busy}><label>要遗忘的话题<input aria-label="要遗忘的话题" maxLength={120} value={topic} onChange={event=>{setTopic(event.target.value);setPreview(null);setConfirmed(false)}}/></label><button onClick={()=>void work(async()=>{const result=await api<Preview>('/memory/topic-preview',{method:'POST',body:{characterId,sessionId,topic}});if(alive.current){setPreview(result);setConfirmed(false);operationId.current=crypto.randomUUID()}})}>预览话题范围</button>
+  {preview&&<><p role="status">匹配 {preview.entries.length} 条私人记忆；来源保留，事实遗忘会同步停止派生消费。</p>{preview.entries.map(entry=><article key={entry.id}><strong>{entry.title||entry.id}{entry.pinned?' · 已固定':''}</strong><p>{entry.body}</p><small>来源：{entry.sourceRefs.join('、')||'未附来源'}</small></article>)}{preview.entries.length>0&&<><label><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/>我已核对全部条目，包括固定条目</label><button disabled={!confirmed} onClick={()=>void work(async()=>{const result=await api<{book:BookSnapshot}>('/memory/topic-forget',{method:'POST',body:{characterId,sessionId,topic:preview.topic,expectedRevision:preview.expectedRevision,entryIds:preview.entries.map(entry=>entry.id),operationId:operationId.current,confirmed:true}});if(alive.current){update(result.book);setPreview(null);setConfirmed(false);setTopic('')}})}>确认遗忘整个话题</button></> }<button onClick={()=>{setPreview(null);setConfirmed(false)}}>取消话题遗忘</button></>}</fieldset></details>
+}

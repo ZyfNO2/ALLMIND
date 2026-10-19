@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "note": "EVAL-01 frozen scenario packs. Group A probes noise rejection, B probes evidence plus scope isolation, C probes correction and forgetting. Every group carries a positive example so a zero score cannot be earned by simply not working.",
+  "groupA_noise": [
+    { "id": "A01-temporary-diet", "text": "我今天想吃拉面。", "expectNoActive": true, "rationale": "transient preference, not a durable user fact" },
+    { "id": "A02-temporary-mood", "text": "我现在有点烦。", "expectNoActive": true, "rationale": "transient mood" },
+    { "id": "A03-hypothetical", "text": "如果我是医生，我会去非洲。", "expectNoActive": true, "rationale": "counterfactual" },
+    { "id": "A04-joke", "text": "哈哈我刚说我要当总统，开玩笑的。", "expectNoActive": true, "rationale": "explicit joke" },
+    { "id": "A05-reported-other", "text": "我朋友说他喜欢下围棋。", "expectNoActive": true, "rationale": "attributed to another person" },
+    { "id": "A06-negation", "text": "我不住在上海。", "expectNoActive": true, "rationale": "negation must not become a positive fact" },
+    { "id": "A07-quotation", "text": "书里写着“我喜欢独处”，但那只是引用。", "expectNoActive": true, "rationale": "quotation" },
+    { "id": "A08-roleplay", "text": "现在开始角色扮演，我是一个古代将军。", "expectNoActive": true, "rationale": "roleplay frame" },
+    { "id": "A09-assistant-selfreport", "text": "我是助手，我不是用户。", "expectNoActive": true, "rationale": "assistant self-description must never create a user fact" },
+    { "id": "A10-sensitive", "text": "我的身份证号是 11010119900307123X，密码是 abc123。", "expectNoActive": true, "expectRejectedSensitive": true, "rationale": "sensitive material must be refused" }
+  ],
+  "groupB_evidence": [
+    { "id": "B01-cross-session-compatible-1", "text": "我叫小林。", "session": 1, "expectedCandidateLayer": "user_wiki", "expectAutoPromotion": false },
+    { "id": "B02-cross-session-compatible-2", "text": "我叫小林。", "session": 2, "expectedCandidateLayer": "user_wiki", "expectAutoPromotion": false, "rationale": "identical evidence across sessions still must not auto-promote" },
+    { "id": "B03-cross-session-compatible-3", "text": "我是学生。", "session": 1, "expectedCandidateLayer": "user_wiki", "expectAutoPromotion": false },
+    { "id": "B04-cross-session-compatible-4", "text": "我是学生。", "session": 2, "expectedCandidateLayer": "user_wiki", "expectAutoPromotion": false },
+    { "id": "B05-same-session-duplicate", "text": "我喜欢安静的图书馆。", "session": 3, "expectedCandidateLayer": "user_wiki", "expectAutoPromotion": false, "rationale": "in-session repetition is not independent evidence" },
+    { "id": "B06-same-session-duplicate-2", "text": "我喜欢安静的图书馆。", "session": 3, "expectedCandidateLayer": "user_wiki", "expectAutoPromotion": false },
+    { "id": "B07-contradictory", "text": "我的职业是老师。", "session": 4, "conflictsWith": "B08", "expectedCandidateLayer": "user_wiki", "expectAutoPromotion": false, "rationale": "a contradiction must not silently promote" },
+    { "id": "B08-contradictory", "text": "我的职业是医生。", "session": 4, "conflictsWith": "B07", "expectedCandidateLayer": "user_wiki", "expectAutoPromotion": false },
+    { "id": "B09-cross-scope", "text": "我叫长门。", "session": 5, "crossScope": true, "expectAutoPromotion": false, "rationale": "must not leak across pairing" },
+    { "id": "B10-idempotent-replay", "text": "我叫小林。", "session": 1, "expectedCandidateLayer": "user_wiki", "expectAutoPromotion": false, "expectIdempotent": true, "rationale": "replaying the same operation must not duplicate the fact" }
+  ],
+  "groupC_correction": [
+    { "id": "C01-correct-value", "initial": "我的职业是学生。", "correction": "我的职业是设计师。", "expect": "old superseded, new active" },
+    { "id": "C02-correct-and-revert", "initial": "我在跑步。", "correction": "我暂停跑步。", "revert": "我恢复跑步。", "expect": "latest active wins" },
+    { "id": "C03-stale-version-conflict", "initial": "我住在北京。", "correction": "我住在上海。", "expectStaleConflict": true },
+    { "id": "C04-correct-twice", "initial": "我喜欢咖啡。", "correction": "我喜欢茶。", "correction2": "我喜欢水。", "expect": "only the newest stays active" },
+    { "id": "C05-correct-not-tombstone", "initial": "我养了一只猫。", "correction": "我养了一只狗。", "expect": "correction supersedes, it does not write a tombstone" },
+    { "id": "C06-forget", "initial": "我讨厌香菜。", "forget": true, "expect": "revoked with a tombstone" },
+    { "id": "C07-forget-survives-restart", "initial": "我住在杭州。", "forget": true, "restart": true, "expect": "revoked fact must not reappear after reopen" },
+    { "id": "C08-forget-blocks-derived-writeback", "initial": "我使用机械键盘。", "forget": true, "derivedWriteback": true, "expect": "stale derived write is rejected" },
+    { "id": "C09-stale-context-rejected", "initial": "我每天跑步。", "correction": "我这周暂停跑步。", "staleContext": true, "expect": "old context stops being current" },
+    { "id": "C10-source-revoked", "initial": "来自导入资料的事实。", "revokedSource": "src-import-1", "expect": "revoked source excludes the fact without deleting its audit row" }
+  ]
+}

@@ -1,0 +1,17 @@
+import {useEffect,useRef,useState} from 'react'
+import type {DesktopHostPreferences,DesktopHostPatchReceipt} from '../../../../contracts/desktop-host'
+import {api,ApiError} from '../book-api'
+export default function DesktopPreferences({dirty}:{dirty:(value:boolean)=>void}){
+  const [saved,setSaved]=useState<DesktopHostPreferences|null>(null),[draft,setDraft]=useState<{mode:'full'|'half';preferredWidth:number}|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('')
+  const controller=useRef<AbortController|null>(null),operation=useRef<string|null>(null)
+  const changed=!!draft&&!!saved&&(draft.mode!==saved.display.mode||draft.preferredWidth!==saved.display.preferredWidth)
+  useEffect(()=>{dirty(changed);return()=>dirty(false)},[changed,dirty])
+  function adopt(value:DesktopHostPreferences){if(!value?.display||!value.capabilities||!Number.isSafeInteger(value.revision)||!['full','half'].includes(value.display.mode)||!Number.isFinite(value.display.preferredWidth))throw Error('桌面宿主返回的偏好格式无效，请重新读取；未采用返回值。');setSaved(value);setDraft({mode:value.display.mode,preferredWidth:value.display.preferredWidth});operation.current=null}
+  async function load(){const signal=controller.current!.signal;setBusy(true);setError('');setMessage('');try{const next=await api<DesktopHostPreferences>('/desktop/preferences',{signal});if(!signal.aborted)adopt(next)}catch(failure){if(!signal.aborted)setError(failure instanceof Error?failure.message:String(failure))}finally{if(!signal.aborted)setBusy(false)}}
+  useEffect(()=>{controller.current=new AbortController();void load();return()=>controller.current?.abort()},[])
+  async function save(){if(!saved||!draft)return;const signal=controller.current!.signal;setBusy(true);setError('');setMessage('');operation.current??=crypto.randomUUID();try{if(!Number.isSafeInteger(draft.preferredWidth)||draft.preferredWidth<220||draft.preferredWidth>720)throw Error('期望宽度须为 220～720 的整数，尚未发送到宿主。');const receipt=await api<DesktopHostPatchReceipt>('/desktop/preferences',{method:'PUT',signal,body:{expectedRevision:saved.revision,operationId:operation.current,patch:draft}});if(!signal.aborted){adopt(receipt.preferences);setMessage('桌面偏好已由宿主保存并生效。')}}catch(failure){if(!signal.aborted){if(failure instanceof ApiError&&failure.status===409)operation.current=null;setError(failure instanceof Error?failure.message:String(failure))}}finally{if(!signal.aborted)setBusy(false)}}
+  return <section className="mb-card" aria-label="桌面形态"><h3>桌面形态</h3>{error&&<p role={saved?'alert':'status'}>{error}</p>}{message&&<p role="status">{message}</p>}
+    {saved?.capabilities.display&&draft?<fieldset disabled={busy}><label>展示形态<select aria-label="展示形态" value={draft.mode} onChange={event=>{operation.current=null;setDraft({...draft,mode:event.target.value as 'full'|'half'})}}><option value="full">全身展示</option><option value="half">半身展示</option></select></label><label>期望宽度（CSS px）<input aria-label="期望宽度" type="number" min={220} max={720} step={1} value={draft.preferredWidth} onChange={event=>{operation.current=null;setDraft({...draft,preferredWidth:Number(event.target.value)})}}/></label><small>当前宿主实际尺寸 {saved.display.modelWidth} × {saved.display.modelHeight}，会依据屏幕可用空间适配。</small><button type="button" onClick={()=>void save()}>保存桌面偏好</button></fieldset>:<p>{busy?'正在读取桌面宿主…':saved?'此宿主未提供展示形态配置。':'尚未读到桌面宿主偏好，不显示默认值冒充已保存。'}</p>}
+    <button type="button" disabled={busy} onClick={()=>void load()}>重新读取桌面偏好（放弃草稿）</button>{changed&&<small>桌面偏好有未保存的修改；由宿主独立保存。</small>}
+  </section>
+}

@@ -1,0 +1,944 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-20",
+  "product": "ALLMIND",
+  "version": "0.1.0-beta.1",
+  "stage": "LOCAL_BETA_CANDIDATE",
+  "publicRelease": "NOT_RELEASED",
+  "publicReleaseNote": "本次交付只建立唯一根提交 Init（无 remote、未推送、无 tag、无安装包）。",
+  "git": {
+    "branch": "main",
+    "commit": "Init",
+    "remote": "NOT_CONFIGURED",
+    "note": "Single root Init amended by explicit user authorization on 2026-10-20; includes reviewed fixes and UX/graph. No remote, push, tag or release."
+  },
+  "initialBaseline": "baseline.json",
+  "baselineInterpretation": "P2/P3 describe the initial prepared source candidate. Later metadata/docs changes are recorded here; they do not turn fixture results into real-model results.",
+  "followUp": {
+    "README": "DONE",
+    "demoScript": "DEMO.md; video not recorded",
+    "betaVersion": "package.json and lockfile root version aligned",
+    "eraseTurnsBackport": {
+      "status": "PASS",
+      "files": 5,
+      "sourceBuild": "PASS",
+      "sourceL1": {
+        "firstRun": {
+          "pass": 344,
+          "fail": 1,
+          "failure": "Extension relay completion assertion; original log preserved. Cause unconfirmed; possible readiness timing race."
+        },
+        "isolatedExtensionRecheck": {
+          "pass": 7,
+          "fail": 0
+        },
+        "fullRecheck": {
+          "pass": 345,
+          "fail": 0
+        }
+      },
+      "sourceArtifactRecovery": {
+        "pass": 4,
+        "fail": 0
+      },
+      "note": "No assertions, timeouts or environment changed between source runs. Verified against preimages; original P0 hashes remain historical."
+    },
+    "assetDecision": "KEEP_EXISTING; user will supply source or distribution evidence",
+    "L4": "NOT_RUN; awaiting real-source selection",
+    "integrityReview": {
+      "initialFilesVerified": 1433,
+      "originalCandidateFilesChanged": [
+        "AGENTS.md",
+        "THIRD_PARTY_NOTICES.md",
+        "windows/code/desktop-pet/package-lock.json",
+        "windows/code/desktop-pet/package.json"
+      ],
+      "runtimeSourceChangesInThisFollowUp": 0,
+      "dependencyUpgrades": 0,
+      "checkedBy": "primary agent",
+      "date": "2026-10-17"
+    }
+  },
+  "assetEvidenceRequired": [],
+  "assetProvenanceResolution": {
+    "date": "2026-10-19",
+    "status": "RESOLVED_BY_MIGRATION",
+    "decision": "按用户空白包要求，原来源待核实的游戏图标与两张立绘已迁出发布树，不再随包分发。当前的默认图标是项目原创几何图标（含 SVG 源与派生记录），测试图片是 2026-10-19 生成的合成几何测试卡；原 assetEvidenceRequired 中列出的旧字节已被替换，其旧哈希仅作历史对照。",
+    "supersededEvidence": [
+      {
+        "path": "windows/code/desktop-pet/desktop/assets/allmind/",
+        "previousStatus": "PENDING_USER_EVIDENCE（旧图标字节），已被原创几何图标替换"
+      },
+      {
+        "path": "validation/fixtures/wiki-handoff/inputs/w02-allmind/portrait-01-original.png",
+        "previousStatus": "PENDING_USER_EVIDENCE（旧立绘字节），已被合成几何测试卡替换；文件名因既有测试导入而保留"
+      },
+      {
+        "path": "validation/fixtures/wiki-handoff/inputs/w02-allmind/portrait-02-original.png",
+        "previousStatus": "PENDING_USER_EVIDENCE（旧立绘字节），已被合成几何测试卡替换；文件名因既有测试导入而保留"
+      }
+    ],
+    "currentHashes": {
+      "windows/code/desktop-pet/desktop/assets/allmind/icon-source.svg": "e86b6050b2e5e811e73c736a73e91dbc3332c374028ba827db645055bdd9466a",
+      "windows/code/desktop-pet/desktop/assets/allmind/icon-16.png": "db7f7c0270eea12a084bd38d0d66317a94dd87f2c9d6d373c43cb720ffbca731",
+      "windows/code/desktop-pet/desktop/assets/allmind/icon-32.png": "3119c8b9c05aab4e29c7408ba7a10d5b237379d1dacb688b1b633bac026515e1",
+      "windows/code/desktop-pet/desktop/assets/allmind/icon-48.png": "b478ff070d08f4ef61dba7e01587b53ac6a6f58a2910551d8d69020ccdab0ebb",
+      "windows/code/desktop-pet/desktop/assets/allmind/icon-256.png": "b10906bb188b58dee52df4f3123959bc602f80045153c4abf848f3cab30fe0f3",
+      "windows/code/desktop-pet/desktop/assets/allmind/icon.ico": "2f491bf0b2d77aa6840e076f074bb23ee9240866c71c34f9687609a68b19a2ec",
+      "windows/code/desktop-pet/desktop/assets/allmind/derive-report.json": "5e6c9ef238066fd09c676b0d69b4a4053260be19642c620a4514cb22e3e41f16",
+      "validation/fixtures/wiki-handoff/inputs/w02-allmind/portrait-01-original.png": "6c58784ccd87267431b042938224739b558426ebd14d47405fd6fa4126ab8e55",
+      "validation/fixtures/wiki-handoff/inputs/w02-allmind/portrait-02-original.png": "777b87ca4a18da998cff12b7ccfbf84066f013cf09b5763ff49ddabda5230cb0",
+      "validation/fixtures/prompt-presets/nano-bear-roleplay.json": "d7a7dfcbc8349d6813171b1a1edbab40cc229e37550be90426ddd7cbfdd78c7f"
+    },
+    "nanoBear": {
+      "source": "https://github.com/cavecomputing/nanobear",
+      "commit": "5a625088f34df130f4b02b6f2b3e649bfa46b1ae",
+      "license": "CC BY 4.0",
+      "localCopy": "validation/fixtures/prompt-presets/nano-bear-roleplay.json",
+      "licenseText": "validation/fixtures/prompt-presets/NANO-BEAR-LICENSE.txt",
+      "verified": "固定提交与随树原件哈希一致；原件未改写"
+    }
+  },
+  "uiRepair": {
+    "date": "2026-10-17",
+    "scope": "ALLMIND release tree only; Aika-Next not modified by this UI task",
+    "changes": [
+      "Reserve the reply-style preview row so typing/policy responses do not move the composer",
+      "Remove floating chat button; open chat by right-clicking the pet, including native rightClickRestore",
+      "Remove synthetic vertical bobbing and resting scale; retain drag and explicit interaction feedback",
+      "Adapt native smoke commands, affected browser tests and optional probe entry selectors without executing real-account probes"
+    ],
+    "validation": {
+      "desktopBuild": "PASS",
+      "browser": {
+        "pass": 7,
+        "fail": 0,
+        "includes": "1440px and 390px slow typing: textarea top varies less than 1 CSS px"
+      },
+      "electron": {
+        "pass": 2,
+        "fail": 0,
+        "model": "local HTTP fixture"
+      },
+      "bubbleRegression": {
+        "pass": 1,
+        "fail": 0
+      },
+      "stationaryRecheck": {
+        "pass": 1,
+        "fail": 0,
+        "note": "Overlaps browser menu test; walking has no vertical translation across 20 frames; resting transform is none."
+      }
+    },
+    "notRun": [
+      "Manual hardware right-click in the personal running instance",
+      "Fresh dependency reinstall and full cold reproduction for this UI revision",
+      "Real-model L4"
+    ],
+    "evidence": "UI-CHAT-REPAIR-20261017.md in local worker handover"
+  },
+  "trayRepair": {
+    "date": "2026-10-17",
+    "scope": "ALLMIND release tree only",
+    "changes": [
+      "Native window close hides to the system tray without destroying the window or stopping the backend/model page",
+      "Double-click tray restores the existing window",
+      "Only tray context-menu Exit ALLMIND exposes real application exit; old renderer quit intent also hides",
+      "before-quit bypasses close-to-hide while preserving the existing backend drain"
+    ],
+    "verification": {
+      "trayContract": {
+        "pass": 10,
+        "fail": 0
+      },
+      "nativeElectron": {
+        "pass": 2,
+        "fail": 0,
+        "includes": "Actual win.close hides; tray.show restores same BrowserWindow; app.quit exits and repository reopens without stale lock; local HTTP model fixture"
+      },
+      "rendererBuild": "PASS",
+      "hostSyntaxCheck": "PASS"
+    },
+    "notRun": [
+      "Manual interaction with the user personal instance",
+      "New full cold reproduction",
+      "L4 real model"
+    ],
+    "evidence": "TRAY-REPAIR-20261017.md (local worker handover)"
+  },
+  "menuCleanup": {
+    "date": "2026-10-17",
+    "scope": "ALLMIND release tree only",
+    "quickMenu": [
+      "免打扰",
+      "本地无痕",
+      "自主活动",
+      "Memory Book",
+      "打开管理",
+      "设置",
+      "收起到系统托盘"
+    ],
+    "settingsGroups": [
+      "AI 与对话",
+      "陪伴与行为",
+      "感知与记忆",
+      "外观与显示",
+      "隐私与系统"
+    ],
+    "behavior": [
+      "Appearance controls moved to a header popover, closed by default; host still persists size and full/half mode",
+      "Focus pauses autonomous activity and proactive output, preserves original enabled/quiet preferences, and permits manual chat",
+      "Interaction history is viewed in Memory Book and cleared only after confirmation under privacy/system",
+      "Default visible AIKI/Aika alias displays ALLMIND; custom names and internal IDs/namespaces remain compatible"
+    ],
+    "validation": {
+      "backendBuild": "PASS",
+      "desktopBuildAndUiTypecheck": "PASS",
+      "bookCore": {
+        "pass": 345,
+        "fail": 0
+      },
+      "expandedL2": {
+        "pass": 11,
+        "fail": 0
+      },
+      "settingsAndConversation": {
+        "pass": 8,
+        "fail": 0
+      },
+      "nativeAndFocus": {
+        "pass": 3,
+        "fail": 0
+      },
+      "lastSettingsAndMenu": {
+        "pass": 2,
+        "fail": 0,
+        "notes": "Includes real production owner writes, auth/revision/confirmation checks, and 390/320 CSS px no-overflow assertions"
+      },
+      "focusChat": {
+        "pass": 1,
+        "fail": 0
+      },
+      "countsOverlap": true
+    },
+    "notRun": [
+      "New full cold installation/reproduction",
+      "Physical device/manual personal-instance acceptance",
+      "Screen-reader and native 200% zoom acceptance",
+      "L4 real model",
+      "Historical optional native probes targeting retired menu items"
+    ],
+    "evidence": "MENU-SETTINGS-20261017.md (local worker handover)"
+  },
+  "uxRedesign": {
+    "date": "2026-10-17",
+    "scope": "Release tree only; no original workspace or Git history writes",
+    "reference": {
+      "name": "ALLMIND-UX-Redesign-Prototype.html",
+      "sha256": "19f92c2be0653b7a35cb7fa6cca17d7c5cf4ee9a1da93f07029813290abda34c"
+    },
+    "changes": [
+      "Reference-inspired production home, sidebar, typography, palette, settings category switching, model connection dialog and narrow-screen composer",
+      "Explicit one-click chat model binding and persistence; API model credentials continue through existing save/test routes",
+      "First-login native window visible before network navigation, reachable through taskbar during login; navigation/probe host budget 65 seconds",
+      "Known DesktopHostError returns its typed error and actionable message instead of generic internal_error",
+      "Original MemoryGraph implementation hash unchanged; custom names and internal namespaces retained"
+    ],
+    "validation": {
+      "backendBuild": "PASS",
+      "desktopBuild": "PASS",
+      "L1": {
+        "pass": 345,
+        "fail": 0
+      },
+      "L2": {
+        "pass": 14,
+        "fail": 0
+      },
+      "uxAndNative": {
+        "pass": 12,
+        "fail": 0
+      },
+      "countsOverlap": true,
+      "viewports": [
+        1440,
+        740,
+        390,
+        320
+      ],
+      "screenshots": "Local ignored .local/ui-v4/tests/ux-binding-*; copies linked in worker report"
+    },
+    "notRun": [
+      "Personal account login and actual online model/L4",
+      "New complete cold installation/P3",
+      "Screen-reader and native 200% zoom acceptance"
+    ],
+    "report": "UX-REDESIGN-20261017.md (local worker handover)"
+  },
+  "betaEngineeringAcceptance": {
+    "date": "2026-10-18",
+    "status": "PASS",
+    "scope": "Current release code cold-copied with per-file SHA-256 verification; independent npm ci in both projects, no original workspace writes",
+    "changes": [
+      "Home inline 25/45 minute focus timer with persisted pause/resume/reset using production Book HTTP",
+      "README and RUNBOOK current 14-test gate unified"
+    ],
+    "validation": {
+      "cleanInstall": "PASS",
+      "check": "PASS",
+      "backendBuild": "PASS",
+      "desktopBuild": "PASS",
+      "L1": {
+        "pass": 345,
+        "fail": 0,
+        "skipped": 0
+      },
+      "L2": {
+        "pass": 14,
+        "fail": 0,
+        "skipped": 0
+      },
+      "uxAndNative": {
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      },
+      "countsOverlap": true,
+      "nativeSameDataDirectoryRounds": 2,
+      "nativeChain": "Real Electron, isolated account/data directories; close hides and keeps writer lock, production tray double-click restores, production tray exit callback drains and releases lock",
+      "viewports": [
+        1440,
+        740,
+        390,
+        320
+      ],
+      "graphUnchanged": true
+    },
+    "remaining": [
+      "User-provided asset provenance/distribution evidence",
+      "Personal-account real-service login, binding, reply and restart reuse (L4 NOT_RUN)"
+    ],
+    "notClaimed": [
+      "Pixel-identical reproduction of every prototype screen",
+      "Screen-reader/native 200% acceptance",
+      "Remote GitHub Actions execution",
+      "Installer or public release"
+    ],
+    "coldInputFiles": 1440,
+    "postTestChanges": "README, RUNBOOK and validation metadata only; final manifest synced and verified separately",
+    "report": "BETA-ENGINEERING-ACCEPTANCE-20261018.md (local worker handover)"
+  },
+  "connectionSetupRepair": {
+    "date": "2026-10-18",
+    "status": "PASS",
+    "trigger": "User could not find API Key setup, could not understand independent-page binding, and pending web receipt blocked browser changes. Prior engineering checks did not establish real usability acceptance.",
+    "changes": [
+      "Explicit API Key and ChatGPT entry points in settings and dialog",
+      "Production API key/model list/test/save/chat path available from existing web binding without discarding pending web receipt",
+      "Readiness-checked independent login/binding steps and saved-source test",
+      "Authenticated local active-request status and automatic top-level resume/stop controls; source-switch guards retained",
+      "Web setup does not disable whole management UI; late bind result rejected after choosing API"
+    ],
+    "validation": {
+      "backendBuild": "PASS",
+      "managementUiBuild": "PASS",
+      "typecheck": "PASS",
+      "L1": {
+        "pass": 345,
+        "fail": 0
+      },
+      "L2": {
+        "pass": 16,
+        "fail": 0
+      },
+      "connectionAndSettings": {
+        "pass": 10,
+        "fail": 0
+      },
+      "lateResultAndAuthenticationRecheck": {
+        "pass": 2,
+        "fail": 0
+      },
+      "countsOverlap": true,
+      "apiModel": "Production BookHttpModel and credentials, local synthetic OpenAI-compatible HTTP server",
+      "independentPage": "Fixture login/readiness/model; no personal account",
+      "graphUnchanged": true
+    },
+    "notRun": [
+      "New dependency cold install after this repair",
+      "Personal-account real ChatGPT/API-service acceptance (L4 NOT_RUN)",
+      "New native tray test; tray code unchanged"
+    ],
+    "firstErrors": "Local worker logs connection-first-tests and connection-native-tests retained; fixed route collision and stop-status timing, no weakened assertions",
+    "report": "CONNECTION-SETUP-REPAIR-20261018.md (local worker handover)"
+  },
+  "userAcceptance": "SCOPED_DEFECT_RECHECK_PASS_FULL_JOURNEY_NOT_REPEATED",
+  "currentValidation": "Sole Init release candidate (2026-10-20): main build and UI build PASS; L1 392/392 (58 files), fixed L2 28/28 (18 files). Blank-user role/persona/import/API/test/save/chat flow and 124-node WebGL graph verified with authored data and fixture HTTP model. Historical live/cold evidence not rerun; real API remains DEFERRED, web long-history failure remains, native pet OUT_OF_SCOPE.",
+  "closedTabRecovery": {
+    "date": "2026-10-18",
+    "status": "PASS",
+    "cause": "Live release-tree log: authenticated extension returned No tab with id; persisted active web request blocked all web source changes. Previous UI repair did not handle this recovery boundary.",
+    "changes": [
+      "Explicit stop of proven-closed bridge tab releases local lease, keeps used ID and persisted abandoned/unknown receipt; no old-message replay",
+      "Reject timeout/lookalike errors/non-bridge release; late read isolated",
+      "Ready independent-page binding button performs explicit old-request stop, readiness verification and source save",
+      "Actionable resume/stop errors and readable recovery banner"
+    ],
+    "validation": {
+      "backendBuild": "PASS (includes TypeScript)",
+      "managementUiBuild": "PASS (includes TypeScript)",
+      "L1": {
+        "pass": 347,
+        "fail": 0,
+        "skipped": 0
+      },
+      "fixedL2": {
+        "pass": 17,
+        "fail": 0
+      },
+      "combinedUiAndSettings": {
+        "pass": 21,
+        "fail": 0,
+        "skipped": 0
+      },
+      "countsOverlap": true,
+      "reproduction": "Persisted old receipt + production authenticated extension HTTP returning exact logged missing-tab error + production bridge/model + real browser UI + ready independent fixture + one new synthetic chat",
+      "personalService": "NOT_RUN"
+    },
+    "userRetest": "Pending: quit old tray instance and launch rebuilt release, inspect independent status, bind ready independent page. Existing user process/data not forcibly modified.",
+    "report": "DEAD-TAB-RECOVERY-20261018.md (local worker)"
+  },
+  "liveCurrentModelAcceptance": {
+    "date": "2026-10-18",
+    "status": "PASS",
+    "scope": "Existing user instance/account: independent embedded page, explicitly configured current webpage model; production API calls, not manual UI clicking",
+    "cause": [
+      "Persisted bridge request belonged to closed Chrome tab; actual local lease released without replay",
+      "Hard-coded GPT-6 required a model picker absent from the actual page; first real test failed, then configuration explicitly changed to current"
+    ],
+    "actual": {
+      "modelTest": {
+        "status": "PASS",
+        "reply": "连接正常。",
+        "durationMs": 8816
+      },
+      "productionChat": {
+        "status": "PASS",
+        "httpStatus": 200,
+        "reply": "聊天正常。",
+        "turnPersisted": true
+      },
+      "managedBackendRestart": {
+        "status": "PASS",
+        "differentPid": true,
+        "configPreserved": true,
+        "reply": "重启正常。",
+        "entireElectronRestart": false
+      },
+      "activeRequestAfter": null,
+      "transport": "embedded",
+      "model": "current",
+      "configRevision": 11
+    },
+    "knownFailures": [
+      {
+        "scope": "Explicit GPT-6 model picker selection",
+        "status": "FAIL",
+        "message": "DesktopHostError: 无法确认唯一模型按钮。"
+      }
+    ],
+    "regression": {
+      "backendAndUiBuild": "PASS",
+      "L2": 17,
+      "modelAndSettings": 9,
+      "countsOverlap": true,
+      "latestL1": "347/347 from earlier same-day dead-tab repair; not rerun for this default/text-only revision"
+    },
+    "notRun": [
+      "External API Key service",
+      "Manual native UI click-through",
+      "Voice/Live2D or other accounts/devices"
+    ],
+    "report": "LIVE-ACCEPTANCE-20261018.md (local worker handover)"
+  },
+  "acceptanceDefectRepair": {
+    "date": "2026-10-18",
+    "status": "PASS_SCOPED",
+    "scope": "DEF-01 browser draft fix plus model-trigger compatibility; current running instance named-model live test separately confirmed",
+    "changes": [
+      "Browsing API/web entry points does not create a mainModel draft; edits create drafts, switching preserves them, discard restores saved configuration",
+      "Incomplete API fields are validated before credentials are written; blank models never show an already-bound label",
+      "Known model selector testIds no longer require aria-haspopup; explicit accessible-name variants supported, disabled/hidden/ambiguous triggers rejected; exact option and checked-state confirmation retained"
+    ],
+    "validation": {
+      "backendBuild": "PASS",
+      "desktopAndUiBuild": "PASS",
+      "L1": {
+        "pass": 347,
+        "fail": 0
+      },
+      "L2WithModelMenuAndThinking": {
+        "pass": 22,
+        "fail": 0
+      },
+      "connectionOnly": {
+        "pass": 4,
+        "fail": 0,
+        "overlapsL2": true
+      }
+    },
+    "liveNamedModel": {
+      "status": "PASS",
+      "requestedModel": "GPT-6",
+      "reply": "指定型号连接正常。",
+      "durationMs": 11618,
+      "activeAfter": null,
+      "configRevisionBefore": 11,
+      "configRevisionAfter": 11,
+      "savedModel": "current",
+      "configWritten": false,
+      "historySent": false,
+      "silentFallback": false,
+      "scope": "Existing running Electron host production model-test endpoint; no full Electron restart or independent live adapter-byte attestation"
+    },
+    "notRun": [
+      "New-candidate complete native/tray restart journey",
+      "P7 real character five-question evaluation",
+      "Clean-machine reinstall",
+      "Independent external API-key service"
+    ],
+    "earlierDiagnostics": [
+      "Model inspection HTTP503 UnknownVizError",
+      "Thinking inspection HTTP503 independent page timeout; no assumption of logged-out state"
+    ],
+    "firstErrors": "Sandbox image/temp-file and browser-launch errors retained; normal-permission same assertions passed. Test seed and global script declaration mistakes corrected without weakening assertions.",
+    "report": "ACCEPTANCE-DEFECT-FIX-20261018.md (local worker)"
+  },
+  "timeoutBoundaryRepair": {
+    "status": "PASS",
+    "scope": "Release-tree only; clean candidate acceptance run",
+    "change": "management/book-server.ts maps provider TimeoutError to HTTP 503 timeout with explicit stopped/no-auto-retry text; preserves internal stack logging and does not expose provider body",
+    "validation": {
+      "targetedServerTests": {
+        "pass": 4,
+        "fail": 0
+      },
+      "L1": {
+        "pass": 348,
+        "fail": 0,
+        "source": "parent independent rerun; logs/parent-L1.log"
+      },
+      "L2": {
+        "pass": 22,
+        "fail": 0,
+        "source": "parent independent rerun; logs/parent-L2.log"
+      },
+      "productionUiTimeout": "PASS; end-to-end HTTP chat timeout at unchanged 75s budget, no persisted turn, one explicit retry persisted once"
+    },
+    "report": "allmind-worker/luna-fix-rerun-20261018-2030/REPORT.md"
+  },
+  "latestFreshAcceptance": {
+    "status": "PASS",
+    "scope": "fresh production web UI + full backend cold restart + user-configured real service five-question character check",
+    "backendRestart": "PASS; session resumed and unique continuation persisted",
+    "importedEntries": 190,
+    "liveCharacterQuestions": {
+      "pass": 5,
+      "fail": 0,
+      "blocked": 0
+    },
+    "additionalModeChecks": {
+      "pass": 2,
+      "description": "Smart isolation and Story/RP imported-focus boundary"
+    },
+    "serviceFallback": "One visible upstream pool-fallback notice; account number omitted. No retry/model change by harness.",
+    "notRun": [
+      "desktop pet/tray/Live2D/voice"
+    ]
+  },
+  "wikiSynthesis": {
+    "status": "PASS_WITH_LIMITS",
+    "scope": "ALLMIND-owned preparation/upload/verified High/independent validation/review/apply/graph/backend restart in isolated role",
+    "liveWeb": {
+      "status": "PASS",
+      "inputMaterials": 192,
+      "citedMaterials": 192,
+      "pages": 23,
+      "semanticRelations": 19,
+      "omissions": 0,
+      "originalEntriesUnchanged": 193,
+      "originalSourcesUnchanged": 14,
+      "restart": "PASS"
+    },
+    "validation": {
+      "productTypeScript": "PASS",
+      "packagedPython": "PASS",
+      "gptExecutedPython": "NOT_INDEPENDENTLY_VERIFIED",
+      "finalCombinedRegression": {
+        "pass": 34,
+        "fail": 0,
+        "includesNewSuite": 14
+      },
+      "build": "PASS",
+      "managementUiBuild": "PASS"
+    },
+    "recall": {
+      "status": "PASS_INTEGRATION_ONLY",
+      "queries": 4,
+      "queriesConsumingDerivedEntries": 1,
+      "note": "Other three selected raw material; ranking quality not certified. Identical selection counts after backend restart."
+    },
+    "notRun": [
+      "Live API end-to-end synthesis with this new protocol",
+      "Desktop pet/tray/Live2D/voice in this iteration"
+    ],
+    "report": "allmind-worker/llm-wiki-research-20261019/IMPLEMENTATION-REPORT.md",
+    "contract": "validation/WIKI-SYNTHESIS.md",
+    "failuresPreserved": "Earlier pre-send High/action mismatches, first High client timeout and lost cache; repaired and explicit fresh High task passed. No knowledge manually rewritten."
+  },
+  "uiRebuild20261019": {
+    "status": "DONE_WITH_LIMITS",
+    "scope": "Management UI shell, four knowledge shelves, and real graph. Not a public release.",
+    "report": "allmind-worker/ui-rebuild-20261019/REPORT.md",
+    "referenceSha256": "37a1887a2778faefb69034f60e75954ae186405858a1733d0842d71480388ee7",
+    "realModelSynthesis": "NOT_RUN",
+    "browserJourney": "PARTIAL",
+    "importPack": "PASS",
+    "importCounts": {
+      "entries": 190,
+      "sources": 13,
+      "world": 36,
+      "persona": 5,
+      "knowledge": 143,
+      "companion": 6
+    },
+    "twoCharacterIsolation": "PASS",
+    "editRestart": "PASS",
+    "note": "Asset provenance was resolved on 2026-10-19 by migrating the unverified assets out of the tree (see assetProvenanceResolution); that note is retained as history. The original test pack was previewed and applied through the management UI into an isolated book. A second role stayed empty, and one edited title survived a process restart before being restored. Real model synthesis remains NOT_RUN for this UI revision."
+  },
+  "docsReleaseCleanup20261019": {
+    "date": "2026-10-19",
+    "status": "DONE_WITH_OPEN_ITEMS",
+    "scope": "Release tree only (this repository root); no product business source (windows/code/desktop-pet/*.ts) changed; no git add/commit/push; no live instance or personal data touched.",
+    "documents": {
+      "README": "Rewritten around the actually usable scope: blank first launch → model configuration → import → preset → chat/Inspector → batched Wiki synthesis → graph/recall, with explicit limits and relative evidence links. Removed prior aggregate counts, asset blocker wording and historic patch ledger.",
+      "DEMO": "Updated to two demo tracks (5-minute blank / 10-minute preset+Wiki+graph); removed stale asset-provenance gate; fixture vs real-service boundaries kept.",
+      "THIRD_PARTY_NOTICES": "Clarified original geometric icons and synthetic test cards (historical filenames), added Nano Bear fixture SHA-256 and the 2026-10-19 personal-tool cleanup record.",
+      "WIKI_SYNTHESIS": "Batch sizing formula (output tokens ÷ 1024, max 16/batch), global limits unchanged, no partial-result resume, cross-batch relations not synthesized, and separated real/fixture status.",
+      "PROMPT_PRESETS": "Documented slot wiring gaps (scenario / personaDescription / dialogueExamples / DesktopContext) and the preserved first-round identity wording defect in real web acceptance.",
+      "RUNBOOK": "Current commands and last recorded runs (L1 376/376, fixed browser set 27/27 on 2026-10-19), L4 split into web PASS-with-limits / API DEFERRED / target Wiki batch NOT_RUN / desktop pet OUT_OF_SCOPE, and the manifest regeneration requirement."
+    },
+    "removedPersonalTooling": [
+      "windows/code/desktop-pet/tools/chatgpt-configure-mvp.mjs",
+      "windows/code/desktop-pet/tools/chatgpt-ui-check.mjs",
+      "windows/code/desktop-pet/tools/chatgpt-mvp-smoke.mjs",
+      "windows/code/desktop-pet/tools/chatgpt-runtime-smoke.mjs",
+      "windows/code/desktop-pet/tools/self-accept.mjs",
+      "windows/code/desktop-pet/tools/character-smoke-data.mjs",
+      "windows/code/desktop-pet/tools/character-live-smoke.mjs",
+      "windows/code/desktop-pet/tests/memory-book/character-import-appearance.test.mjs"
+    ],
+    "removalBasis": "Referenced only by each other or by package.json scripts that do not exist; contained hard-coded personal browser profiles / home-directory paths / original workspace paths / private character packs. Originals archived outside the release tree with SHA-256 before deletion. Build-critical tools (build-*, run-tests.mjs, release-doctor.mjs, run-eval.mjs, etc.) untouched; no tests/ or extension directory was removed wholesale.",
+    "toolRewrite": "tools/quick.mjs no longer embeds a local MSVC toolchain path; the OCR helper entry requires AIKI_VCVARS and reports BLOCKED when unset.",
+    "openItems": [
+      "validation/source-manifest.json still lists the removed files and pre-cleanup counts; regenerate after candidate freeze",
+      "final frozen L1/L2/native numbers not yet re-run for the frozen candidate",
+      "README has no embedded screenshots; real-app screenshots (chat with Prompt Inspector, four shelves, real graph/detail, preset editing) must come from an isolated blank/acceptance instance by the Lead",
+      "failed turnId freeze implemented in source (character-scoped turn-freezes ledger read before compile plus process-local markers; incognito stays process-local only); request-count regression evidence must come from the final frozen run",
+      "real API live path DEFERRED; target-pack Wiki batch acceptance NOT_RUN",
+      "residual personal absolute paths remain in test/tool files outside this cleanup scope (see docs-release REPORT.md for the path list); AGENTS.md header still says the initial P0–P4 pass is complete"
+    ],
+    "resolution20261019": {
+      "sourceManifest": "regenerated for the frozen candidate (1467 git-includable files, no personal absolute paths)",
+      "screenshots": "four real-app screenshots added under assets/readme/ and embedded in README",
+      "personalPaths": "personal absolute paths (local user directory) and personal profile fixtures removed from the release tree; local workspace absolute paths replaced with neutral workspace placeholders",
+      "frozenNumbers": "L1 382/382, L2 27/27, cold reproduction logged in worker evidence"
+    }
+  },
+  "finalAcceptance20261019": {
+    "date": "2026-10-19",
+    "isolatedLiveInstance": "E:/allmind-p0-20261019/live (pid/port recorded in worker evidence; no credentials printed)",
+    "build": {
+      "check": "PASS exit 0",
+      "build": "PASS exit 0",
+      "buildDesktop": "PASS exit 0"
+    },
+    "l1": {
+      "result": "PASS",
+      "tests": 382,
+      "pass": 382,
+      "fail": 0,
+      "files": 55,
+      "log": "worker release-20261019/l1-final.log"
+    },
+    "l2": {
+      "result": "PASS",
+      "tests": 27,
+      "pass": 27,
+      "fail": 0,
+      "files": 17,
+      "log": "worker release-20261019/l2-retest.log",
+      "earlierConcurrentRun": "25/27 (2 load-induced timeouts preserved in l2-final.log)"
+    },
+    "realWebChat": {
+      "result": "PASS_WITH_LIMITS",
+      "thinking": "level 2 = 6 High verified through the UI and re-asserted before each submit; receipts modelSlug gpt-6-thinking",
+      "rounds": 7,
+      "identities": "first-round wording defect kept; second round corrected itself; later rounds kept canon/author/simulated/real boundaries",
+      "historyLimit": "16384 window: older turns omitted as oldest_complete_turn_budget (Inspector visible); raised windows (20480/32768) produced an empty web reply and 503 网页回复为空，不冒充成功"
+    },
+    "realWikiBatches": {
+      "result": "PASS_ON_RETRY",
+      "attempts": [
+        {
+          "attempt": 1,
+          "result": "FAILED",
+          "batch": 7,
+          "completed": 6,
+          "total": 12,
+          "firstError": "Wiki 输出：证据不能逐字回查：fact.plan.augmented-key",
+          "applied": false,
+          "elapsedSeconds": 757
+        },
+        {
+          "attempt": 2,
+          "result": "PASS",
+          "completed": 12,
+          "total": 12,
+          "elapsedSeconds": 1454,
+          "pages": 36,
+          "relations": 12,
+          "coverage": "189/189",
+          "domains": {
+            "canon": 31,
+            "author": 4,
+            "simulated": 1
+          },
+          "applied": true
+        }
+      ],
+      "budget": "local config input 65536 / output 16384 => 16 materials per batch; run-time bound raised from 15 to 45 minutes because 12 sequential real requests exceed 15 minutes",
+      "humanReview": "paragraph semantics, canon/author/simulated boundaries and two-sided relation evidence checked before UI apply",
+      "limitations": [
+        "cross-batch same-topic pages are not merged (e.g. Release Project pages in batches 5/6/7/9)",
+        "one attempt can fail on a non-verbatim quote; retry needs an explicit new task"
+      ]
+    },
+    "graphAndRecall": {
+      "graph": {
+        "nodes": 124,
+        "edges": 500,
+        "semantic": 12,
+        "related": 401,
+        "source": 87,
+        "cap": "128/2048 not exceeded"
+      },
+      "recall": {
+        "queries": 3,
+        "appliedPagesUsed": true,
+        "notes": "theme query used the applied Release Project page; entity query used Raven license material; simulated-companion query used the interaction-rules page"
+      }
+    },
+    "restart": {
+      "configRevision": 22,
+      "bookRevisionBefore": 1,
+      "bookRevisionAfter": 2,
+      "entries": 226,
+      "synthesized": 36,
+      "preserved": true,
+      "resent": false,
+      "usedRequestsBefore": 33,
+      "usedRequestsAfter": 33
+    },
+    "freeze": {
+      "frozenTurnIds": 4,
+      "response": "409 conflict 该轮次已失败并已冻结",
+      "usedRequestsBefore": 33,
+      "usedRequestsAfter": 33
+    },
+    "coldReproduction": {
+      "dir": "E:/allmind-cold-20261019",
+      "candidateFiles": 1468,
+      "hashMismatches": 0,
+      "forbiddenDirs": "none",
+      "installs": {
+        "main": "exit 0",
+        "characterUi": "exit 0"
+      },
+      "check": "exit 0",
+      "build": "exit 0",
+      "buildDesktop": "exit 0",
+      "l1": "382/382 PASS on rerun (first parallel run 381/382 with one child-stdout parse flake; isolated single-file run 8/8)",
+      "l2": "27/27 PASS exit 0",
+      "l3": "SUPERSEDED: original PowerShell log output polluted boolean result; old PASS is invalid. See reviewFixes20261019.validation.coldLifecycle for strict replacement.",
+      "logs": "worker release-20261019/cold"
+    },
+    "api": "DEFERRED: DeepSeek minimal connection and batched request both HTTP 403, user deferred API troubleshooting this round",
+    "desktopPet": "OUT_OF_SCOPE this round; no native pet journey claim"
+  },
+  "reviewFixes20261019": {
+    "baseCommit": "a0dd812",
+    "workingTree": "Validation originally ran as uncommitted fixes against a0dd812; folded into sole Init on 2026-10-20",
+    "changes": [
+      "durable submitted intent before transport, released after SavedTurn is durable",
+      "intent write failure prevents transport; terminal write failure is surfaced while original intent remains",
+      "no FIFO eviction; refuse new unresolved identities at role1024/session512",
+      "replace cold lifecycle truthy-array gate with structured assertions and live HTTP checks",
+      "embedded source needs no external CLI; CLI instructions limited to alternative transport"
+    ],
+    "validation": {
+      "check": "PASS",
+      "build": "PASS",
+      "buildDesktop": "PASS",
+      "l1": {
+        "pass": 385,
+        "fail": 0
+      },
+      "l2": {
+        "files": 17,
+        "pass": 27,
+        "fail": 0
+      },
+      "durability": {
+        "pass": 8,
+        "fail": 0,
+        "cases": [
+          "hard process exit",
+          "intent I/O failure before send",
+          "terminal marker I/O failure after send",
+          "full ledger preserves old IDs",
+          "normal failure/cancel/timeout",
+          "incognito",
+          "completed replay"
+        ]
+      },
+      "coldLifecycle": {
+        "status": "PASS",
+        "rounds": 2,
+        "authenticatedHttp": true,
+        "aliveBeforeStop": true,
+        "normalStdinClose": true,
+        "locksReleased": true,
+        "portsClosed": true,
+        "importedSyntheticEntries": 12,
+        "presetAndRecall": true,
+        "chatAndRestartReplay": true,
+        "modelCalls": 1,
+        "dependencies": "reused prior cold npm ci; rebuilt patched source; no fresh npm ci in this patch",
+        "interaction": "production backend management HTTP API; fixture model; not real model or native pet"
+      }
+    },
+    "historicalEvidenceCorrections": [
+      "previous cold L3 PASS gate was invalid; superseded by strict lifecycle test",
+      "initial new test teardown order failed after assertions; fixed harness cleanup, kept first log",
+      "cold fixture initially used an invalid preset ID; strict runner returned FAIL and closed backend; fixed fixture and retained first failure"
+    ],
+    "remaining": [
+      "web long-history failure remains",
+      "API 403 deferred",
+      "desktop pet outside scope"
+    ],
+    "evidence": "worker release-20261019/review-fixes"
+  },
+  "defaultChatStyle20261019": {
+    "status": "IMPLEMENTED",
+    "scope": "unbound/default reply only; custom presets unchanged",
+    "source": "user-supplied Tavo 微信真实聊天风格预设 4.0, selectively adapted",
+    "realModel": "NOT_RUN",
+    "validation": "Build and L1 results: worker review-fixes/chat-style-*.log; first budget failure retained, prompt shortened without changing budgets or assertions",
+    "activation": "backend restart required; no saved replies or selected presets rewritten"
+  },
+  "gptNiangAdapter20261019": {
+    "status": "PASS_WITH_LIMITATIONS",
+    "textPack": "Original user draft ZIP: 1 persona, 4 keyword lore, 1 interaction Wiki, zero demo memory",
+    "appearance": "Real upstream PNG 1254x1254 decoded and added via production UI, not auto-selected",
+    "quota": "Read-only local snapshot parser; live user installation NOT_RUN; no active quota refresh",
+    "sourceCommit": "f906d61bb3a19b6a7004507274fdd2165d3f14b6",
+    "build": "PASS",
+    "l1": {
+      "pass": 390,
+      "fail": 0,
+      "files": 57
+    },
+    "l2": {
+      "pass": 27,
+      "fail": 0,
+      "files": 17
+    },
+    "harnessNote": "First L2 command retained trailing CR and omitted final file; 26 not accepted as complete; trimmed and reran fixed 17 files",
+    "evidence": "worker release-20261019/review-fixes/DRAGON-ADAPTER-REPORT.md",
+    "notMigrated": [
+      "music rhythm",
+      "press sounds",
+      "auto quotes",
+      "original window following"
+    ],
+    "git": "Uncommitted at its acceptance; folded into sole Init on 2026-10-20"
+  },
+  "uxGraph20261019": {
+    "status": "PASS_WITH_LIMITATIONS",
+    "git": "Folded into sole Init on 2026-10-20; no remote/push",
+    "build": "main and UI PASS",
+    "l1": {
+      "pass": 392,
+      "fail": 0,
+      "files": 58
+    },
+    "l2": {
+      "pass": 28,
+      "fail": 0,
+      "files": 18,
+      "log": "worker review-fixes/ux-delivery-l2.log"
+    },
+    "journey": {
+      "status": "PASS",
+      "fixtureModel": true,
+      "actualUi": true,
+      "graphNodes": 124,
+      "graphEdges": 540,
+      "narrowWidths": [
+        390,
+        320
+      ],
+      "scope": "blank setup, new role, edit/cancel/leave protection, import preview/cancel/apply, API list/failure retention/test without save/save/chat, original role isolation, WebGL graph/community/inspect/fullscreen Escape"
+    },
+    "firstErrorsPreserved": [
+      "worker filename static whitelist rejected graph.worker-* asset",
+      "isolate layout still seeded in grid; fixed golden-angle centers",
+      "dense node hit targets overlapped; fixed layout collision spacing without forced click"
+    ],
+    "notRun": [
+      "new clean npm ci/cold reproduction",
+      "real model requests",
+      "native desktop pet interactions",
+      "screen reader and comprehensive dark-theme audit"
+    ],
+    "evidence": "worker release-20261019/review-fixes/UX-GRAPH-REPORT.md",
+    "documentation": "validation/UX-GRAPH.md",
+    "readme": "four real-app synthetic-data screenshots, second image is new graph overview",
+    "completedAt": "2026-10-20"
+  },
+  "initCleanup20261020": {
+    "status": "PASS",
+    "authorization": "User requested sole Init and removal of old pictures",
+    "removed": [
+      "avatar-aika.png",
+      "avatar-sakura.png",
+      "avatar-yoruko.png",
+      "hero-aika.png"
+    ],
+    "removedBytes": 8837194,
+    "oldPageReferences": "existing neutral SVG",
+    "buildDesktop": "PASS exit 0",
+    "fixedL2": {
+      "files": 18,
+      "pass": 28,
+      "fail": 0,
+      "skipped": 0
+    },
+    "l1": "392/392 from preceding source validation; image cleanup does not change core modules",
+    "git": "One reachable root commit Init; no remote or push",
+    "backup": "Outside repository in worker process directory",
+    "scope": "Runtime and dependency directories remain ignored, not packaged"
+  }
+}

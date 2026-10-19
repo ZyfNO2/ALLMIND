@@ -1,0 +1,47 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { resolve,sep,extname } from 'node:path';
+import { chromium } from '@playwright/test';
+import {createCompanionLifeState} from '../../dist/core/companion-behavior.js';
+test('production renderer stops old producer, shows one proactive message, acknowledges display and rejects hidden delivery',async t=>{
+  const root=resolve('desktop'),server=createServer(async(request,response)=>{const path=resolve(root,'.'+new URL(request.url,'http://127.0.0.1').pathname);if(!path.startsWith(root+sep)){response.writeHead(403);response.end();return;}try{response.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');response.end(await readFile(path));}catch{response.writeHead(404);response.end();}});
+  await new Promise(done=>server.listen(0,'127.0.0.1',done));t.after(async()=>{server.closeAllConnections();await new Promise(done=>server.close(done));});
+  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:800,height:950}}),errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.addInitScript(()=>{window.hostMessages=[];window.desktopHost={postMessage(name,value){window.hostMessages.push({name,value});},subscribe(){}};});await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);await page.waitForFunction(()=>!!window.petBridge);
+  await page.evaluate(()=>{window.petBridge.connectionChanged({generation:1,state:'connecting'});window.petBridge.receive({channel:'backend_ready',bridgeVersion:'0.8.0',characterId:'aika',characterLabel:'隔离角色',sessionId:'desktop',productMode:'memory-book'},1);window.petBridge.receive({channel:'companion_takeover',phase:'prepare'},1);});
+  assert.equal(await page.evaluate(()=>window.hostMessages.some(item=>item.value?.message?.channel==='companion_takeover'&&item.value.message.stopped===true)),true);
+  await page.evaluate(()=>window.petBridge.receive({channel:'companion_takeover',phase:'ready'},1));
+  const delivery={id:'proactive-one',text:'面试准备得怎么样？',status:'dispatched',expiresAt:Date.now()+120000};
+  await page.evaluate(()=>window.petBridge.receive({channel:'companion_offer',characterId:'aika',sessionId:'desktop',id:'proactive-one'},1));
+  assert.equal(await page.evaluate(()=>window.hostMessages.filter(row=>row.value?.message?.channel==='companion_claim').length),1);
+  assert.equal(await page.locator('.chat-row.assistant').count(),0,'offer alone never displays or acknowledges a message');
+  const send=value=>page.evaluate(delivery=>window.petBridge.receive({channel:'companion_message',characterId:'aika',sessionId:'desktop',delivery},1),value);
+  await send(delivery);await page.waitForFunction(()=>window.hostMessages.some(item=>item.value?.message?.channel==='companion_ack'&&item.value.message.id==='proactive-one'));
+  assert.equal(await page.locator('#speech-bubble-text').textContent(),'面试准备得怎么样？');await send(delivery);
+  await page.locator('#speech-bubble-text').click();assert.equal(await page.locator('.chat-row.assistant').count(),1);
+  await page.evaluate(()=>window.petBridge.desktopVisibility(false));await send({...delivery,id:'hidden-one'});assert.equal(await page.evaluate(()=>window.hostMessages.some(item=>item.value?.message?.channel==='companion_ack'&&item.value.message.id==='hidden-one')),false);
+  await page.evaluate(()=>window.petBridge.receive({channel:'companion_offer',characterId:'aika',sessionId:'desktop',id:'hidden-offer'},1));
+  assert.equal(await page.evaluate(()=>window.hostMessages.some(row=>row.value?.message?.channel==='companion_claim'&&row.value.message.id==='hidden-offer')),false);
+  assert.deepEqual(errors,[]);
+});
+
+test('focus retracts a displayed proactive bubble and rejects queued delivery without acknowledgement',async t=>{
+  const root=resolve('desktop'),server=createServer(async(request,response)=>{const path=resolve(root,'.'+new URL(request.url,'http://127.0.0.1').pathname);if(!path.startsWith(root+sep)){response.writeHead(403);response.end();return}try{response.setHeader('Content-Type',extname(path)==='.html'?'text/html':extname(path)==='.js'?'text/javascript':'text/css');response.end(await readFile(path))}catch{response.writeHead(404);response.end()}});
+  await new Promise(done=>server.listen(0,'127.0.0.1',done));t.after(async()=>{server.closeAllConnections();await new Promise(done=>server.close(done))});
+  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:800,height:950}});
+  await page.addInitScript(()=>{window.hostMessages=[];window.desktopHost={postMessage(name,value){window.hostMessages.push({name,value})},subscribe(){}}});
+  await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);await page.waitForFunction(()=>!!window.petBridge);
+  await page.evaluate(()=>{window.petBridge.connectionChanged({generation:1,state:'connecting'});window.petBridge.receive({channel:'backend_ready',bridgeVersion:'0.8.0',characterId:'aika',characterLabel:'专注验收',sessionId:'desktop',productMode:'memory-book'},1);window.petBridge.receive({channel:'companion_takeover',phase:'ready'},1)});
+  const send=id=>page.evaluate(id=>window.petBridge.receive({channel:'companion_message',characterId:'aika',sessionId:'desktop',delivery:{id,text:'主动问候 '+id,status:'dispatched',expiresAt:Date.now()+120000}},1),id);
+  await send('before-focus');await page.waitForFunction(()=>window.hostMessages.some(row=>row.value?.message?.channel==='companion_ack'&&row.value.message.id==='before-focus'));
+  assert.equal(await page.locator('#speech-bubble').isVisible(),true);
+  const life=createCompanionLifeState({characterId:'aika',pairingId:'local-user'},Date.now());
+  await page.evaluate(state=>window.petBridge.receive({channel:'companion_state',sequence:1,state,focus:true},1),life);
+  assert.equal(await page.locator('#speech-bubble').isVisible(),false);
+  await send('queued-after-focus');assert.equal(await page.evaluate(()=>window.hostMessages.some(row=>row.value?.message?.channel==='companion_ack'&&row.value.message.id==='queued-after-focus')),false);
+  assert.doesNotMatch(await page.locator('#reply').textContent(),/queued-after-focus/);
+  await page.evaluate(state=>window.petBridge.receive({channel:'companion_state',sequence:2,state,focus:false},1),life);
+  await send('after-focus');await page.waitForFunction(()=>window.hostMessages.some(row=>row.value?.message?.channel==='companion_ack'&&row.value.message.id==='after-focus'));assert.equal(await page.locator('#speech-bubble').isVisible(),true);
+});

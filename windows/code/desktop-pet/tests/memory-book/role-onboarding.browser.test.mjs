@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,mkdirSync,rmSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {createServer} from 'node:http';
+import {chromium,expect} from '@playwright/test';
+import {FileBookRepository} from '../../dist/memory/file-book-repository.js';
+import {BookRuntime} from '../../dist/app/book-runtime.js';
+import {BookHttpModel} from '../../dist/providers/book-model.js';
+import {BookCredentials} from '../../dist/management/book-credentials.js';
+import {startBookServer} from '../../dist/management/book-server.js';
+import {emptyEntry} from '../../dist/contracts/memory-book.js';
+
+test('new user creates a role, authors persona, imports with review and connects API entirely through UI',{timeout:90000},async t=>{
+ mkdirSync('.local/onboarding-tests',{recursive:true});const directory=mkdtempSync(resolve('.local/onboarding-tests/run-')),repo=new FileBookRepository(directory),credentials=new BookCredentials(join(directory,'credentials')),calls=[];
+ const modelServer=createServer(async(request,response)=>{response.setHeader('Content-Type','application/json');if(request.url==='/v1/models'){response.end(JSON.stringify({data:[{id:'fixture-role-model'}]}));return;}let text='';for await(const chunk of request)text+=chunk;const input=JSON.parse(text);calls.push(input);if(input.model==='invalid-model'){response.statusCode=400;response.end(JSON.stringify({error:{message:'Unknown fixture model'}}));return;}response.end(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'这是角色引导的合成验收回复。'}}]}));});
+ await new Promise(done=>modelServer.listen(0,'127.0.0.1',done));
+ const server=await startBookServer({runtime:new BookRuntime(repo,new BookHttpModel(id=>credentials.get(id))),credentials,uiRoot:resolve('management')}),browser=await chromium.launch({headless:true});
+ t.after(async()=>{await browser.close();await server.close();await new Promise(done=>modelServer.close(done));repo.close();rmSync(directory,{recursive:true,force:true});});
+ const page=await browser.newPage({viewport:{width:1440,height:1000}});page.setDefaultTimeout(12000);page.on('dialog',dialog=>dialog.dismiss());
+ await page.goto(server.url);await page.getByLabel('开始使用 ALLMIND',{exact:true}).waitFor();await page.getByRole('link',{name:'角色',exact:true}).click();await page.getByRole('button',{name:'新增角色',exact:true}).click();const manager=page.getByRole('dialog',{name:'管理角色',exact:true});await manager.getByLabel('新角色名称',{exact:true}).fill('合成向导');await manager.getByRole('button',{name:'新建角色',exact:true}).click();await expect(manager).not.toBeVisible();
+ const characterId=repo.loadConfig().currentCharacterId,scope={characterId,pairingId:'local-user',sessionId:'web-chat'};assert.notEqual(characterId,'aika');
+ await page.getByRole('button',{name:'添加核心人设',exact:true}).click();await page.getByLabel('人设正文',{exact:true}).fill('你是冷静坦率的合成向导。不要编造共同经历。');await page.getByRole('button',{name:'保存核心人设',exact:true}).click();await page.getByText('核心人设已保存，从下一轮对话生效。',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'编辑人设',exact:true}).click();await page.getByLabel('人设正文',{exact:true}).fill('取消的修改');await page.getByRole('link',{name:'聊天',exact:true}).click();assert.ok(page.url().includes('/character'));await expect(page.getByLabel('人设正文',{exact:true})).toHaveValue('取消的修改');await page.getByRole('button',{name:'取消编辑人设',exact:true}).click();assert.ok(!JSON.stringify(repo.snapshot(scope)).includes('取消的修改'));
+ const entry=emptyEntry('synthetic-world','story','合成星港','作者提供的虚构演示场景。');const upload={name:'role.book.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({schemaVersion:'memory-book/v1',name:'合成设定包',entries:[entry]}))};
+ await page.getByLabel('选择角色包',{exact:true}).setInputFiles(upload);await page.getByRole('button',{name:'确认导入角色资料',exact:true}).waitFor();assert.equal(repo.snapshot(scope).entries.length,1);await page.getByRole('button',{name:'取消导入角色资料',exact:true}).click();assert.equal(repo.snapshot(scope).entries.length,1);await expect(page.getByLabel('选择角色包',{exact:true})).toHaveValue('');await page.getByLabel('选择角色包',{exact:true}).setInputFiles(upload);await page.getByRole('button',{name:'确认导入角色资料',exact:true}).click();await page.getByText('角色资料已导入，从下一轮对话生效。',{exact:true}).waitFor();assert.equal(repo.snapshot(scope).entries.length,2);
+ await page.getByRole('button',{name:'配置对话模型',exact:true}).click();const dialog=page.getByRole('dialog',{name:'连接文字主模型',exact:true});await dialog.getByLabel('端点',{exact:true}).fill('http://127.0.0.1:'+modelServer.address().port+'/v1');await dialog.getByLabel('API Key',{exact:true}).fill('synthetic-only');await dialog.getByRole('button',{name:'获取模型',exact:true}).click();await dialog.getByLabel('已获取的模型',{exact:true}).selectOption('fixture-role-model');await dialog.getByLabel('模型',{exact:true}).fill('invalid-model');await dialog.getByRole('button',{name:'测试连接',exact:true}).click();await dialog.locator('.mb-test-error').waitFor();await expect(dialog.getByLabel('模型',{exact:true})).toHaveValue('invalid-model');assert.equal(repo.loadConfig().mainModel,null);
+ await dialog.getByLabel('已获取的模型',{exact:true}).selectOption('fixture-role-model');await dialog.getByRole('button',{name:'测试连接',exact:true}).click();await dialog.getByText(/请求成功/).waitFor();assert.equal(repo.loadConfig().mainModel,null);await dialog.getByRole('button',{name:'保存连接设置',exact:true}).click();await dialog.getByText('设置已保存并生效。',{exact:true}).waitFor();await dialog.getByRole('button',{name:'开始对话',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).fill('你好');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('这是角色引导的合成验收回复。',{exact:true}).waitFor();assert.ok(calls.at(-1).messages.some(row=>row.content.includes('冷静坦率')));assert.equal(repo.readSession(scope).length,1);assert.equal(repo.snapshot({...scope,characterId:'aika'}).entries.length,0);
+ for(const width of [390,320]){await page.setViewportSize({width,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+});

@@ -1,0 +1,10 @@
+import {artifactFixture} from './artifact-fixture.mjs';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+test('actual management server uploads and reads material, freezes chat inputs and enforces scope/authentication',async t=>{const f=await artifactFixture(t);const query='?characterId=aika&sessionId=artifact-http';let response=await f.request('/resources/upload'+query+'&name=test.md&operationId=upload-1',{method:'POST',headers:{'Content-Type':'text/markdown'},body:'# SYNTHETIC_HTTP_SOURCE'});assert.equal(response.status,200);const resource=await response.json();response=await f.request('/resources/'+resource.id+'/material'+query);assert.match((await response.json()).text,/SYNTHETIC_HTTP_SOURCE/);response=await f.request('/resources/'+resource.id+query.replace('artifact-http','other-session'));assert.equal(response.status,404);response=await f.request('/chat'+query,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:'读取资料',turnId:'artifact-http-turn',inputResources:[{resourceId:resource.id,use:'text'}]})});assert.equal(response.status,200);assert.match(JSON.stringify(f.prompts),/SYNTHETIC_HTTP_SOURCE/);const turn=(await response.json()).turn;assert.equal(turn.inputResources[0].sha256,resource.sha256);response=await fetch(new URL(f.server.url).origin+'/api/memory-book/v1/resources/'+resource.id+query);assert.equal(response.status,401);});
+test('resource HTTP routes preserve explicit pairing scope for uploads and subsequent reads',async t=>{
+ const f=await artifactFixture(t),query='?characterId=aika&sessionId=pairing-review&pairingId=synthetic-other';
+ const response=await f.request('/resources/upload'+query+'&name=note.md&operationId=pairing-upload',{method:'POST',headers:{'Content-Type':'text/markdown'},body:'# isolated pairing'});assert.equal(response.status,200);const record=await response.json();
+ assert.equal(record.scope.pairingId,'synthetic-other');assert.equal((await f.request('/resources/'+record.id+query)).status,200);
+ assert.equal((await f.request('/resources/'+record.id+'?characterId=aika&sessionId=pairing-review')).status,404);
+});

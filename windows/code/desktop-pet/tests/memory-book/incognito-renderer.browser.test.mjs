@@ -1,0 +1,24 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {resolve,extname,sep} from 'node:path';
+import {createServer} from 'node:http';
+import {chromium} from '@playwright/test';
+test('desktop privacy handshake clears visible private content and blocks send or toggle during a turn',{timeout:30000},async t=>{
+  const root=resolve('desktop'),server=createServer(async(request,response)=>{const path=resolve(root,'.'+new URL(request.url,'http://127.0.0.1').pathname);if(!path.startsWith(root+sep)){response.writeHead(403);response.end();return;}try{response.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');response.end(await readFile(path));}catch{response.writeHead(404);response.end();}});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(async()=>{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));});
+  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:800,height:950}}),errors=[];page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));
+  await page.addInitScript(()=>{window.hostMessages=[];window.desktopHost={postMessage(name,value){window.hostMessages.push({name,value});},subscribe(){}};});
+  await page.goto('http://127.0.0.1:'+server.address().port+'/index.html');await page.waitForFunction(()=>!!window.petBridge);
+  await page.evaluate(()=>{window.petBridge.connectionChanged({generation:1,state:'connecting'});window.petBridge.receive({channel:'backend_ready',bridgeVersion:'0.8.0',characterId:'aika',characterLabel:'测试角色',sessionId:'desktop',productMode:'memory-book'},1);});
+  await page.locator('#model').click({button:'right'});await page.getByRole('button',{name:'更多操作',exact:true}).click();await page.getByRole('menuitemcheckbox',{name:'本地无痕：已关闭',exact:true}).click();
+  const request=await page.evaluate(()=>window.hostMessages.findLast(row=>row.value?.message?.channel==='book_privacy').value.message);assert.equal(request.incognito,true);assert.equal(await page.locator('#send').isDisabled(),true);
+  await page.evaluate(()=>window.petBridge.receive({channel:'book_privacy',characterId:'aika',sessionId:'desktop',incognito:true},1));
+  await page.locator('#text').fill('private-renderer-secret');await page.locator('#form').evaluate(form=>form.requestSubmit());
+  await page.getByRole('button',{name:'更多操作',exact:true}).click();assert.equal(await page.getByRole('menuitemcheckbox',{name:'本地无痕：已开启',exact:true}).isDisabled(),true);
+  const command=await page.evaluate(()=>window.hostMessages.findLast(row=>row.value?.message?.channel==='command'&&row.value.message.command.type==='submit_text').value.message.command);
+  await page.evaluate(command=>window.petBridge.receive({channel:'book_turn_state',clientRequestId:command.clientRequestId,scope:{characterId:'aika',sessionId:'desktop',turnId:command.clientRequestId,generation:1},state:'completed',text:'private-renderer-answer'},1),command);
+  await page.getByRole('menuitemcheckbox',{name:'本地无痕：已开启',exact:true}).click();
+  await page.evaluate(()=>window.petBridge.receive({channel:'book_privacy',characterId:'aika',sessionId:'desktop',incognito:false},1));
+  assert.ok(!(await page.locator('#drawer').textContent()).includes('private-renderer-secret'));assert.equal(await page.locator('#text').inputValue(),'');assert.deepEqual(errors,[]);
+});

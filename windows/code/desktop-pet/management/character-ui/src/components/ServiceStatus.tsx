@@ -1,0 +1,13 @@
+import {useEffect,useState} from 'react'
+import {api} from '../book-api'
+interface Status {local:{state:string;revision:number};reply:{state:string;model:string|null};memory:{enabled:boolean;mode:string;state:string;model:string|null;paused:boolean;failed:number;pending:number};checkedAt:string}
+export default function ServiceStatus({characterId,sessionId,revision,onQueue}:{characterId:string;sessionId:string;revision:number;onQueue?:()=>void}){
+  const [status,setStatus]=useState<Status|null>(null),[error,setError]=useState(''),[checking,setChecking]=useState(false),[refresh,setRefresh]=useState(0)
+  const [dismissed,setDismissed]=useState('')
+  const fault=error||(status?.memory.failed?`${status.memory.failed} 个整理任务失败`:status?.memory.enabled&&status.memory.state==='unconfigured'?'整理模型未绑定':'')
+  const signature=characterId+':'+sessionId+':'+fault
+  useEffect(()=>{const controller=new AbortController();setStatus(null);setError('');setChecking(true);api<Status>('/services/status?'+new URLSearchParams({characterId,sessionId}),{signal:controller.signal}).then(next=>{if(!controller.signal.aborted)setStatus(next)}).catch(failure=>{if(!controller.signal.aborted)setError(failure.message)}).finally(()=>{if(!controller.signal.aborted)setChecking(false)});return()=>controller.abort()},[characterId,sessionId,revision,refresh])
+  return <>{fault&&(dismissed===signature?<button type="button" onClick={()=>setDismissed('')}>显示服务故障提示</button>:<div className="mb-service-banner" role="status"><strong>{error?'服务状态读取失败':'本地回忆可用，记忆整理需要处理'}</strong><p>{fault}</p><div className="mb-row">{onQueue&&<button type="button" onClick={onQueue}>查看入库队列</button>}<button type="button" onClick={()=>setDismissed(signature)}>收起提示</button></div></div>)}<details className="mb-service-details"><summary>服务与入库状态</summary>{error&&<p role="alert">读取状态失败：{error}</p>}{checking&&<p role="status">正在回查本地服务…</p>}{status&&<><p>本地回忆：读取正常 · r{status.local.revision}</p><p>回复模型：{status.reply.state==='unconfigured'?'未绑定':`${status.reply.model} · 已配置，当前可用性未测试`}</p><p>记忆整理：{status.memory.enabled?'自动记忆已开':'自动记忆已关'} · {status.memory.mode==='model'?'模型整理':'本地声明规则'} · {status.memory.state==='unconfigured'?'整理模型未绑定':status.memory.model?`${status.memory.model} · 可用性未测试`:'本地处理'} · {status.memory.paused?'已暂停':'未暂停'}</p>{status.memory.failed>0&&<p role="status">有 {status.memory.failed} 个失败任务、{status.memory.pending} 个等待/运行任务；本地读取仍可用，请在入库队列查看具体错误和重试。</p>}<small>本次只回查本地配置和任务，不发送测试聊天，不将“已配置”当作供应商在线。模型实测入口保留在设置。</small></>}
+    <button disabled={checking} onClick={()=>setRefresh(value=>value+1)}>重新检查本地状态</button>
+  </details></>
+}

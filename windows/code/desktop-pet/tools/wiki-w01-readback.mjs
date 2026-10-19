@@ -1,0 +1,23 @@
+import {readFileSync,writeFileSync,existsSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+const directory='../../../docs/next/chatgpt-integration/wiki-handoff/evidence/w01';
+const source=JSON.parse(readFileSync(directory+'/final-real.json','utf8'));
+const target=directory+'/restart-readback.json';
+const report=existsSync(target)?JSON.parse(readFileSync(target,'utf8')):{};
+const url=new URL(JSON.parse(readFileSync('../../.local/memory-book/management-session.json','utf8')).url);
+const headers={Authorization:'Bearer '+new URLSearchParams(url.hash.slice(1)).get('token'),'Content-Type':'application/json'};
+const query='?'+new URLSearchParams({characterId:source.characterId,sessionId:source.sessionId});
+const api=async(path,body)=>{const response=await fetch(url.origin+'/api/memory-book/v1'+path,{headers,...(body===undefined?{}:{method:'POST',body:JSON.stringify(body)}),signal:AbortSignal.timeout(20000)});if(!response.ok)throw Error(path.split('?')[0]+' HTTP '+response.status+' '+await response.text());return response.json();};
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+const resources=source.delivery.result.resources;
+const bytes=[];
+for(const resource of [...resources,source.web.result]){const response=await fetch(url.origin+'/api/memory-book/v1/resources/'+resource.id+'/content'+query,{headers});if(!response.ok)throw Error('字节读取 HTTP '+response.status);const body=Buffer.from(await response.arrayBuffer());bytes.push({id:resource.id,name:resource.name,bytes:body.length,sha256:hash(body),matches:hash(body)===resource.sha256&&body.length===resource.bytes});}
+const bundle=await api('/resources/'+resources.find(row=>row.kind==='zip').id+'/bundle-preview'+query,{});
+const history=await api('/chat/history'+query);const turn=history.turns.find(row=>row.id===source.turnId);
+const runtime=await api('/runtime');
+const key=process.argv.includes('--after')?'after':'before';
+report[key]={checkedAt:new Date().toISOString(),configHash:hash(JSON.stringify(runtime.config)),turnPreserved:Boolean(turn),imageReceipts:turn?.inputImageReceipts,bytes,bundle};
+if(key==='after')report.agrees=JSON.stringify(report.before.bytes)===JSON.stringify(bytes)&&report.before.configHash===report.after.configHash&&report.after.turnPreserved;
+writeFileSync(target,JSON.stringify(report,null,2));
+console.log(JSON.stringify({evidence:target,stage:key,allHashesAgree:bytes.every(row=>row.matches),canOrganize:bundle.canOrganize,links:bundle.links,agrees:report.agrees}));
+if(bytes.some(row=>!row.matches)||!bundle.canOrganize||!turn||key==='after'&&!report.agrees)process.exitCode=1;

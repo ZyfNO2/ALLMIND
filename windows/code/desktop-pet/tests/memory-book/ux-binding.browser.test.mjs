@@ -1,0 +1,48 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdirSync,mkdtempSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {chromium} from '@playwright/test';
+import {FileBookRepository} from '../../dist/memory/file-book-repository.js';
+import {BookRuntime} from '../../dist/app/book-runtime.js';
+import {BookCredentials} from '../../dist/management/book-credentials.js';
+import {startBookServer} from '../../dist/management/book-server.js';
+import {DesktopHostError} from '../../dist/app/desktop-host-bridge.js';
+
+test('prototype navigation and one-click binding persist through real HTTP; host failures remain actionable',{timeout:60000},async t=>{
+  mkdirSync('.local/ui-v4/tests',{recursive:true});const directory=resolve(mkdtempSync('.local/ui-v4/tests/ux-binding-'));
+  const repository=new FileBookRepository(directory);t.after(()=>repository.close());let calls=0,signedIn=false;
+  const runtime=new BookRuntime(repository,{async complete(){calls++;return '绑定链路合成回复';}});
+  const server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management'),chatgptEmbedded:{async login(){throw new DesktopHostError('unavailable','独立页面加载失败，请检查网络后重试。');},async probe(){return {ready:signedIn,detail:'请先完成登录'};}}});t.after(()=>server.close());
+  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1440,height:960}});page.setDefaultTimeout(10000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(server.url);await page.getByRole('link',{name:'首页',exact:true}).click();await page.getByRole('heading',{name:'欢迎回来',exact:true}).waitFor();
+  assert.equal(await page.getByText('3 条示例记录',{exact:true}).count(),0);
+  const focus=page.getByRole('region',{name:'首页专注计时',exact:true});
+  await focus.getByRole('button',{name:'45 分钟',exact:true}).click();
+  assert.equal(await focus.getByLabel('专注剩余时间').textContent(),'45:00');
+  await focus.getByRole('button',{name:'开始专注',exact:true}).click();await focus.getByRole('button',{name:'暂停专注',exact:true}).waitFor();
+  await focus.getByRole('button',{name:'暂停专注',exact:true}).click();await focus.getByRole('button',{name:'继续专注',exact:true}).waitFor();
+  const ledger=repository.loadCompanionData({characterId:'aika',pairingId:'local-user',sessionId:'web-chat'});
+  assert.equal(ledger.focus,false);assert.ok(ledger.focusTimer.pausedRemainingMs>44*60000);
+  await page.reload();await focus.getByRole('button',{name:'继续专注',exact:true}).waitFor();
+  await focus.getByRole('button',{name:'继续专注',exact:true}).click();await focus.getByRole('button',{name:'暂停专注',exact:true}).waitFor();
+  await focus.getByRole('button',{name:'重置计时',exact:true}).click();await focus.getByText('尚未开始',{exact:true}).waitFor();
+  await page.screenshot({path:join(directory,'home.png'),fullPage:true});
+  await page.reload();await page.getByRole('heading',{name:'欢迎回来',exact:true}).waitFor();
+  await page.getByRole('link',{name:'设置',exact:true}).click();
+  assert.equal(await page.locator('#settings-conversation').isVisible(),true);assert.equal(await page.locator('#settings-behavior').isVisible(),false);
+  await page.getByRole('button',{name:'陪伴与行为',exact:true}).click();assert.equal(await page.locator('#settings-conversation').isVisible(),false);assert.equal(await page.locator('#settings-behavior').isVisible(),true);
+  await page.getByRole('button',{name:'AI 与对话',exact:true}).click();await page.screenshot({path:join(directory,'settings.png'),fullPage:true});
+  await page.getByRole('button',{name:'连接模型',exact:true}).click();await page.getByRole('dialog',{name:'连接文字主模型',exact:true}).getByRole('button',{name:'ChatGPT 网页接入',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'连接文字主模型',exact:true});
+  await dialog.getByRole('button',{name:'准备独立页面登录（不切换来源）',exact:true}).click();await dialog.getByRole('alert').filter({hasText:'独立页面加载失败'}).waitFor();
+  assert.equal(repository.loadConfig().mainModel,null);
+  await dialog.getByLabel('ChatGPT 连接方式',{exact:true}).selectOption('embedded');
+  await dialog.getByLabel('ChatGPT 网页模型',{exact:true}).fill('GPT-6');
+  signedIn=true;await dialog.getByRole('button',{name:'检查登录并绑定独立页面',exact:true}).click();await dialog.getByText('独立页面已登录，文字主模型已绑定并保存。现在可以测试网页连接。',{exact:true}).waitFor();
+  const config=repository.loadConfig();assert.equal(config.mainModel.kind,'chatgpt-web');assert.equal(config.mainModel.model,'GPT-6');assert.equal(config.chatgptWeb.transport,'embedded');assert.deepEqual(config.chatgptWeb.authorizedPurposes,['reply','wiki']);
+  await page.keyboard.press('Escape');await page.getByRole('link',{name:'聊天',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).fill('验证绑定');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('绑定链路合成回复',{exact:true}).waitFor();assert.equal(calls,1);
+  await page.screenshot({path:join(directory,'chat.png'),fullPage:true});
+  for(const width of [740,390,320]){await page.setViewportSize({width,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+'px chat overflow');await page.getByRole('link',{name:'首页',exact:true}).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+'px home overflow');await page.getByRole('link',{name:'设置',exact:true}).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+'px settings overflow');await page.getByRole('link',{name:'聊天',exact:true}).click();}
+  await page.screenshot({path:join(directory,'chat-narrow.png'),fullPage:true});assert.deepEqual(errors,[]);
+});

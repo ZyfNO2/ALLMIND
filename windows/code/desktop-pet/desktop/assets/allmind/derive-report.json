@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "origin": "Original geometric artwork generated for blank ALLMIND source release; no external image input",
+  "date": "2026-10-19",
+  "iconSource": "icon-source.svg",
+  "author": "ALLMIND project contributors",
+  "license": "Project LICENSE",
+  "sizes": [
+    16,
+    32,
+    48,
+    256
+  ],
+  "fixtures": "Two transparent synthetic geometric test cards (1086x1448), not character illustrations. No runtime autoload."
+}

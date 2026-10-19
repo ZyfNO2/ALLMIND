@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {chromium} from '@playwright/test';
+import {artifactFixture} from './artifact-fixture.mjs';
+test('production chat UI uploads MD and selects it for a real Runtime request',{timeout:60000},async t=>{const f=await artifactFixture(t);const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage();await page.goto(f.server.url);await page.getByText('本轮资料与图片',{exact:true}).click();await page.getByLabel('上传聊天资料').setInputFiles({name:'synthetic.md',mimeType:'text/markdown',buffer:Buffer.from('# SYNTHETIC_UI_MATERIAL')});await page.getByRole('button',{name:'用于下一轮',exact:true}).waitFor();await page.getByRole('button',{name:'用于下一轮',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).fill('读取这份资料');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('合成回复',{exact:true}).waitFor();assert.match(JSON.stringify(f.prompts),/SYNTHETIC_UI_MATERIAL/);});
