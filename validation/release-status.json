@@ -168,6 +168,17 @@
       "userDataPreserved": true
     }
   },
+  "desktopClickAudio": {
+    "date": "2026-10-20",
+    "status": "IMPLEMENTED",
+    "changes": "Separate explicit click sounds from proactive-notification gating; finish press/release synchronously on worker; coalesce rapid gestures without a backlog; explicit mute/hide cancels pending clips",
+    "sequenceAssertions": 148,
+    "nativeSilentPlaybackRegression": "PASS; preload, PCM volume, 120 rapid clicks, ordinary pairs, mute/cancel/reinitialization/cleanup",
+    "visibilityAssertions": 53,
+    "portableAssertions": 46,
+    "audibleManualAcceptance": "NOT_RUN",
+    "currentPackageUpdated": true
+  },
   "assetEvidenceRequired": [],
   "assetProvenanceResolution": {
     "date": "2026-10-19",
@@ -1094,5 +1105,117 @@
     "productionBackendFirstStart": "PASS; real composition root; graceful shutdown and lock release",
     "nativeRendering": "NOT_RUN; WPF uses registered single-frame skin",
     "realModel": "NOT_RUN"
+  },
+  "chatgptParallelAndComposer": {
+    "date": "2026-10-20",
+    "status": "PASS_WITH_SCOPE",
+    "implementation": "Embedded ChatGPT owns four separate pages and durable request receipts. Unknown old submissions retain their lane; other lanes can send. Extension and CLI retain their existing single-page behavior. No automatic resend.",
+    "composer": "Entire yellow send-policy hint is absent after API or web model binding, including after typing, asynchronous policy preview and reload.",
+    "offlineCore": {
+      "pass": 398,
+      "fail": 0
+    },
+    "pageHost": {
+      "pass": 3,
+      "fail": 0
+    },
+    "browserRegression": {
+      "pass": 4,
+      "fail": 0
+    },
+    "portable": {
+      "pass": 46,
+      "inventoryFiles": 1677,
+      "model": "fixture"
+    },
+    "realWeb": {
+      "status": "PASS",
+      "thinking": "High level 2 read back before send",
+      "concurrentRequests": 2,
+      "overlapSamples": 60,
+      "durationMs": [
+        12548,
+        16650
+      ],
+      "persistence": "Both replies stored in their separate sessions with correct lane text",
+      "oldRequest": "Explicit resume recovered existing terminal reply without a new submission"
+    },
+    "limits": [
+      "Four embedded tasks maximum; full capacity rejects before sending.",
+      "Real concurrent uploads/artifact downloads not exercised; identity isolation covered by fixture.",
+      "Native UI input and new full cold installation not rerun."
+    ]
+  },
+  "chatgptLoginRecovery": {
+    "date": "2026-10-20",
+    "status": "PASS_WITH_SCOPE",
+    "cause": "ERR_CONNECTION_CLOSED left a failed document retaining its requested ChatGPT URL; login trusted that URL and skipped navigation.",
+    "fix": "Track main-frame load failures; explicit login reloads ChatGPT and preserves third-party identity-provider navigation; failed login displays an escaped local diagnostic page and actionable management error. No automatic chat replay.",
+    "regression": {
+      "pass": 16,
+      "fail": 0,
+      "scope": "WPF Node, page-host, connection setup and chat usability"
+    },
+    "realWeb": {
+      "status": "PASS",
+      "thinking": "High level 2 confirmed before sending",
+      "login": "UI opened login and checked/saved existing authorized account; fresh credential entry NOT_RUN",
+      "chat": "UI message completed with expected reply; stored and visibly recovered after backend restart"
+    },
+    "deployment": "Source and local portable host updated; current source instance restarted.",
+    "notes": [
+      "During continuation the prior process was gone; dead writer PID 49340 verified, lock renamed in-place for evidence, backend restored.",
+      "Initial stale-page regression harness hung on its synthetic error-page load; corrected mock and retained failure."
+    ]
+  },
+  "endfieldUi": {
+    "date": "2026-10-20",
+    "status": "PASS_WITH_SCOPE",
+    "skill": {
+      "repository": "https://github.com/hhikr/endfield-ui-skill",
+      "commit": "96702a36317b4c76538d1a20ed6beaae4e6067e2",
+      "installed": "endfield-ui"
+    },
+    "scope": "Management shell, chat, role, memory/library controls and settings. Existing pet rendering, graph data/semantic category colors and business routes retained.",
+    "variant": "yellow / neutral / tight / plain / standard / calm; existing light/dark preference respected",
+    "build": "Backend and management UI build PASS",
+    "browser": {
+      "pass": 11,
+      "fail": 0,
+      "provider": "fixture or not called",
+      "layouts": 32,
+      "widths": [
+        375,
+        768,
+        1024,
+        1440
+      ],
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "reducedMotion": true,
+      "externalRequests": 0
+    },
+    "staticAssetRegression": {
+      "pass": 1,
+      "fail": 0,
+      "scope": "Worker/font MIME allowlist and traversal/private-source rejection"
+    },
+    "deployment": {
+      "source": "updated and running",
+      "portable": "updated",
+      "inventoryHashes": 1684,
+      "fontRoute": "HTTP200 font/ttf"
+    },
+    "liveModel": "NOT_RERUN; displayed existing real-model acceptance reply after restart",
+    "firstFailures": [
+      "TTF initially rejected by bounded static routing; explicit font/ttf support added without widening directory access.",
+      "Old reload harness accessed input before it mounted; now waits for element existence, preserving assertions."
+    ],
+    "limits": [
+      "No native pet appearance redesign or native UI acceptance in this change.",
+      "Full portable behavioral suite and fresh clone not rerun for this visual change."
+    ]
   }
 }

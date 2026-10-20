@@ -25,6 +25,7 @@ test('default style saves per role, 恢复自然长度 clears both, per-turn sel
   await page.goto(server.url);
   // settings: default style save + readback per role
   await page.getByRole('link', { name: '设置', exact: true }).click();
+  await page.getByText('回复语言与表达偏好',{exact:true}).click();
   const panel = page.getByRole('region', { name: '回复长度', exact: true });
   await panel.getByLabel('默认回复风格', { exact: true }).waitFor();
   await panel.getByLabel('默认回复风格', { exact: true }).selectOption('auto');
@@ -32,7 +33,8 @@ test('default style saves per role, 恢复自然长度 clears both, per-turn sel
   await page.getByText('设置已保存并生效。', { exact: true }).waitFor();
   assert.equal(repository.loadConfig().characters.find(role => role.id === 'aika')?.replyStyle, 'auto');
   assert.equal(repository.loadConfig().characters.find(role => role.id === 'role-b')?.replyStyle, undefined, '风格按角色保存，不污染其他角色');
-  await page.reload();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.getByText('回复语言与表达偏好',{exact:true}).click();
   const reread = page.getByRole('region', { name: '回复长度', exact: true });
   await reread.getByLabel('默认回复风格', { exact: true }).waitFor();
   assert.equal(await reread.getByLabel('默认回复风格', { exact: true }).inputValue(), 'auto', '刷新后回读');
@@ -41,8 +43,10 @@ test('default style saves per role, 恢复自然长度 clears both, per-turn sel
   const turnSelect = page.getByLabel('本次回复风格', { exact: true });
   await turnSelect.waitFor();
   assert.equal(await turnSelect.inputValue(), 'inherit');
+  const policyResponse=page.waitForResponse(response=>response.url().endsWith('/chat/policy')&&response.request().postDataJSON()?.text==='这次不超过50字，而且这次至少100字');
   await page.getByLabel('聊天消息', { exact: true }).fill('这次不超过50字，而且这次至少100字');
-  await page.locator('.mb-style-preview').filter({hasText:'字数边界优先'}).waitFor();
+  assert.equal((await (await policyResponse).json()).decision.requestConflict,true,'conflict policy still applies without a banner');
+  assert.equal(await page.locator('.mb-composer-hint').count(),0,'bound model hides the entire yellow banner even after policy preview returns');
   assert.equal(calls,0,'发送前冲突预览不触发模型');
   await turnSelect.selectOption('short');
   await page.getByLabel('聊天消息', { exact: true }).fill('你好');
@@ -62,20 +66,17 @@ test('default style saves per role, 恢复自然长度 clears both, per-turn sel
   assert.equal(await turnSelect.inputValue(), 'detailed', '失败时保留本轮选择');
   assert.equal(await page.getByLabel('聊天消息', { exact: true }).inputValue(), '第二次输入', '失败时保留输入');
   // per-scope isolation: the other character starts from inherit and does not inherit the draft
-  await page.locator('.mb-sidebar').getByLabel('当前角色').selectOption('role-b');
+  await page.getByRole('combobox',{name:'当前角色',exact:true}).selectOption('role-b');
   await page.getByText('和 角色B 说点什么', { exact: false }).first().waitFor();
   assert.equal(await page.getByLabel('本次回复风格', { exact: true }).inputValue(), 'inherit', '其他角色不继承本轮选择');
-  await page.locator('.mb-sidebar').getByLabel('当前角色').selectOption('aika');
+  await page.getByRole('combobox',{name:'当前角色',exact:true}).selectOption('aika');
   await expect(page.getByLabel('本次回复风格', { exact: true })).toHaveValue('detailed', { timeout: 8000 });
   const failedRequest=submitted.find(row=>row.text==='第二次输入');
   await turnSelect.selectOption('short');
   await page.getByRole('button',{name:'发送',exact:true}).click();
-  await page.getByRole('alert').filter({hasText:'已有未确认请求'}).waitFor();
-  assert.equal(calls,2,'失败后切档不能以新身份重发同一输入');
-  await turnSelect.selectOption('detailed');
-  await page.getByRole('button',{name:'发送',exact:true}).click();
   await expect(turnSelect).toHaveValue('inherit');
-  assert.equal(submitted.at(-1).turnId,failedRequest.turnId,'跨角色返回仍沿用原请求身份');
+  assert.equal(calls,3,'terminal provider failure allows an explicit new turn');
+  assert.notEqual(submitted.at(-1).turnId,failedRequest.turnId,'new explicit turn must not replay a terminal failed identity');
   // Simulate a committed response lost in transport, then recover the exact same turn.
   await page.route('**/api/memory-book/v1/chat',async route=>{await route.fetch();await route.abort('failed');},{times:1});
   await turnSelect.selectOption('short');await page.getByLabel('聊天消息',{exact:true}).fill('模拟回包丢失');
@@ -87,6 +88,7 @@ test('default style saves per role, 恢复自然长度 clears both, per-turn sel
   assert.equal(submitted.at(-1).turnId,lostId);assert.equal(calls,beforeRetry,'丢包重试回放历史，不再次调用模型');
   // settings: 恢复自然长度 clears BOTH the default style and the saved bounds
   await page.getByRole('link', { name: '设置', exact: true }).click();
+  await page.getByText('回复语言与表达偏好',{exact:true}).click();
   const reset = page.getByRole('region', { name: '回复长度', exact: true });
   await reset.getByLabel('默认回复风格', { exact: true }).waitFor();
   await reset.getByLabel('最小回复字数', { exact: true }).fill('300');

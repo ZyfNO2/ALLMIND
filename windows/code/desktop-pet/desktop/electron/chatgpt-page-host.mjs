@@ -17,7 +17,7 @@ const loginDestination = url => {
 
 /** In-process, browser-owned authentication. No CDP, CLI, shell or credential export. */
 export function createChatgptPageHost({ BrowserWindow, getParent, accountFile }) {
-  let page = null, signingIn = false, navigating = null, loginTimer = null;
+  let page = null, signingIn = false, navigating = null, loginTimer = null, loadFailure = null;
   let account = accountFile && existsSync(accountFile) ? JSON.parse(readFileSync(accountFile,'utf8')).account : null;
   if(account!==null && !/^[a-f0-9]{64}$/.test(account))throw Error('独立页面账号绑定损坏。');
   const confirmAccount = async target => {
@@ -43,6 +43,10 @@ export function createChatgptPageHost({ BrowserWindow, getParent, accountFile })
       : { action: 'deny' });
     page.webContents.on('did-create-window', child => { popups.add(child); child.setMenu(null); child.once('closed', () => popups.delete(child)); });
     page.webContents.on('will-navigate', (event, url) => { if (!loginDestination(url)) event.preventDefault(); });
+    page.webContents.on('did-fail-load', (_event, code, description, _url, mainFrame) => {
+      if (mainFrame && code !== -3) loadFailure = new Error('ChatGPT 页面加载失败：' + description + ' (' + code + ')；请重新打开登录窗口重试。');
+    });
+    page.webContents.on('did-finish-load', () => { loadFailure = null; });
     page.on('close', event => { event.preventDefault(); conceal(); });
     return page;
   };
@@ -50,8 +54,9 @@ export function createChatgptPageHost({ BrowserWindow, getParent, accountFile })
     if (signingIn) throw new Error('请先在 ALLMIND 登录面板完成登录。');
     const target = ensure();
     // Fixed destination only; no URL can be supplied by the management renderer.
+    loadFailure = null;
     navigating = target.loadURL(chatUrl(temporary,project));
-    try { await navigating; } finally { navigating = null; }
+    try { await navigating; } catch(error) { loadFailure = error; throw error; } finally { navigating = null; }
   };
   const execute = async (action, input = {}) => {
     // Opt-in development reload of this fixed local adapter, never supplied scripts/URLs.
@@ -61,6 +66,7 @@ export function createChatgptPageHost({ BrowserWindow, getParent, accountFile })
     const target = ensure();
     if (!target.webContents.getURL()) await navigate(true);
     if (navigating) await navigating;
+    if (loadFailure) throw new Error('ChatGPT 页面未加载成功：' + loadFailure.message + '；请重新打开登录窗口。');
     if (signingIn && action !== 'probe') throw new Error('请先完成 ALLMIND 内的登录。');
     if (!chatOrigin(target.webContents.getURL())) {
       if (action === 'probe') return { ready: false, temporary: false, generating: false, hasTurns: false };
@@ -85,10 +91,20 @@ export function createChatgptPageHost({ BrowserWindow, getParent, accountFile })
     const target = ensure();
     // Show the login surface before network navigation, including slow/offline first launch.
     target.setSkipTaskbar(false); target.show(); target.focus?.();
-    const loading = navigating ?? (!target.webContents.getURL() || !loginDestination(target.webContents.getURL()) ? navigate(true) : null);
+    const url = target.webContents.getURL();
+    // getURL() retains the requested HTTPS URL even when Chromium displays an error document.
+    // An explicit login click retries ChatGPT GET navigation; preserve an in-progress IdP login.
+    signingIn = false;
+    const loading = navigating ?? (!url || chatOrigin(url) || !loginDestination(url) || loadFailure ? navigate(false) : null);
     signingIn = true;
     try { if (loading) await loading; }
-    catch (error) { signingIn = false; throw error; }
+    catch (error) {
+      signingIn = false;
+      // Render only a fixed local error page; never keep a featureless failed Chromium document.
+      const description = String(error.message ?? error).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      await target.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent('<!doctype html><meta charset="utf-8"><title>ALLMIND · ChatGPT 连接失败</title><body style="font:16px system-ui;padding:40px;line-height:1.8"><h2>ChatGPT 页面未能加载</h2><p>' + description + '</p><p>检查网络或代理连接后，返回 ALLMIND 设置，重新点击“打开独立登录窗口”。不会自动重发聊天消息。</p></body>')).catch(renderError=>process.stderr.write('Chat login error page: '+String(renderError)+'\n'));
+      throw new Error('ChatGPT 登录页面加载失败：' + error.message + '。检查网络或代理后，重新点击打开登录窗口重试。');
+    }
     if (loginTimer) clearInterval(loginTimer);
     // Observe only readiness on our own page; never read credentials. Hide after login.
     let inspecting = false;
@@ -115,5 +131,21 @@ export function createChatgptPageHost({ BrowserWindow, getParent, accountFile })
       return execute(params.action, params.input ?? {});
     },
     close() { conceal(); if (page && !page.isDestroyed()) page.destroy(); page = null; },
+  };
+}
+
+
+/** Fixed, isolated task pages sharing only the already authorized account partition. */
+export function createParallelChatgptPageHost(options) {
+  const lanes=new Map();
+  return {
+    async handle(params){
+      if(!params||typeof params!=='object'||Array.isArray(params))throw Error('Chat 宿主参数无效。');
+      const {lane=0,...request}=params;
+      if(!Number.isInteger(lane)||lane<0||lane>3)throw Error('Chat 网页通道无效。');
+      if(!lanes.has(lane))lanes.set(lane,createChatgptPageHost(options));
+      return lanes.get(lane).handle(request);
+    },
+    close(){for(const host of lanes.values())host.close();lanes.clear();}
   };
 }

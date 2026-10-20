@@ -56,6 +56,8 @@ jobs:
           node --test tests/wpf/*.test.mjs
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/allmind-visibility.test.ps1
           powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/allmind-quick-chat.test.ps1
+          powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/sound-sequence.test.ps1
+          powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/sound-player.test.ps1
 
       - name: Install and record Chromium for browser tests
         run: |
@@ -66,4 +68,4 @@ jobs:
         run: node --test dist/tests/memory-book/*.test.js
 
       - name: L2 - representative UI/protocol tests
-        run: node --test tests/memory-book/w02-release.test.mjs tests/memory-book/character-client.browser.test.mjs tests/memory-book/w02-ui.browser.test.mjs tests/memory-book/w03-ui.browser.test.mjs tests/memory-book/zip-import.test.mjs tests/memory-book/local-pet-menu.browser.test.mjs tests/memory-book/incognito-renderer.browser.test.mjs tests/memory-book/companion-lifecycle.browser.test.mjs tests/memory-book/ux-binding.browser.test.mjs tests/memory-book/chatgpt-page-host.test.mjs tests/memory-book/connection-setup.browser.test.mjs tests/memory-book/chatgpt-model-menu.browser.test.mjs tests/memory-book/chatgpt-thinking.browser.test.mjs tests/memory-book/prompt-presets.browser.test.mjs tests/memory-book/wiki-compilation.browser.test.mjs tests/memory-book/wiki-maintenance.browser.test.mjs tests/memory-book/ui-v4-acceptance.browser.test.mjs tests/memory-book/role-onboarding.browser.test.mjs tests/memory-book/ui-v2.browser.test.mjs tests/memory-book/starter-characters.browser.test.mjs tests/memory-book/portable-preview.test.mjs tests/memory-book/chat-usability.browser.test.mjs
+        run: node --test tests/memory-book/w02-release.test.mjs tests/memory-book/character-client.browser.test.mjs tests/memory-book/w02-ui.browser.test.mjs tests/memory-book/w03-ui.browser.test.mjs tests/memory-book/zip-import.test.mjs tests/memory-book/local-pet-menu.browser.test.mjs tests/memory-book/incognito-renderer.browser.test.mjs tests/memory-book/companion-lifecycle.browser.test.mjs tests/memory-book/ux-binding.browser.test.mjs tests/memory-book/chatgpt-page-host.test.mjs tests/memory-book/connection-setup.browser.test.mjs tests/memory-book/chatgpt-model-menu.browser.test.mjs tests/memory-book/chatgpt-thinking.browser.test.mjs tests/memory-book/prompt-presets.browser.test.mjs tests/memory-book/wiki-compilation.browser.test.mjs tests/memory-book/wiki-maintenance.browser.test.mjs tests/memory-book/ui-v4-acceptance.browser.test.mjs tests/memory-book/role-onboarding.browser.test.mjs tests/memory-book/ui-v2.browser.test.mjs tests/memory-book/starter-characters.browser.test.mjs tests/memory-book/portable-preview.test.mjs tests/memory-book/chat-usability.browser.test.mjs tests/memory-book/endfield-ui.browser.test.mjs

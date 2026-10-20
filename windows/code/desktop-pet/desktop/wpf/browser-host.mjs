@@ -3,7 +3,7 @@ import {createInterface} from 'node:readline';
 import {mkdirSync} from 'node:fs';
 import {resolve,join} from 'node:path';
 import net from 'node:net';
-import {createChatgptPageHost} from '../electron/chatgpt-page-host.mjs';
+import {createParallelChatgptPageHost} from '../electron/chatgpt-page-host.mjs';
 const data=resolve(process.argv[process.argv.indexOf('--data')+1]);
 const endpoint=process.env.ALLMIND_BROWSER_PIPE,token=process.env.ALLMIND_BROWSER_TOKEN;
 delete process.env.ALLMIND_BROWSER_PIPE;delete process.env.ALLMIND_BROWSER_TOKEN;
@@ -12,7 +12,7 @@ mkdirSync(data,{recursive:true});app.setPath('userData',join(data,'profile'));
 // Electron must finish evaluating its ESM entry before emitting ready.
 // Awaiting whenReady at module scope can deadlock the helper before its handshake.
 app.whenReady().then(()=>{
-const host=createChatgptPageHost({BrowserWindow,getParent:()=>undefined,accountFile:join(data,'account.json')});
+const host=createParallelChatgptPageHost({BrowserWindow,getParent:()=>undefined,accountFile:join(data,'account.json')});
 const channel=net.connect(endpoint);
 const lines=createInterface({input:channel,crlfDelay:Infinity});
 const reply=value=>{if(!channel.destroyed)channel.write(JSON.stringify(value)+'\n');};

@@ -9,7 +9,7 @@ import { basename, dirname, join, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { BackendConnection } from './transport.mjs';
-import { createChatgptPageHost } from './chatgpt-page-host.mjs';
+import { createParallelChatgptPageHost } from './chatgpt-page-host.mjs';
 import { createScreenTargetCapture, dispatchScreenTargetCaptureRequest } from './screen-capture.mjs';
 import { fitDisplay } from './layout.mjs';
 import {surfaceAt,dockPosition,movePet,reachableWindow} from './pet-geometry.ts';
@@ -51,7 +51,7 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'pet', privileges: { standard: t
 const skinAssets = new Map(), appearanceRequests = new Map();
 let activeSkinPrefix = null;
 let win, ready = false, voiceRequested = false, wakeRequested = false, micTestRequested = false, panelOpen = false, beforeResize, beforeDrawerResize, clickThrough = false;
-const chatgptPageHost = createChatgptPageHost({ BrowserWindow, getParent: () => win, accountFile: resolve(app.getPath('userData'),'chatgpt-account.json') });
+const chatgptPageHost = createParallelChatgptPageHost({ BrowserWindow, getParent: () => win, accountFile: resolve(app.getPath('userData'),'chatgpt-account.json') });
 let desktopTray;
 let hostBookMode = false, hostLife = null, hostInteractionManifest = null;
 let companionStepAt = 0;

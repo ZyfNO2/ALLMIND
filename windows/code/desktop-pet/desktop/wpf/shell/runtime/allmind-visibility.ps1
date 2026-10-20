@@ -58,7 +58,7 @@ function Update-AllmindVisibility([switch]$Force) {
  if($decision.Revision-ne $script:allmindLastRevision){
   $script:allmindLastRevision=$decision.Revision
   if($decision.ClickThrough -and $script:allmindQuickChat){$script:allmindQuickChat.Hide()}
-  if(!$decision.NotificationAllowed){if(!$script:allmindQuickChat -or !$script:allmindQuickChat.Visible){Hide-Quota};Stop-WidgetAudio}
+  if(!$decision.NotificationAllowed){if(!$script:allmindQuickChat -or !$script:allmindQuickChat.Visible){Hide-Quota};if(!(Test-WidgetClickAudioAllowed)){Stop-WidgetAudio}}
   if(!$decision.Visible){
    if($script:drag){$control=$script:drag.control;$script:drag=$null;if($control){$control.ReleaseMouseCapture()};Animate-Press $false}
    $script:context.IsOpen=$false;Suspend-AllmindMusic

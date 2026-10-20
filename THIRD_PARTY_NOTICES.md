@@ -65,3 +65,9 @@ WPF 整合版本另在 `windows/code/desktop-pet/desktop/wpf/shell/` 保留 GPT-
 按用户要求随附 GPT-Niang 的 `gpt-dragon-niang-bust.png`，来源 https://github.com/T7moris/GPT-Niang ，原路径 `gpt-niang-usage/assets/gpt-dragon-niang-bust.png`。固定素材提交 `f906d61bb3a19b6a7004507274fdd2165d3f14b6`，SHA-256 `7787b108d9c972d06228acf4c41721217ae88489b79dc116e2a78d4f81767204`。图片保持原字节，未改绘。随附于 `windows/code/desktop-pet/desktop/assets/gpt-niang/`，同目录保留上游 `CHARACTER-NOTICE.txt` 与 `生成说明.md`。
 
 该图片及副本**不适用代码 MIT 许可**。上游声明在维护者有权许可的范围内，允许随非商业项目副本用于挂件和项目展示，要求保留素材声明与来源；不许可商业素材用途或独立素材包分发，第三方参考设计权利归各自权利人。以随附原声明为准。初始角色只注册名称与静态形象，不随附用户 Wiki、私人设定或聊天记录。
+
+## 8. Endfield UI 样式套件与字体（2026-10-20）
+
+管理界面使用 [hhikr/endfield-ui-skill](https://github.com/hhikr/endfield-ui-skill) 的样式、token 与等高线资源，取自提交 `96702a36317b4c76538d1a20ed6beaae4e6067e2`。上游 `SKILL.md` 声明其代码、模板、token 和规则可自由使用；等高线由上游脚本生成，不包含游戏官方素材。资源位于 `windows/code/desktop-pet/management/character-ui/src/vendor/endfield/`，ALLMIND 的布局适配位于相邻 `endfield-allmind.css`；未接入上游示例数据或动效脚本。
+
+随附 Saira 可变字体，Copyright 2020 The Saira Project Authors，适用 SIL Open Font License 1.1。完整许可证见上述目录 `fonts/Saira-OFL.txt`。字体从本地加载，不访问外部字体服务；中文使用系统黑体。

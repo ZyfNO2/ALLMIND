@@ -1,0 +1,217 @@
+@import './vendor/endfield/endfield.css';
+
+@font-face {
+  font-family: 'Saira';
+  src: url('./vendor/endfield/fonts/Saira.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: 50% 125%;
+  font-display: swap;
+}
+
+/* ALLMIND variant: neutral paper, yellow actions, tight cuts, calm motion.
+   Product layout stays in ui-v2.css; this layer maps existing controls to the kit. */
+:root[data-ef-accent] {
+  --ef-font-ui: 'Saira', 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --ef-font-text: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --mb-bg: var(--ef-paper);
+  --mb-surface: var(--ef-panel);
+  --mb-soft: color-mix(in srgb, var(--ef-paper) 80%, var(--ef-panel));
+  --mb-line: var(--ef-rule);
+  --mb-ink: var(--ef-ink);
+  --mb-muted: var(--ef-ink-2);
+  --mb-accent: var(--ef-ink);
+  --mb-accent-ink: var(--ef-ink);
+  --mb-accent-soft: color-mix(in srgb, var(--ef-signal) 18%, var(--ef-panel));
+  --mb-ok: var(--ef-ink);
+  --mb-serif: var(--ef-font-text);
+  --allmind-cut: polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%);
+}
+body:has(.v2-app.endfield-app) { background: var(--ef-paper); background-image: none; }
+.mb-shell.v2-app.endfield-app { font-family: var(--ef-font-text); font-size: 14px; line-height: 1.65; }
+.v2-app.endfield-app *, .v2-app.endfield-app *::before, .v2-app.endfield-app *::after { box-sizing: border-box; }
+.v2-app.endfield-app :is(button, input, textarea, select, dialog, .mb-card, .tac-card, .mb-entry, .mb-context, .mb-profile-avatar, .mb-empty-avatar) {
+  border-radius: 0; box-shadow: none;
+}
+.v2-app.endfield-app :is(button, a, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--ef-trace); outline-offset: 3px;
+}
+.v2-app.endfield-app :is(button, a) { transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease; }
+.v2-app.endfield-app button:not(.knowledge-node-target) {
+  min-height: 40px; padding: 9px 18px 9px 13px; clip-path: var(--allmind-cut);
+  background: var(--ef-panel); border: 1px solid var(--ef-rule); color: var(--ef-ink);
+  font-family: var(--ef-font-ui); font-stretch: 112%; font-weight: 550;
+}
+.v2-app.endfield-app button:not(.knowledge-node-target):focus-visible { outline-offset: -4px; }
+.v2-app.endfield-app button:not(.knowledge-node-target):hover:not(:disabled) {
+  background: var(--ef-signal); color: var(--ef-on-signal); border-color: var(--ef-signal);
+}
+.v2-app.endfield-app button.mb-primary {
+  background: var(--ef-ink); color: var(--ef-panel); border-color: var(--ef-ink); font-weight: 650;
+}
+.v2-app.endfield-app button.mb-primary:hover:not(:disabled) { background: var(--ef-signal); color: var(--ef-on-signal); }
+.v2-app.endfield-app :is(button.tac-btn-active, button[aria-pressed=true], button[aria-current=page], button.v2-outline) {
+  background: var(--ef-signal); color: var(--ef-on-signal); border-color: var(--ef-signal);
+}
+.v2-app.endfield-app button:disabled { opacity: .5; cursor: not-allowed; }
+.v2-app.endfield-app :is(input:not([type=checkbox]):not([type=radio]), select, textarea) {
+  color: var(--ef-ink); border: 1px solid var(--ef-rule); background: var(--ef-panel);
+  min-height: 42px; padding: 10px 12px; font-family: var(--ef-font-text); line-height: 1.5;
+}
+.v2-app.endfield-app :is(input, textarea)::placeholder { color: var(--ef-ink-2); opacity: .8; }
+.v2-app.endfield-app input[type=checkbox], .v2-app.endfield-app input[type=radio] { accent-color: var(--ef-ink); }
+.v2-app.endfield-app label { font-weight: 500; }
+.v2-app.endfield-app :is(h1,h2,h3,h4) { font-family: var(--ef-font-ui); font-weight: 650; color: var(--ef-ink); }
+.v2-app.endfield-app h1 { font-size: 30px; line-height: 1.3; }
+.v2-app.endfield-app h2 { font-size: 22px; }
+.v2-app.endfield-app h3 { font-size: 17px; }
+.ef-eyebrow { display: block; font: 550 10px/1.6 var(--ef-font-ui); font-stretch: 125%; letter-spacing: .16em; color: var(--ef-ink-2); }
+.v2-app.endfield-app .v2-sidebar {
+  width: 208px; padding: 27px 16px 20px; background: var(--ef-paper); border-right: 1px solid var(--ef-rule);
+}
+.v2-app.endfield-app .v2-brand { padding: 0 6px 30px; }
+.v2-app.endfield-app .v2-brand b { display: block; font: 700 27px/1.6 var(--ef-font-ui); font-stretch: 125%; letter-spacing: .04em; }
+.v2-brand b>span { color: var(--ef-ink-2); }
+.v2-app.endfield-app .v2-brand small { display: block; font-size: 11px; margin-top: 5px; color: var(--ef-ink-2); }
+.v2-app.endfield-app .v2-sidebar nav { gap: 7px; }
+.v2-app.endfield-app .v2-nav-item {
+  min-height: 65px; border-radius: 0; padding: 13px 14px 13px 10px; gap: 9px; font-size: 15px;
+  clip-path: var(--allmind-cut); border-bottom: 1px solid var(--ef-rule);
+}
+.v2-app.endfield-app .v2-nav-item.active { background: var(--ef-signal); color: var(--ef-on-signal); font-weight: 650; }
+.v2-app.endfield-app .v2-nav-item.active small { color: var(--ef-on-signal); }
+.ef-nav-index { font: 500 10px var(--ef-font-ui); font-variant-numeric: tabular-nums; opacity: .65; }
+.v2-app.endfield-app .v2-nav-item small { font-size: 10px; margin-top: 3px; }
+.v2-app.endfield-app .v2-storage { border-top: 1px solid var(--ef-rule); padding: 16px 6px 0; font-size: 11px; }
+.v2-app.endfield-app .v2-page { margin-left: 208px; }
+.v2-app.endfield-app .v2-header { height: 65px; background: var(--ef-paper); padding-inline: 30px; border-bottom: 1px solid var(--ef-rule); }
+.ef-breadcrumb { display: flex; align-items: center; gap: 12px; font: 500 11px var(--ef-font-ui); letter-spacing: .08em; }
+.ef-breadcrumb strong { font: 500 13px var(--ef-font-text); letter-spacing: 0; color: var(--ef-ink); }
+.ef-model-status { margin-left: auto; font-size: 11px; padding: 5px 9px; border: 1px solid var(--ef-rule); white-space: nowrap; }
+.v2-app.endfield-app .v2-role-switch { max-width: 240px; }
+.v2-app.endfield-app .v2-role-switch select { background: transparent; font-weight: 600; }
+.v2-app.endfield-app .v2-main { padding: 30px 34px; }
+.v2-app.endfield-app .mb-page-head { padding-bottom: 20px; border-bottom: 1px solid var(--ef-rule); }
+.v2-app.endfield-app .mb-page-head h1 { margin: 6px 0 10px; }
+.v2-app.endfield-app .mb-page-head p { margin: 0; font-size: 13px; color: var(--ef-ink-2); }
+.v2-app.endfield-app :is(.mb-card,.tac-card) { border: 0; border-top: 1px solid var(--ef-rule); padding: 22px 0; background: transparent; }
+.v2-app.endfield-app :is(.mb-error,.mb-notice,.mb-test-error,.mb-test-ok,.mb-composer-hint) {
+  border: 1px solid var(--ef-rule); border-left: 4px solid var(--ef-trace); border-radius: 0;
+  background: var(--mb-accent-soft); color: var(--ef-ink); box-shadow: none;
+}
+.v2-app.endfield-app .mb-link { color: var(--ef-ink); text-decoration: underline; text-underline-offset: 4px; }
+.v2-app.endfield-app .mb-settings-layout { grid-template-columns: 180px minmax(0,1fr); gap: 32px; }
+.v2-app.endfield-app .mb-settings-nav { border: 0; padding: 0; background: transparent; gap: 5px; counter-reset: settings; }
+.v2-app.endfield-app .mb-settings-nav button { display: flex; gap: 12px; align-items: center; min-height: 47px; }
+.v2-app.endfield-app .mb-settings-nav button::before { counter-increment: settings; content: counter(settings, decimal-leading-zero); font: 500 10px var(--ef-font-ui); opacity: .6; }
+.v2-app.endfield-app .mb-settings-content { max-width: 920px; }
+.v2-app.endfield-app .mb-settings-content h2 { margin: 0 0 12px; }
+.v2-app.endfield-app .mb-settings-content .mb-card { margin: 0 0 18px; }
+.v2-app.endfield-app .mb-settings-content .mb-card .mb-card { padding: 18px 0; }
+.v2-app.endfield-app .mb-settings-content :is(input:not([type=checkbox]),select) { max-width: 100%; }
+.v2-app.endfield-app .mb-save-bar { background: var(--ef-panel); border: 1px solid var(--ef-rule); border-top: 2px solid var(--ef-ink); padding: 15px; bottom: 12px; }
+.v2-app.endfield-app .mb-connection-types { gap: 4px; padding-bottom: 15px; border-bottom: 1px solid var(--ef-rule); }
+.v2-app.endfield-app .mb-connection-footer { padding-top: 15px; border-top: 1px solid var(--ef-rule); }
+.v2-app.endfield-app .mb-model-card { padding: 24px 0; }
+.v2-app.endfield-app .mb-page-chat .v2-main { padding: 18px 24px; }
+.v2-app.endfield-app .mb-chat-layout { grid-template-columns: 232px minmax(0,1fr); gap: 24px; }
+.v2-app.endfield-app .v2-session-rail { background: transparent; border: 0; border-right: 1px solid var(--ef-rule); border-radius: 0; padding: 6px 18px 0 0; gap: 16px; }
+.v2-app.endfield-app .v2-session-rail h2 { font-size: 17px; font-weight: 650; }
+.v2-app.endfield-app .v2-session-search { border-bottom: 1px solid var(--ef-rule); }
+.v2-app.endfield-app .v2-session-search input { background: transparent; padding-inline: 3px; font-size: 12px; }
+.v2-app.endfield-app .v2-session-list button { margin: 0; padding: 14px 12px; border: 0; border-bottom: 1px solid var(--ef-rule); background: transparent; }
+.v2-app.endfield-app .v2-session-list button[aria-current=page] { background: var(--ef-chip); border-left: 3px solid var(--ef-trace); color: var(--ef-ink); }
+.v2-app.endfield-app .v2-session-list b { font-size: 12px; font-weight: 550; }
+.v2-app.endfield-app .v2-session-list small { display: block; font: 400 10px var(--ef-font-ui); margin-top: 8px; color: var(--ef-ink-2); }
+.v2-app.endfield-app .mb-chat-main { background: var(--ef-panel); }
+.v2-app.endfield-app .mb-chat-toolbar { border: 0; border-bottom: 1px solid var(--ef-rule); padding: 10px 16px 17px; }
+.v2-app.endfield-app .mb-chat-identity h1 { font-size: 19px; font-weight: 650; }
+.v2-app.endfield-app .mb-chat-toolbar small { font-size: 11px; }
+.v2-app.endfield-app .mb-chat-log { padding: 28px clamp(16px,4vw,65px); }
+.v2-app.endfield-app .mb-chat-log section { margin-bottom: 30px; }
+.v2-app.endfield-app .mb-user { background: var(--ef-chip); border: 0; border-radius: 0; padding: 14px 18px; max-width: 80%; }
+.v2-app.endfield-app .mb-assistant-row { background: transparent; border: 0; border-left: 2px solid var(--ef-rule); border-radius: 0; padding: 4px 20px; max-width: 95%; }
+.v2-app.endfield-app .mb-answer { font-size: 15px; line-height: 1.9; }
+.v2-app.endfield-app .mb-turn-decision { font-size: 11px; }
+.v2-app.endfield-app .mb-composer { border: 1px solid var(--ef-rule); border-top: 2px solid var(--ef-ink); padding: 16px; margin: 8px 16px 14px; gap: 12px; }
+.v2-app.endfield-app .mb-composer textarea { border: 0; font-size: 15px; min-height: 52px; height: 60px; }
+.v2-app.endfield-app .mb-composer textarea:focus-visible { outline-offset: 2px; }
+.v2-app.endfield-app .mb-composer button.mb-primary { min-width: 92px; }
+.v2-app.endfield-app .mb-empty { max-width: 650px; margin: auto; padding: 48px 24px; }
+.v2-app.endfield-app .mb-empty h2 { font-size: clamp(21px,2.5vw,30px); font-weight: 600; margin: 22px 0 12px; }
+.v2-app.endfield-app .mb-empty p { font-size: 13px; line-height: 1.9; }
+.v2-app.endfield-app .mb-empty-avatar { background: var(--ef-chip); color: var(--ef-ink); box-shadow: none; }
+.v2-app.endfield-app .mb-empty-avatar:has(img) { background: transparent; }
+.v2-app.endfield-app .mb-starters { gap: 8px; margin-block: 22px; }
+.v2-app.endfield-app .mb-chat-main>details.mb-card { margin: 0 16px; padding: 0; background: transparent; }
+.v2-app.endfield-app .mb-chat-main>details.mb-card summary { font-size: 12px; padding-block: 8px; }
+.v2-app.endfield-app dialog { background: var(--ef-panel); color: var(--ef-ink); border: 1px solid var(--ef-rule); border-top: 3px solid var(--ef-ink); }
+.v2-app.endfield-app dialog::backdrop { background: #0008; backdrop-filter: none; }
+.v2-app.endfield-app .mb-profile-avatar { background: var(--ef-chip); color: var(--ef-ink); }
+.v2-app.endfield-app .mb-profile h2 { font-size: 29px; font-weight: 650; }
+.v2-app.endfield-app .v2-action-list button { border-bottom: 1px solid var(--ef-rule); padding: 20px; }
+.v2-app.endfield-app .v2-notes>.mb-card { padding: 18px; border: 1px solid var(--ef-rule); }
+.v2-app.endfield-app .v2-note-evidence { border-radius: 0; background: var(--ef-paper); }
+.v2-app.endfield-app .mb-entry { border-bottom: 1px solid var(--ef-rule); padding: 12px 8px; }
+.v2-app.endfield-app .mb-entry[aria-selected=true] { background: var(--ef-chip); border-left: 3px solid var(--ef-trace); }
+.v2-app.endfield-app .knowledge-main { border: 1px solid var(--ef-rule); padding: 18px; }
+.v2-app.endfield-app .knowledge-detail { background: var(--ef-paper)!important; border: 0; border-left: 1px solid var(--ef-rule); padding: 20px; }
+.v2-app.endfield-app .knowledge-canvas { background: var(--ef-paper); }
+.v2-app.endfield-app .knowledge-node-target { clip-path: none; }
+.v2-app.endfield-app .knowledge-main .graph-toolbar { padding-bottom: 12px; border-bottom: 1px solid var(--ef-rule); }
+.v2-app.endfield-app .knowledge-main .graph-toolbar button { min-height: 36px; }
+.v2-app.endfield-app .knowledge-detail .mb-graph-body { font-family: var(--ef-font-text); line-height: 1.85; }
+.v2-app.endfield-app ::selection { background: var(--ef-signal); color: var(--ef-on-signal); }
+.v2-app.endfield-app * { scrollbar-width: thin; scrollbar-color: var(--ef-rule) transparent; }
+@media (hover:none) { .v2-app.endfield-app button.mb-primary { background: var(--ef-signal); color: var(--ef-on-signal); border-color: var(--ef-signal); } }
+@media (max-width:1150px) {
+  .v2-app.endfield-app .v2-sidebar { width: 176px; padding-inline: 12px; }
+  .v2-app.endfield-app .v2-page { margin-left: 176px; }
+  .v2-app.endfield-app .v2-brand b { font-size: 23px; }
+  .v2-app.endfield-app .v2-main { padding: 25px 22px; }
+  .v2-app.endfield-app .mb-chat-layout, .v2-app.endfield-app .mb-chat-layout.mb-with-context { grid-template-columns: 190px minmax(0,1fr); gap: 16px; }
+  .v2-app.endfield-app .mb-settings-layout { grid-template-columns: 150px minmax(0,1fr); gap: 22px; }
+  .ef-model-status { display: none; }
+}
+@media (max-width:760px) {
+  .v2-app.endfield-app .v2-sidebar { position: static; width: 100%; padding: 12px 12px 8px; border: 0; border-bottom: 1px solid var(--ef-rule); }
+  .v2-app.endfield-app .v2-brand { padding: 0 4px 12px; display: flex; align-items: center; gap: 10px; }
+  .v2-app.endfield-app .v2-brand>.ef-eyebrow { display: none; }
+  .v2-app.endfield-app .v2-brand b { font-size: 19px; }
+  .v2-app.endfield-app .v2-brand small { font-size: 10px; margin: 0; }
+  .v2-app.endfield-app .v2-sidebar nav { gap: 4px; }
+  .v2-app.endfield-app .v2-nav-item { min-height: 45px; padding: 8px 6px; gap: 5px; font-size: 12px; }
+  .ef-nav-index { display: none; }
+  .v2-app.endfield-app .v2-page { margin-left: 0; }
+  .v2-app.endfield-app .v2-header { height: 51px; padding-inline: 14px; }
+  .v2-app.endfield-app .v2-role-switch { max-width: 155px; }
+  .v2-app.endfield-app .ef-breadcrumb { gap: 5px; font-size: 10px; }
+  .v2-app.endfield-app .v2-main { padding: 20px 14px; }
+  .v2-app.endfield-app .mb-page-chat .v2-main { padding: 8px; }
+  .v2-app.endfield-app .mb-chat-layout, .v2-app.endfield-app .mb-chat-layout.mb-with-context { grid-template-columns: minmax(0,1fr); gap: 0; }
+  .v2-app.endfield-app .mb-chat-toolbar { padding: 8px; gap: 8px; }
+  .v2-app.endfield-app .mb-chat-log { padding: 20px 10px; }
+  .v2-app.endfield-app .mb-chat-toolbar button { min-height: 38px; padding: 8px 12px; }
+  .v2-app.endfield-app .mb-chat-identity h1 { font-size: 17px; }
+  .v2-app.endfield-app .mb-chat-main>details.mb-card { margin-inline: 6px; }
+  .v2-app.endfield-app .mb-composer { padding: 12px; margin: 6px; }
+  .v2-app.endfield-app .mb-composer textarea { min-height: 42px; height: 48px; font-size: 16px; }
+  .v2-app.endfield-app .mb-empty { padding: 20px 10px; }
+  .v2-app.endfield-app .mb-assistant-row { padding-left: 12px; }
+  .v2-app.endfield-app .mb-settings-layout { display: block; }
+  .v2-app.endfield-app .mb-settings-nav { flex-direction: row; flex-wrap: wrap; margin-bottom: 22px; }
+  .v2-app.endfield-app .mb-settings-nav button { font-size: 12px; padding: 8px 12px; min-height: 42px; gap: 6px; }
+  .v2-app.endfield-app .mb-settings-nav button::before { display: none; }
+  .v2-app.endfield-app .mb-save-bar { bottom: 0; }
+  .v2-app.endfield-app h1 { font-size: 26px; }
+  .v2-app.endfield-app .knowledge-detail { border-left: 0; border-top: 1px solid var(--ef-rule); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .v2-app.endfield-app *, .v2-app.endfield-app *::before, .v2-app.endfield-app *::after { animation: none!important; transition: none!important; scroll-behavior: auto!important; }
+}
+
+.v2-app.endfield-app .mb-composer textarea[aria-label] { border: 0; background: transparent; }
+.v2-app.endfield-app button.mb-danger { color: var(--ef-danger); border-color: var(--ef-danger); background: var(--ef-panel); }
+
+/* Old form rules contain :not() selectors with extra specificity. */
+.v2-app.endfield-app :is(input, select, textarea, .mb-composer, .mb-chat-toolbar, .mb-save-bar, .mb-tag) { border-radius: 0 !important; }
+.v2-app.endfield-app .mb-tag, .v2-app.endfield-app .mb-tag.ok { color: var(--ef-ink); border: 1px solid var(--ef-rule); background: var(--ef-chip); }

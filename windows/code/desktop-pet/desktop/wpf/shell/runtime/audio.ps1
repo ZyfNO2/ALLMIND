@@ -10,6 +10,13 @@ function Get-WidgetAudioEnabled {
     return ($setting.Value -ne $false)
 }
 
+# User-triggered click audio is not a proactive notification. Dragging or opening
+# the chat bubble suppresses notifications but must not cut a click in half.
+function Test-WidgetClickAudioAllowed {
+    if(!$script:allmindMode){return $true}
+    return [bool]($script:allmindBackendReady -and !$script:allmindHidden -and !$script:allmindQuiet -and !$script:allmindFocus -and (!$script:allmindDecision -or !$script:allmindDecision.ClickThrough))
+}
+
 function Get-WidgetAudioVolume {
     $setting = Get-Variable -Name soundVolume -Scope Script -ErrorAction SilentlyContinue
     $value = 0.9
@@ -46,16 +53,38 @@ using System.Threading;
 public sealed class GptClickAudioQueue : IDisposable {
  private readonly BlockingCollection<Action> queue=new BlockingCollection<Action>();
  private readonly Thread worker;
- public GptClickAudioQueue(){worker=new Thread(Loop);worker.IsBackground=true;worker.Name="gpt-click-audio";worker.Start();}
- private void Loop(){foreach(Action action in queue.GetConsumingEnumerable()){try{action();}catch{}}}
- private static void TryStop(SoundPlayer player){if(player==null)return;try{player.Stop();}catch{}}
- private static void TryPlay(SoundPlayer player){if(player==null)return;try{player.Play();}catch{}}
- public void Press(SoundPlayer press,SoundPlayer release){queue.Add(()=>{TryStop(press);TryStop(release);TryPlay(press);});}
- public void Release(SoundPlayer press,SoundPlayer release){queue.Add(()=>{TryStop(press);TryStop(release);TryPlay(release);});}
- public void Stop(SoundPlayer press,SoundPlayer release){queue.Add(()=>{TryStop(press);TryStop(release);});}
- public void Dispose(){try{queue.CompleteAdding();}catch{}}
- public void Wait(int milliseconds){try{worker.Join(milliseconds);}catch{}}
+ private readonly object gate=new object();
+ private readonly Action<SoundPlayer> play,stop;
+ private bool active,releasing,stopping,disposed;
+ private int generation;
+ private string lastError;
+ public bool Busy {get{lock(gate)return active||stopping;}}
+ public string LastError {get{lock(gate)return lastError;}}
+ public GptClickAudioQueue():this(p=>p.PlaySync(),p=>p.Stop()){}
+ public GptClickAudioQueue(Action<SoundPlayer> playClip,Action<SoundPlayer> stopClip){
+  play=playClip;stop=stopClip;worker=new Thread(Loop);worker.IsBackground=true;worker.Name="gpt-click-audio";worker.Start();
+ }
+ private void Loop(){foreach(Action action in queue.GetConsumingEnumerable()){try{action();}catch(Exception error){lock(gate){lastError=error.ToString();generation++;active=false;}}}}
+ private void PlayClip(SoundPlayer player,int expected){lock(gate){if(disposed||expected!=generation)return;}if(player!=null)play(player);}
+ // At most one accepted gesture: no cut-off and no stale clicks waiting in a backlog.
+ public bool Press(SoundPlayer press,SoundPlayer release){lock(gate){
+  if(disposed||active||stopping)return false;
+  active=true;releasing=false;lastError=null;int expected=++generation;
+  queue.Add(()=>PlayClip(press,expected));return true;
+ }}
+ public void Release(SoundPlayer press,SoundPlayer release){lock(gate){
+  if(disposed||!active||releasing)return;releasing=true;int expected=generation;
+  queue.Add(()=>{try{PlayClip(release,expected);}finally{lock(gate){if(expected==generation)active=false;}}});
+ }}
+ public void Stop(SoundPlayer press,SoundPlayer release){lock(gate){
+  generation++;active=false;releasing=false;if(stopping)return;stopping=true;
+  // Explicit mute/hide may interrupt, but never block the WPF dispatcher.
+  ThreadPool.QueueUserWorkItem(_=>{try{if(press!=null)stop(press);if(release!=null)stop(release);}catch(Exception error){lock(gate)lastError=error.ToString();}finally{lock(gate)stopping=false;}});
+ }}
+ public void Dispose(){lock(gate){if(disposed)return;disposed=true;generation++;queue.CompleteAdding();}}
+ public void Wait(int milliseconds){worker.Join(milliseconds);}
 }
+
 '@
 }
 function Read-WidgetPcmWave([string]$Path) {
@@ -208,10 +237,10 @@ function Invoke-WidgetReleaseNow {
     $audio=$script:gptNiangAudio
     if(!$audio -or !$audio.PendingRelease -or $audio.ReleasePlayed){return}
     $audio.Timer.Stop();$audio.PendingRelease=$false;$audio.ReleasePlayed=$true
-    if(!(Get-WidgetAudioEnabled) -or (Get-WidgetAudioVolume)-le 0 -or !$audio.Release){return}
+    if(!(Get-WidgetAudioEnabled) -or (Get-WidgetAudioVolume)-le 0){return}
     Set-WidgetAudioVolume
-    # Playback runs on a dedicated worker thread: SoundPlayer.Stop() waits for
-    # the clip to finish, and doing that on the UI thread froze the widget.
+    # The worker waits for actual PCM completion before starting release.
+    # No dispatcher-clock estimate and no Stop() between the two clips.
     if($audio.Queue){try{$audio.Queue.Release($audio.Press,$audio.Release)}catch{}}
 }
 function Stop-WidgetAudio {
@@ -235,29 +264,27 @@ function Close-WidgetAudio {
     Stop-WidgetAudio;Close-WidgetAudioState $script:gptNiangAudio;$script:gptNiangAudio=$null
 }
 function Play-WidgetPressSound {
-    if($script:allmindMode -and !$script:allmindNotificationAllowed){return}
+    if(!(Test-WidgetClickAudioAllowed)){return}
     $audio=$script:gptNiangAudio
     if(!$audio){return}
     $audio.Timer.Stop();$audio.PendingRelease=$false;$audio.PressEnded=$true;$audio.Clock.Reset()
     if(!(Get-WidgetAudioEnabled) -or (Get-WidgetAudioVolume)-le 0 -or (!$audio.Press -and !$audio.Release)){$audio.Pressing=$false;return}
     $audio.Pressing=$true;$audio.PressEnded=(!$audio.Press);$audio.ReleasePlayed=$false;$audio.Clock.Restart()
     Set-WidgetAudioVolume
-    # Enqueue only: the worker repeats the original Stop-then-Play sequence that
-    # produced the clean click, so the UI thread never waits for the clip.
-    if($audio.Press -and $audio.Queue){try{$audio.Queue.Press($audio.Press,$audio.Release)}catch{$audio.PressEnded=$true}}
+    if($audio.Queue){
+        $audio.Pressing=$audio.Queue.Press($audio.Press,$audio.Release)
+        if(!$audio.Pressing){$audio.ReleasePlayed=$true}
+    }
 }
 function Play-WidgetReleaseSound {
-    if($script:allmindMode -and !$script:allmindNotificationAllowed){Stop-WidgetAudio;return}
+    if(!(Test-WidgetClickAudioAllowed)){Stop-WidgetAudio;return}
     $audio=$script:gptNiangAudio
     if(!$audio -or !$audio.Pressing){return}
     $audio.Pressing=$false
     if(!(Get-WidgetAudioEnabled) -or (Get-WidgetAudioVolume)-le 0){Stop-WidgetAudio;return}
-    if(!$audio.Release){$audio.ReleasePlayed=$true;return}
+    if(!$audio.Release){$audio.PendingRelease=$true;Invoke-WidgetReleaseNow;return}
     $audio.PendingRelease=$true
-    if(!$audio.Press -or $audio.PressEnded){Invoke-WidgetReleaseNow;return}
-    $remaining=$audio.Duration+0.06-$audio.Clock.Elapsed.TotalSeconds
-    if($remaining-le 0.002){$audio.PressEnded=$true;Invoke-WidgetReleaseNow;return}
-    $audio.Timer.Interval=[TimeSpan]::FromSeconds($remaining);$audio.Timer.Start()
+    Invoke-WidgetReleaseNow
 }
 function Remove-WidgetUnusedAudioFiles($Audio,$Preferences) {
     # Replaced or cleared custom clips otherwise stay in the user's data folder
@@ -364,6 +391,7 @@ function Get-WidgetAudioStatus {
     $status=@{enabled=(Get-WidgetAudioEnabled);volume=(Get-WidgetAudioVolume);backend=$null;ready=[bool]$audio;mode='builtin';press=$null;release=$null}
     if(!$audio){return $status}
     $status.mode=$audio.Preferences.mode;$status.error=$audio.Preferences.loadError
+    if($audio.Queue -and $audio.Queue.LastError){$status.playbackError=$audio.Queue.LastError}
     if($audio.Press -or $audio.Release){$status.backend='System.Media.SoundPlayer'}
     foreach($slot in @('press','release')){
         $entry=$audio.Preferences[$slot];$source=Get-WidgetCustomAudioPath $audio $slot

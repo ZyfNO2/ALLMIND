@@ -70,7 +70,7 @@ function bookErrorOf(code: ChatgptWebFailureCode, message: string): BookError {
 }
 
 export interface ChatgptWebModelOptions {
-  bridge: Pick<ChatgptWebBridge, 'ask'> & Partial<Pick<ChatgptBackgroundBridge,'resume'|'forgetCompleted'>>;
+  bridge: Pick<ChatgptWebBridge, 'ask'> & Partial<Pick<ChatgptBackgroundBridge,'resume'|'forgetCompleted'>> & {releaseRequest?:(id:string)=>void};
   /** Live source-config reader (budgets and profile/session come from here). */
   config: () => ChatgptWebSourceConfig;
   runtime?: () => RuntimeConfig;
@@ -131,6 +131,9 @@ export class ChatgptWebModel implements BookModelPort {
    */
   private richBusy=false;
   async completeRich(binding: ModelBinding, messages: ChatMessage[], signal: AbortSignal, options: RichModelCallOptions = {}): Promise<RichModelResult> {
+    return new ChatgptWebModel({bridge:this.bridge,config:this.config,requestId:this.newRequestId,...(this.runtime?{runtime:this.runtime}:{}),...(this.artifacts?{artifacts:this.artifacts}:{})}).completeRichIsolated(binding,messages,signal,options);
+  }
+  private async completeRichIsolated(binding: ModelBinding, messages: ChatMessage[], signal: AbortSignal, options: RichModelCallOptions): Promise<RichModelResult> {
     if(this.richBusy)throw new BookError('busy','来源正在接收本轮终态文件。');this.richBusy=true;
     try{
     const text = await this.completeInternal(binding, messages, signal, {...options,captureArtifacts:true});
@@ -150,7 +153,7 @@ export class ChatgptWebModel implements BookModelPort {
       // A file that cannot even be listed is a discovery failure — the text is still a complete turn.
       return { text, requestId, imageReceipts, conversationId: this.lastConversationId, messageId: this.lastMessageId, artifacts: [], artifactDiscovery: 'failed', artifactError: { code: 'unverified_identity' as const, message: error instanceof Error ? error.message : String(error) } };
     }
-    }finally{this.richBusy=false;}
+    }finally{if(this.lastRequestId)this.bridge.releaseRequest?.(this.lastRequestId);this.richBusy=false;}
   }
   /** W01: the identity of the submission `complete` just performed, for the rich wrapper only. */
   private lastImageReceipts: NonNullable<RichModelResult['imageReceipts']> = [];

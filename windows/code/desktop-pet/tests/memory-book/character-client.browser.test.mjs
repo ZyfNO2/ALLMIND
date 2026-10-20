@@ -43,7 +43,8 @@ test('character client preserves failed input, freezes the failed identity, rest
       window.composerSampler = setInterval(() => window.composerTops.push(document.querySelector('.mb-composer textarea').getBoundingClientRect().top), 16);
     });
     await input.pressSequentially('测试，看看最近的情况', { delay: 200 });
-    await page.waitForFunction(() => document.querySelector('.mb-style-preview')?.textContent.includes('发送前：'));
+    await page.waitForFunction(() => document.querySelector('.mb-composer-hint') === null);
+    assert.equal(await page.locator('.mb-style-preview').count(),0,'bound model never shows the yellow pre-send banner');
     await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
     const tops = await page.evaluate(() => { clearInterval(window.composerSampler); return window.composerTops; });
     assert.ok(tops.length > 10);
@@ -68,16 +69,16 @@ test('character client preserves failed input, freezes the failed identity, rest
   await page.screenshot({ path: join(evidence, 'chat.png'), fullPage: true });
   await page.getByRole('button', { name: '查看引用的记忆 →', exact: true }).click(); await page.getByRole('dialog').getByRole('heading', { name: '为什么想起这些？' }).waitFor();
   assert.equal(await page.getByRole('dialog').isVisible(), true); await page.keyboard.press('Escape'); assert.equal(await page.getByRole('dialog').isVisible(), false);
-  await input.fill('第一个会话草稿'); await page.getByRole('button', { name: '开始新话题', exact: true }).click(); await page.waitForFunction(() => !document.querySelector('textarea[aria-label="聊天消息"]').disabled);
+  await input.fill('第一个会话草稿'); await page.getByRole('button', { name: '开始新话题', exact: true }).click(); await page.waitForFunction(() => (document.querySelector('textarea[aria-label="聊天消息"]') && !document.querySelector('textarea[aria-label="聊天消息"]').disabled));
   assert.equal(await input.inputValue(), ''); await input.fill('第二个会话的一轮'); await page.getByRole('button', { name: '发送', exact: true }).click(); await page.waitForFunction(() => document.querySelector('textarea[aria-label="聊天消息"]').value === '');
   const secondSession = submitted.at(-1).sessionId; assert.notEqual(secondSession, 'web-chat');
   await selectSession(page,'web-chat');
   await page.waitForFunction(() => document.querySelector('textarea[aria-label="聊天消息"]').value === '第一个会话草稿');
   await selectSession(page,secondSession);
-  await page.waitForFunction(() => !document.querySelector('textarea[aria-label="聊天消息"]').disabled && document.querySelector('textarea[aria-label="聊天消息"]').value === '');
-  await page.reload(); await page.waitForFunction(() => !document.querySelector('textarea[aria-label="聊天消息"]').disabled);
+  await page.waitForFunction(() => (document.querySelector('textarea[aria-label="聊天消息"]') && !document.querySelector('textarea[aria-label="聊天消息"]').disabled) && document.querySelector('textarea[aria-label="聊天消息"]').value === '');
+  await page.reload(); await input.waitFor(); await page.waitForFunction(() => (document.querySelector('textarea[aria-label="聊天消息"]') && !document.querySelector('textarea[aria-label="聊天消息"]').disabled));
   assert.equal(new URL(page.url()).searchParams.get('sessionId'), secondSession); assert.ok(await page.locator('.mb-user').innerText().then(text => text.includes('第二个会话')));
-  await selectSession(page,'web-chat'); await page.waitForFunction(() => !document.querySelector('textarea[aria-label="聊天消息"]').disabled);
+  await selectSession(page,'web-chat'); await page.waitForFunction(() => (document.querySelector('textarea[aria-label="聊天消息"]') && !document.querySelector('textarea[aria-label="聊天消息"]').disabled));
   // The page reload discarded in-memory drafts, while committed session records survived.
   await input.fill('取消后保留'); nextFault = 'hold'; await page.getByRole('button', { name: '发送', exact: true }).click(); await page.getByRole('button', { name: '停止', exact: true }).click();
   await page.getByText('本轮已停止，输入已保留；该轮不会自动重发，再次发送将作为新的一轮。', { exact: true }).waitFor(); assert.equal(await input.inputValue(), '取消后保留'); assert.equal(repository.readSession(runtime.scope('aika', 'web-chat')).length, 1);

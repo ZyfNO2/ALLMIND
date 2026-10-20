@@ -1,3 +1,4 @@
+import { ChatgptParallelBridge } from '../providers/chatgpt-parallel-bridge.js';
 import {FileResourceStore} from '../memory/file-resource-store.js';
 import {BookResourceService} from '../memory/book-resources.js';
 import {focusState} from '../core/book-focus.js';
@@ -59,16 +60,16 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
   const resourceSweepTimer=setInterval(()=>resourceService.sweep(),60*60*1000);resourceSweepTimer.unref();
   // One model port for the whole runtime (RPD_CHAT_WIKI §2.2): legacy bindings keep the HTTP path
   // exactly; `chatgpt-web` bindings route to the web adapter. The bridge instance is shared by the
-  // adapter and the management surface so the source-level single-generation lease and the
-  // chatgpt-use receipts cover every consumer of this backend.
+  // adapter and the management surface. Embedded tasks own separate pages and durable receipts;
+  // extension/CLI transports retain their single-page lease.
   const chatgptConfig = () => repository.loadConfig().chatgptWeb ?? DEFAULT_CHATGPT_WEB_SOURCE;
   const host = new DesktopHostBridge({ send: message => { if (!closing) process.stdout.write(JSON.stringify(message) + '\n'); } });
   const extension = new ChatgptExtensionHost({ keyPath: join(directory, 'chatgpt-bridge-key') });
-  const chatgptBridge = new ChatgptBackgroundBridge({ config: chatgptConfig, prewarm:true, receiptPath: join(directory, 'chatgpt-web-requests.json'), pageHost: {
-    execute: (action, input) => chatgptConfig().transport === 'embedded' ? host.request('chatgpt-page', { action, input }) : extension.execute(action, input),
-    async navigate(temporary, project) { if (chatgptConfig().transport === 'embedded') await host.request('chatgpt-page', { action: 'navigate', temporary, ...(project?{project}: {}) }); else { if(project)throw new BookError('unavailable','项目导航仅支持独立页面。');await extension.navigate(temporary); } },
-    async login() { if (chatgptConfig().transport === 'embedded') await host.request('chatgpt-page', { action: 'login' }); else await extension.login(); },
-  } });
+  const chatgptBridge = new ChatgptParallelBridge({ config: chatgptConfig, prewarm:true, receiptPath: join(directory, 'chatgpt-web-requests.json'), pageHostForLane: lane => ({
+    execute: (action, input) => chatgptConfig().transport === 'embedded' ? host.request('chatgpt-page', { action, input, lane }) : extension.execute(action, input),
+    async navigate(temporary, project) { if (chatgptConfig().transport === 'embedded') await host.request('chatgpt-page', { action: 'navigate', temporary, ...(project?{project}: {}), lane }); else { if(project)throw new BookError('unavailable','项目导航仅支持独立页面。');await extension.navigate(temporary); } },
+    async login() { if (chatgptConfig().transport === 'embedded') await host.request('chatgpt-page', { action: 'login', lane }); else await extension.login(); },
+  }) });
   clearCompleted=ids=>chatgptBridge.forgetCompleted(ids);
   if(erasedRequests.length)clearCompleted(erasedRequests);
   const chatgptModel = new ChatgptWebModel({ bridge: chatgptBridge, config: chatgptConfig, runtime:()=>repository.loadConfig(), artifacts:chatgptBridge });
