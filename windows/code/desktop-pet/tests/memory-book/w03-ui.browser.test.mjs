@@ -14,7 +14,7 @@ test('default production memory page reads rich sources, stages next-turn input 
  f.runtime.repository.commit(scope,{upsert:preview.facts,wikiSources:[preview.source]},0,'seed-reader');
  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1280,height:1000}}),errors=[];page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(15000);
  await page.goto(new URL('/memory-book',f.server.url).href+new URL(f.server.url).hash);
- await page.getByRole('button',{name:'03 · 图文设定 Wiki',exact:true}).click();
+ await page.getByRole('button',{name:'阅读整理后的知识页 →',exact:true}).click();
  const reader=page.getByRole('region',{name:'图文 Wiki 阅读'});await reader.getByRole('heading',{name:'图文 Wiki',exact:true}).waitFor();
  await reader.getByRole('navigation',{name:'Wiki 主题目录'}).getByRole('button',{name:'验收人物',exact:true}).first().click();
  await reader.getByRole('button',{name:'查看原文：验收来源',exact:true}).click();
@@ -26,6 +26,6 @@ test('default production memory page reads rich sources, stages next-turn input 
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(evidence,'reader-narrow.png'),fullPage:true});const bounds=await reader.boundingBox();assert.ok(bounds.width<=390,'reader fits narrow viewport');
  await reader.getByRole('button',{name:'查看原文：验收来源',exact:true}).click();await image.waitFor();
  f.resources.revoke(scope,picture.id,picture.revision,'revoke-ui');await reader.getByText('人物参考：资料已撤销',{exact:true}).waitFor();assert.equal(await image.count(),0);
- await page.getByRole('link',{name:'聊天',exact:true}).click();await page.locator('summary').filter({hasText:'本轮资料与图片'}).click();await page.getByText('正文资料 · '+note.id,{exact:false}).first().waitFor();assert.equal(f.prompts.length,0,'staging does not send a model request');
+ await page.getByRole('link',{name:'首页',exact:true}).click();await page.locator('summary').filter({hasText:'本轮资料与图片'}).click();await page.getByText('正文资料 · '+note.id,{exact:false}).first().waitFor();assert.equal(f.prompts.length,0,'staging does not send a model request');
  assert.deepEqual(errors,[]);
 });

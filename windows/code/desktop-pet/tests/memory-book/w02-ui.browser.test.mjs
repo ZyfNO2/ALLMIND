@@ -26,7 +26,7 @@ test('normal character page uploads a portrait, previews, selects, renames and g
  t.after(async()=>{await browser.close();await server.close();repository.close();rmSync(directory,{recursive:true,force:true});});
  const page=await browser.newPage({viewport:{width:1280,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(15000);
  await page.goto(new URL('/character',server.url).href+new URL(server.url).hash);
- await page.getByLabel('形象与换装面板',{exact:true}).locator('summary').first().click();
+ await page.getByRole('button',{name:'形象与动作',exact:true}).click();
  await page.getByRole('heading',{name:'静态立绘与换装',exact:true}).waitFor();
  await page.getByLabel('上传参考图片',{exact:true}).setInputFiles({name:'portrait.png',mimeType:'image/png',buffer:image});
  await page.getByRole('button',{name:'将选中图片添加为差分',exact:true}).click();
@@ -41,7 +41,7 @@ test('normal character page uploads a portrait, previews, selects, renames and g
  const evidence=resolve('../../../validation/output/wiki-handoff-evidence/w02/review-20261016');mkdirSync(evidence,{recursive:true});await page.screenshot({path:join(evidence,'browser-portraits.png'),fullPage:true});
  await page.goto(new URL('/memory-book',server.url).href);await page.getByRole('button',{name:'列表与编辑',exact:true}).click();
  const details=page.locator('details').filter({has:page.locator('summary').filter({hasText:'两版资料融合'})}).last();
- await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.locator('summary').filter({hasText:'高级工具与来源'}).click();await page.locator('summary').filter({hasText:'两版资料融合'}).click();await page.getByLabel('上传整理资料',{exact:true}).setInputFiles({name:'review.md',mimeType:'text/markdown',buffer:Buffer.from('角色喜欢红茶。')});
+ await page.getByRole('button',{name:'日常整理'}).click();await page.locator('summary').filter({hasText:'高级工具与来源'}).click();await page.locator('summary').filter({hasText:'两版资料融合'}).click();await page.getByLabel('上传整理资料',{exact:true}).setInputFiles({name:'review.md',mimeType:'text/markdown',buffer:Buffer.from('角色喜欢红茶。')});
  await page.getByRole('button',{name:'生成融合预览',exact:true}).click();await page.getByLabel('审核 饮品 红茶',{exact:true}).waitFor();assert.equal(modelCalls,1);
  const replay=page.waitForResponse(response=>response.url().includes('/wiki/organization/preview')&&response.request().method()==='POST');await page.getByRole('button',{name:'生成融合预览',exact:true}).click();await replay;assert.equal(modelCalls,1,'same selected inputs replay the original preview without another model call');
  await page.getByLabel('审核 饮品 红茶',{exact:true}).selectOption('accept');await page.getByRole('button',{name:'按当前选择应用',exact:true}).click();await page.getByText('已按逐条审核结果应用。',{exact:true}).waitFor();

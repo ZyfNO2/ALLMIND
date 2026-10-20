@@ -24,9 +24,9 @@ test('topic review excludes author and other pairs, refuses changed targets and 
   const originalRevision=repository.snapshot(scope).revision;repository.commit(scope,{upsert:[emptyEntry('unrelated','wiki','未关联','作者资料')]},originalRevision,'changed');
   assert.equal((await call('/memory/topic-forget',{...preview,entryIds:preview.entries.map(row=>row.id),operationId:'stale',confirmed:true})).status,409);
   const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage();page.setDefaultTimeout(10000);const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto(server.url);await page.getByRole('link',{name:'我们的回忆',exact:true}).click();
+  await page.goto(server.url);await page.getByRole('link',{name:'记忆',exact:true}).click();
   // V4 nests topic review inside the collapsed 高级工具与来源 panel on the memory page.
-  await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源',{exact:true}).click();await page.getByText('按话题核对与遗忘',{exact:true}).click();await page.getByLabel('要遗忘的话题',{exact:true}).fill('园艺');await page.getByRole('button',{name:'预览话题范围',exact:true}).click();await page.getByText(/匹配 2 条私人记忆/).waitFor();
+  await page.getByRole('button',{name:'日常整理'}).click();await page.getByText('高级工具与来源',{exact:true}).click();await page.getByText('按话题核对与遗忘',{exact:true}).click();await page.getByLabel('要遗忘的话题',{exact:true}).fill('园艺');await page.getByRole('button',{name:'预览话题范围',exact:true}).click();await page.getByText(/匹配 2 条私人记忆/).waitFor();
   assert.equal(await page.getByRole('button',{name:'确认遗忘整个话题',exact:true}).isDisabled(),true);await page.getByRole('button',{name:'取消话题遗忘',exact:true}).click();assert.ok(repository.snapshot(scope).entries.some(row=>row.fact?.value==='园艺'));
   await page.getByRole('button',{name:'预览话题范围',exact:true}).click();await page.getByLabel('我已核对全部条目，包括固定条目',{exact:true}).check();
   const responsePromise=page.waitForResponse(response=>response.url().endsWith('/memory/topic-forget')&&response.ok());await page.getByRole('button',{name:'确认遗忘整个话题',exact:true}).click();const response=await responsePromise,request=response.request().postDataJSON(),result=await response.json();

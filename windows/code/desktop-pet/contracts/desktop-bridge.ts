@@ -32,6 +32,7 @@ export interface BridgeVoiceChunk {
 // Production capture returns required audio and zero to three actual images.
 // Capture readiness and finish never wait for the camera; historical evaluation has its own frame policy.
 export type BackendToDesktop =
+  | {readonly channel:'book_chat_notice';readonly state:'pending'|'completed'|'failed';readonly scope:import('./memory-book.js').BookScope;readonly text?:string;readonly incognito?:boolean}
   | {readonly channel:'book_reply_style';readonly requestId:string;readonly characterId:string;readonly sessionId:string;readonly decision?:import('./reply-length.js').ReplyStyleDecision;readonly error?:string}
   | {readonly channel:'book_activity';readonly characterId:string;readonly view:import('../core/book-activity.js').ActivityView}
   | {readonly channel:'book_activity_pulse';readonly characterId:string}

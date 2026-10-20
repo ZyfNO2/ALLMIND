@@ -248,7 +248,7 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
         return { width: sprite.width, height: sprite.height, minAlpha: sprite.alpha?.min ?? 0, maxAlpha: sprite.alpha?.max ?? 255, touchesEdge: bounds.x <= 1 || bounds.y <= 1 || bounds.x + bounds.width >= sprite.width - 1 || bounds.y + bounds.height >= sprite.height - 1 };
       } finally { unlinkSync(file); }
     }, async (scope, skinId) => {if(scope.characterId!==activeCharacter||currentManifest?.skinId!==skinId||process.env.AIKI_BOOK_WEB_ONLY!=='1'&&!appearanceAcknowledged)throw new BookError('conflict','当前角色或宿主载入状态已变化。');});
-    server = await startBookServer({ runtime, credentials, uiRoot: join(petRoot, 'management'), onConfig: applyCharacter,activity,...(process.env.AIKI_BOOK_WEB_ONLY==='1'?{}:{companionInteractions:interactionControls}),
+    server = await startBookServer({ runtime, credentials,...(process.env.AIKI_WPF_HOST==='1'?{onChatState:(value:{state:'pending'|'completed'|'failed';scope:BookScope;text?:string;incognito?:boolean})=>send({channel:'book_chat_notice',...value})}:{}), uiRoot: join(petRoot, 'management'), onConfig: applyCharacter,activity,...(process.env.AIKI_BOOK_WEB_ONLY==='1'?{}:{companionInteractions:interactionControls}),
       companionLife:{
         read(characterId){if(!behavior||characterId!==activeCharacter)throw new BookError('unavailable','请切换到当前桌面角色后操作。');return behavior.snapshot();},
         change(characterId,action,expectedRevision,enabled){

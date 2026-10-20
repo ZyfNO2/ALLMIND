@@ -37,7 +37,7 @@ test('default style saves per role, 恢复自然长度 clears both, per-turn sel
   await reread.getByLabel('默认回复风格', { exact: true }).waitFor();
   assert.equal(await reread.getByLabel('默认回复风格', { exact: true }).inputValue(), 'auto', '刷新后回读');
   // chat: per-turn selection sends the option, renders the decision and resets on success
-  await page.getByRole('link', { name: '聊天', exact: true }).click();
+  await page.getByRole('link', { name: '首页', exact: true }).click();
   const turnSelect = page.getByLabel('本次回复风格', { exact: true });
   await turnSelect.waitFor();
   assert.equal(await turnSelect.inputValue(), 'inherit');

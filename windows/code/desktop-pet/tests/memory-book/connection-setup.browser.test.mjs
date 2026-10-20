@@ -29,7 +29,7 @@ test('browsing connection types never creates an empty model draft or overwrites
     try{
       await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();
       await page.getByRole('button',{name:'API Key 接入',exact:true}).click();
-      const dialog=page.getByRole('dialog',{name:'连接文字主模型',exact:true});
+      const dialog=page.locator('.v2-main');
       await dialog.getByLabel('端点',{exact:true}).waitFor();
       for(const name of ['ChatGPT 网页接入','API Key 接入'])await dialog.getByRole('button',{name,exact:true}).click();
       assert.match(await page.locator('.mb-save-bar').innerText(),/当前配置已保存/);
@@ -66,8 +66,8 @@ test('visible API Key path replaces a web binding despite a pending web receipt,
   const server=await startBookServer({runtime,credentials,uiRoot:resolve('management'),chatgptWeb:{probe:async()=>({state:'not-connected',checkedAt:new Date().toISOString()}),openLoginPage:async()=>{},currentRequest:()=>pending?{requestId:'orphan-web',submitted:'unknown'}:null,cancel:async()=>{pending=false;return {kind:'cancelled',confirmed:true,message:'已确认停止。'}}}});
   assert.equal((await fetch(new URL('/api/memory-book/v1/chatgpt-web/active-request',server.url))).status,401,'local receipt status remains authenticated');
   const browser=await chromium.launch({headless:true});t.after(async()=>{await browser.close();await server.close();provider.closeAllConnections();await new Promise(done=>provider.close(done));repository.close()});
-  const page=await browser.newPage({viewport:{width:1280,height:900}});page.setDefaultTimeout(10000);await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'连接模型',exact:true}).click();
-  const dialog=page.getByRole('dialog',{name:'连接文字主模型',exact:true});
+  const page=await browser.newPage({viewport:{width:1280,height:900}});page.setDefaultTimeout(10000);await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();
+  const dialog=page.locator('.v2-main');
   await dialog.getByRole('region',{name:'网页请求恢复',exact:true}).waitFor();
   await dialog.getByRole('button',{name:'API Key 接入',exact:true}).click();
   const card=dialog.locator('.mb-model-card');await card.getByLabel('端点',{exact:true}).fill(`http://127.0.0.1:${provider.address().port}/v1`);await card.getByLabel('API Key',{exact:true}).fill('synthetic-api-key');
@@ -75,8 +75,8 @@ test('visible API Key path replaces a web binding despite a pending web receipt,
   await card.getByRole('button',{name:'测试连接',exact:true}).click();await card.getByText('测试成功',{exact:true}).waitFor();assert.equal(repository.loadConfig().mainModel.kind,'chatgpt-web','test does not save draft');
   await dialog.getByRole('button',{name:'保存连接设置',exact:true}).click();await dialog.getByText('设置已保存并生效。',{exact:true}).waitFor();
   assert.equal(repository.loadConfig().mainModel.kind,'http');assert.equal(await credentials.get('main-key'),'synthetic-api-key');assert.equal(pending,true,'API save must not erase web receipt');assert.equal(repository.loadConfig().chatgptWeb.transport,'bridge');
-  await page.screenshot({path:join(directory,'api-setup.png'),fullPage:true});await page.keyboard.press('Escape');await page.getByRole('link',{name:'聊天',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).fill('通过 API 聊天');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('API 链路合成回复',{exact:true}).waitFor();
-  assert.deepEqual(requests,['models','chat','chat']);await page.reload();await page.getByRole('link',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'连接模型',exact:true}).click();assert.equal(await dialog.getByLabel('API Key',{exact:true}).inputValue(),'','saved key is not echoed');assert.equal(await dialog.getByLabel('端点',{exact:true}).inputValue(),`http://127.0.0.1:${provider.address().port}/v1`);
+  await page.screenshot({path:join(directory,'api-setup.png'),fullPage:true});await page.keyboard.press('Escape');await page.getByRole('link',{name:'首页',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).fill('通过 API 聊天');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('API 链路合成回复',{exact:true}).waitFor();
+  assert.deepEqual(requests,['models','chat','chat']);await page.reload();await page.getByRole('link',{name:'设置',exact:true}).click();assert.equal(await dialog.getByLabel('API Key',{exact:true}).inputValue(),'','saved key is not echoed');assert.equal(await dialog.getByLabel('端点',{exact:true}).inputValue(),`http://127.0.0.1:${provider.address().port}/v1`);
 });
 
 test('independent setup exposes login, verifies readiness before binding and tests saved source; pending recovery needs no remote probe',{timeout:60000},async t=>{
@@ -84,7 +84,7 @@ test('independent setup exposes login, verifies readiness before binding and tes
   const runtime=new BookRuntime(repository,{async complete(){modelCalls++;return '独立页面合成回复'}});
   const server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management'),chatgptEmbedded:{login:async()=>{logins++},probe:async()=>{if(holdProbe)await new Promise(done=>releaseProbe=done);return {ready,detail:'请在独立窗口完成登录。'}}},chatgptWeb:{probe:async()=>{probeCalls++;throw Error('unreachable remote')},openLoginPage:async()=>{},currentRequest:()=>pending?{requestId:'old-request',submitted:'unknown'}:null,cancel:async()=>{pending=false;return {kind:'cancelled',confirmed:true,message:'已确认停止。'}}}});
   const browser=await chromium.launch({headless:true});t.after(async()=>{await browser.close();await server.close();repository.close()});const page=await browser.newPage({viewport:{width:1280,height:900}});page.setDefaultTimeout(10000);await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'ChatGPT 网页接入',exact:true}).click();
-  const dialog=page.getByRole('dialog',{name:'连接文字主模型',exact:true});const recovery=dialog.getByRole('region',{name:'网页请求恢复',exact:true});await recovery.waitFor();assert.equal(probeCalls,0);await recovery.getByRole('button',{name:'停止并核对结果',exact:true}).click();await recovery.waitFor({state:'detached'});
+  const dialog=page.locator('.v2-main');const recovery=dialog.getByRole('region',{name:'网页请求恢复',exact:true});await recovery.waitFor();assert.equal(probeCalls,0);await recovery.getByRole('button',{name:'停止并核对结果',exact:true}).click();await recovery.waitFor({state:'detached'});
   assert.equal(await dialog.getByLabel('ChatGPT 网页模型',{exact:true}).inputValue(),'current','fresh web setup must not invent an account model name');
   await dialog.getByLabel('ChatGPT 连接方式',{exact:true}).selectOption('embedded');await dialog.getByRole('button',{name:'打开独立登录窗口',exact:true}).click();await dialog.getByText(/登录窗口已打开/).waitFor();assert.equal(logins,1);
   await dialog.getByRole('button',{name:'检查登录并绑定独立页面',exact:true}).click();await dialog.getByRole('alert').filter({hasText:'请在独立窗口完成登录'}).waitFor();assert.equal(repository.loadConfig().mainModel,null);
@@ -114,10 +114,10 @@ test('persisted dead Chrome tab recovers through authenticated extension error, 
   const model=new ChatgptWebModel({bridge,config,runtime:()=>repository.loadConfig()}),runtime=new BookRuntime(repository,model);
   const server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management'),chatgptWeb:bridge,chatgptEmbedded:{login:async()=>{},probe:async()=>({ready:true})}});
   const browser=await chromium.launch({headless:true});t.after(async()=>{await browser.close();await server.close();controller.abort();await relay;await extension.close();repository.close()});
-  const page=await browser.newPage({viewport:{width:1440,height:960}});page.setDefaultTimeout(10000);await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'连接模型',exact:true}).click();
-  const dialog=page.getByRole('dialog',{name:'连接文字主模型',exact:true});await dialog.getByRole('region',{name:'网页请求恢复',exact:true}).waitFor();
+  const page=await browser.newPage({viewport:{width:1440,height:960}});page.setDefaultTimeout(10000);await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();
+  const dialog=page.locator('.v2-main');await dialog.getByRole('region',{name:'网页请求恢复',exact:true}).waitFor();
   await dialog.getByRole('button',{name:'检查独立页面',exact:true}).click();await dialog.getByRole('button',{name:'绑定已就绪的独立页面',exact:true}).click();
   await dialog.getByText('独立页面已登录，文字主模型已绑定并保存。现在可以测试网页连接。',{exact:true}).waitFor();
   assert.equal(repository.loadConfig().chatgptWeb.transport,'embedded');assert.equal(bridge.currentRequest(),null);assert.equal(bridge.requestStatus('lost-request').outcome,'unknown');assert.deepEqual(extensionActions,['submission']);assert.equal(submits,0,'switch never resends the old message');
-  await page.screenshot({path:join(directory,'recovered.png'),fullPage:true});await page.keyboard.press('Escape');await page.getByRole('link',{name:'聊天',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).fill('新的合成消息');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('独立页面恢复合成回复',{exact:true}).waitFor();assert.equal(submits,1);assert.equal((await bridge.ask({requestId:'lost-request',prompt:'never replay',timeoutMs:100})).kind,'failed');assert.equal(submits,1);
+  await page.screenshot({path:join(directory,'recovered.png'),fullPage:true});await page.keyboard.press('Escape');await page.getByRole('link',{name:'首页',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).fill('新的合成消息');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('独立页面恢复合成回复',{exact:true}).waitFor();assert.equal(submits,1);assert.equal((await bridge.ask({requestId:'lost-request',prompt:'never replay',timeoutMs:100})).kind,'failed');assert.equal(submits,1);
 });

@@ -1,4 +1,4 @@
-async function selectSession(page,id){await page.getByRole('button',{name:'选择会话',exact:true}).click();await page.getByLabel('搜索会话',{exact:true}).fill(id);await page.getByRole('dialog',{name:'会话记录',exact:true}).locator('.mb-session-option').click()}
+async function selectSession(page,id){await page.getByRole('button',{name:'切换会话',exact:true}).click();await page.getByLabel('搜索会话',{exact:true}).fill(id);await page.getByRole('dialog',{name:'会话记录',exact:true}).locator('.mb-session-option').click()}
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
@@ -34,7 +34,7 @@ test('character client preserves failed input, freezes the failed identity, rest
   const page = await browser.newPage({ viewport: { width: 1440, height: 950 } }); page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => { if (request.url().endsWith('/api/memory-book/v1/chat') && request.method() === 'POST') submitted.push(request.postDataJSON()); });
-  await page.goto(server.url); await page.getByRole('button', { name: '新会话', exact: true }).waitFor();
+  await page.goto(server.url); await page.getByRole('button', { name: '开始新话题', exact: true }).waitFor();
   const input = page.getByLabel('聊天消息', { exact: true });
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 950 }); await input.fill('');
@@ -66,9 +66,9 @@ test('character client preserves failed input, freezes the failed identity, rest
   assert.equal(repository.readSession(runtime.scope('aika', 'web-chat')).length, 1, '只有成功的新轮次落库');
   const evidence = resolve('../../../validation/output/ui-rework-evidence/character-client'); mkdirSync(evidence, { recursive: true });
   await page.screenshot({ path: join(evidence, 'chat.png'), fullPage: true });
-  await page.getByRole('button', { name: '查看本轮召回', exact: true }).click(); await page.getByRole('dialog').getByRole('heading', { name: '为什么想起这些？' }).waitFor();
+  await page.getByRole('button', { name: '查看引用的记忆 →', exact: true }).click(); await page.getByRole('dialog').getByRole('heading', { name: '为什么想起这些？' }).waitFor();
   assert.equal(await page.getByRole('dialog').isVisible(), true); await page.keyboard.press('Escape'); assert.equal(await page.getByRole('dialog').isVisible(), false);
-  await input.fill('第一个会话草稿'); await page.getByRole('button', { name: '新会话', exact: true }).click(); await page.waitForFunction(() => !document.querySelector('textarea[aria-label="聊天消息"]').disabled);
+  await input.fill('第一个会话草稿'); await page.getByRole('button', { name: '开始新话题', exact: true }).click(); await page.waitForFunction(() => !document.querySelector('textarea[aria-label="聊天消息"]').disabled);
   assert.equal(await input.inputValue(), ''); await input.fill('第二个会话的一轮'); await page.getByRole('button', { name: '发送', exact: true }).click(); await page.waitForFunction(() => document.querySelector('textarea[aria-label="聊天消息"]').value === '');
   const secondSession = submitted.at(-1).sessionId; assert.notEqual(secondSession, 'web-chat');
   await selectSession(page,'web-chat');
@@ -82,20 +82,18 @@ test('character client preserves failed input, freezes the failed identity, rest
   await input.fill('取消后保留'); nextFault = 'hold'; await page.getByRole('button', { name: '发送', exact: true }).click(); await page.getByRole('button', { name: '停止', exact: true }).click();
   await page.getByText('本轮已停止，输入已保留；该轮不会自动重发，再次发送将作为新的一轮。', { exact: true }).waitFor(); assert.equal(await input.inputValue(), '取消后保留'); assert.equal(repository.readSession(runtime.scope('aika', 'web-chat')).length, 1);
   await input.fill(''); await page.getByRole('link', { name: '设置', exact: true }).click();
-  await page.getByRole('button',{name:'连接模型',exact:true}).click();
+
   const card = page.locator('.mb-model-card').filter({ has: page.getByRole('heading', { name: '文字主模型', exact: true }) });
   await card.getByLabel('API Key', { exact: true }).fill('temporary-draft-key'); await card.getByRole('button', { name: '测试连接', exact: true }).click();
   await card.getByText('测试成功', { exact: true }).waitFor(); assert.equal(modelRequests.at(-1).auth, 'Bearer temporary-draft-key'); assert.equal(modelRequests.at(-1).payload.messages.length, 1);
   assert.equal(repository.loadConfig().revision, 1); assert.equal(await credentials.get('local-no-auth'), ''); assert.equal(repository.readSession(runtime.scope('aika', 'web-chat')).length, 1);
   nextFault = 'fail'; await card.getByRole('button', { name: '测试连接', exact: true }).click(); await card.getByText('测试失败', { exact: true }).waitFor();
   await page.screenshot({ path: join(evidence, 'model-settings.png'), fullPage: true });
-  await page.getByRole('button',{name:'关闭连接文字主模型',exact:true}).click();
-  page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('link', { name: '聊天', exact: true }).click(); assert.ok(page.url().includes('/settings')); await page.getByRole('button',{name:'连接模型',exact:true}).click();assert.equal(await card.getByLabel('API Key', { exact: true }).inputValue(), 'temporary-draft-key');
-  await page.getByRole('button',{name:'关闭连接文字主模型',exact:true}).click();
-  page.once('dialog', dialog => dialog.accept()); await page.getByRole('link', { name: '聊天', exact: true }).click();
+  page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('link', { name: '首页', exact: true }).click(); assert.ok(page.url().includes('/settings')); assert.equal(await card.getByLabel('API Key', { exact: true }).inputValue(), 'temporary-draft-key');
+  page.once('dialog', dialog => dialog.accept()); await page.getByRole('link', { name: '首页', exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 }); await page.screenshot({ path: join(evidence, 'chat-narrow.png'), fullPage: true });
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'narrow UI must not overflow horizontally');
   assert.equal(await page.getByRole('button', { name: '发送', exact: true }).isVisible(), true);
-  runtime.invalidate('aika'); await page.getByRole('button', { name: '查看本轮召回', exact: true }).click(); await page.getByText('详细记录已过期，历史回答仍然保留。', { exact: true }).waitFor();
+  runtime.invalidate('aika'); await page.getByRole('button', { name: '查看引用的记忆 →', exact: true }).click(); await page.getByText('详细记录已过期，历史回答仍然保留。', { exact: true }).waitFor();
   assert.deepEqual(errors, []);
 });

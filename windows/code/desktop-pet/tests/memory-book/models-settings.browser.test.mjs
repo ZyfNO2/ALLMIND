@@ -57,7 +57,7 @@ test('model discovery exposes a selectable list, preserves manual input and save
   assert.equal(repository.loadConfig().replyLanguage, 'zh-ja-ruby');
   await page.reload();
   assert.equal(await page.getByLabel('回复语言', { exact: true }).inputValue(), 'zh-ja-ruby');
-  await page.getByRole('link', { name: '聊天', exact: true }).click();
+  await page.getByRole('link', { name: '首页', exact: true }).click();
   await page.getByLabel('聊天消息').fill('你好');
   await page.getByRole('button', { name: '发送', exact: true }).click();
   await page.locator('.mb-answer ruby rt').waitFor();

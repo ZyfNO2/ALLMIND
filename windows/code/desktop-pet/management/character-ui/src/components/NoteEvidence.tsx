@@ -1,0 +1,8 @@
+import type {BookEntry,BookSnapshot} from '../../../../contracts/memory-book'
+export default function NoteEvidence({entry,book,choose,source}:{entry:BookEntry|null;book:BookSnapshot|null;choose:(entry:BookEntry)=>void;source:(id:string)=>void}){
+ const refs=new Set([...(entry?.sourceRefs??[]),...(entry?.fact?[entry.fact.sourceId]:[])])
+ const sources=(book?.wikiSources??[]).filter(row=>refs.has(row.id))
+ const backlinks=(book?.entries??[]).filter(row=>row.id!==entry?.id&&row.related.includes(entry?.id??''))
+ const related=(book?.entries??[]).filter(row=>entry?.related.includes(row.id))
+ return <aside className="v2-note-evidence" aria-label="关联与来源"><h3>关联与来源</h3>{!entry?<p className="mb-muted">选择一篇笔记，查看其来源与反向链接。</p>:<><section><h4>原始来源 · {sources.length}</h4>{sources.map(row=><button className="mb-link" key={row.id} type="button" onClick={()=>source(row.id)}>{row.title} →</button>)}{!sources.length&&<p className="mb-muted">{entry.origin==='authored'?'这是一条作者设定。':'没有可定位的原始来源。'}</p>}{entry.fact&&<blockquote>{entry.fact.quote}</blockquote>}</section><section><h4>关联笔记 · {related.length}</h4>{related.map(row=><button className="mb-link" key={row.id} type="button" onClick={()=>choose(structuredClone(row))}>{row.title} →</button>)}</section><section><h4>反向链接 · {backlinks.length}</h4>{backlinks.map(row=><button className="mb-link" key={row.id} type="button" onClick={()=>choose(structuredClone(row))}>{row.title} →</button>)}{!backlinks.length&&<p className="mb-muted">还没有笔记引用此条目。</p>}</section><small>当前修订 r{entry.revision} · {entry.enabled?'已启用':'已停用'}<br/>只展示已保存的引用。</small></>}</aside>
+}

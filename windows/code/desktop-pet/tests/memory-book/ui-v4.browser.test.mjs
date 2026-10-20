@@ -25,7 +25,7 @@ test('V4 navigation, themes, session search, persisted settings and paginated me
   assert.equal(await page.getByRole('navigation',{name:'主导航'}).getByRole('link').count(),6);
   await page.getByRole('button',{name:'外观：跟随系统',exact:true}).click();await page.getByRole('button',{name:'外观：浅色',exact:true}).click();
   assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');await page.reload();await page.getByRole('button',{name:'外观：深色',exact:true}).waitFor();
-  await page.getByRole('button',{name:'选择会话',exact:true}).click();await page.getByLabel('搜索会话',{exact:true}).fill('面试');assert.equal(await page.getByRole('dialog',{name:'会话记录'}).locator('.mb-session-option').count(),1);
+  await page.getByRole('button',{name:'切换会话',exact:true}).click();await page.getByLabel('搜索会话',{exact:true}).fill('面试');assert.equal(await page.getByRole('dialog',{name:'会话记录'}).locator('.mb-session-option').count(),1);
   await page.getByRole('dialog',{name:'会话记录'}).locator('.mb-session-option').click();await page.getByRole('log').getByText('可搜索的面试记录',{exact:true}).waitFor();
   await page.getByRole('link',{name:'陪伴',exact:true}).click();await page.getByLabel('专注模式',{exact:true}).waitFor();
   await Promise.all([page.waitForResponse(response=>response.url().endsWith('/companion/focus')&&response.request().method()==='POST'&&response.ok()),page.getByLabel('专注模式',{exact:true}).check()]);
@@ -33,19 +33,19 @@ test('V4 navigation, themes, session search, persisted settings and paginated me
   await page.getByLabel('专注时长',{exact:true}).selectOption('15');await page.getByRole('button',{name:'开始专注计时',exact:true}).click();await page.getByText(/剩余 14:|剩余 15:/).waitFor();assert.equal(repository.loadCompanionData(scope).focusTimer.until-repository.loadCompanionData(scope).focusTimer.startedAt,15*60000);
   await page.reload();await page.getByRole('button',{name:'重置专注计时',exact:true}).waitFor();await page.getByRole('button',{name:'重置专注计时',exact:true}).click();await page.waitForResponse(response=>response.url().includes('/companion?')&&response.ok());assert.equal(repository.loadCompanionData(scope).focusTimer,undefined);
 
-  await page.getByRole('link',{name:'我们的回忆',exact:true}).click();await page.getByRole('button',{name:'入库队列',exact:true}).click();
+  await page.getByRole('link',{name:'记忆',exact:true}).click();await page.getByRole('button',{name:'入库队列',exact:true}).click();
   await Promise.all([page.waitForResponse(response=>response.url().endsWith('/companion/memory-pause')&&response.ok()),page.getByLabel('暂停自动入库',{exact:true}).check()]);
   await runtime.chat({...scope,sessionId:'paused-test'},'饮品：乌龙茶',new AbortController().signal);await runtime.automaticMemory.flush();assert.equal(repository.loadCompanionData(scope).jobs.at(-1).status,'pending');
   await page.reload();await page.getByRole('button',{name:'入库队列',exact:true}).click();await page.getByLabel('暂停自动入库',{exact:true}).waitFor();assert.equal(await page.getByLabel('暂停自动入库',{exact:true}).isChecked(),true);
   await Promise.all([page.waitForResponse(response=>response.url().endsWith('/companion/memory-pause')&&response.ok()),page.getByLabel('暂停自动入库',{exact:true}).uncheck()]);await runtime.automaticMemory.flush();assert.equal(repository.loadCompanionData(scope).jobs.at(-1).status,'done');
   await page.keyboard.press('Escape');await page.getByRole('link',{name:'设置',exact:true}).click();await page.getByLabel('回复语言',{exact:true}).selectOption('ja-JP');await page.getByRole('button',{name:'放弃更改',exact:true}).click();assert.equal(await page.getByLabel('回复语言',{exact:true}).inputValue(),'zh-CN');
   await page.getByLabel('回复语言',{exact:true}).selectOption('ja-JP');await page.getByRole('button',{name:'保存设置',exact:true}).click();await page.getByText('设置已保存并生效。',{exact:true}).waitFor();assert.equal(repository.loadConfig().replyLanguage,'ja-JP');
-  await page.getByRole('link',{name:'我们的回忆',exact:true}).click();await page.getByRole('button',{name:'列表与编辑',exact:true}).click();assert.equal(await page.locator('.mb-entry').count(),20);await page.getByRole('button',{name:'下一页',exact:true}).click();assert.equal(await page.locator('.mb-entry').count(),12);
+  await page.getByRole('link',{name:'记忆',exact:true}).click();await page.getByRole('button',{name:'列表与编辑',exact:true}).click();assert.equal(await page.locator('.mb-entry').count(),20);await page.getByRole('button',{name:'下一页',exact:true}).click();assert.equal(await page.locator('.mb-entry').count(),12);
   await page.getByLabel('搜索条目',{exact:true}).fill('记忆 30');assert.equal(await page.locator('.mb-entry').count(),1);
   await page.getByRole('button',{name:'知识图谱',exact:true}).click();await page.getByLabel('显示未关联设定',{exact:true}).check();await page.getByRole('button',{name:'查看节点：记忆 30',exact:true}).click();
-  const graph=page.getByRole('region',{name:'知识与来源图谱'});await graph.getByRole('button',{name:'查看原文 1',exact:true}).click();await page.getByRole('button',{name:'编辑条目',exact:true}).click();assert.equal(await page.getByLabel('标题',{exact:true}).inputValue(),'记忆 30');
+  const graph=page.getByRole('region',{name:'知识与来源图谱'});await graph.getByRole('button',{name:'查看原文 1',exact:true}).click();await page.getByRole('button',{name:'编辑当前笔记',exact:true}).click();assert.equal(await page.getByLabel('标题',{exact:true}).inputValue(),'记忆 30');
   const evidence=resolve('../../../validation/output/allmind-companion-v2/evidence/ui-v4');mkdirSync(evidence,{recursive:true});await page.screenshot({path:join(evidence,'memories-dark.png'),fullPage:true});
-  await page.setViewportSize({width:390,height:844});await page.getByRole('link',{name:'聊天',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).waitFor();
+  await page.setViewportSize({width:390,height:844});await page.getByRole('link',{name:'首页',exact:true}).click();await page.getByLabel('聊天消息',{exact:true}).waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'390px layout does not overflow');
   await page.screenshot({path:join(evidence,'chat-narrow.png'),fullPage:true});assert.deepEqual(errors,[]);
 });
@@ -57,8 +57,8 @@ test('V4 settings enumerates real thinking options and saves only confirmed chan
   const runtime=new BookRuntime(repository,{async complete(){throw Error('thinking control must not send a chat')}});
   const server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management'),chatgptWeb:{async thinking(next){calls.push(next);if(next!==undefined)level=next;return {level,label:options[level].label,options}}}});t.after(()=>server.close());
   const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage();page.setDefaultTimeout(10000);
-  await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'连接模型',exact:true}).click();const panel=page.locator('section').filter({has:page.getByRole('heading',{name:'ChatGPT 思考强度',exact:true})});
+  await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();const panel=page.locator('section').filter({has:page.getByRole('heading',{name:'ChatGPT 思考强度',exact:true})});
   await panel.getByRole('button',{name:'读取可用思考强度',exact:true}).click();await panel.getByRole('button',{name:'高',exact:true}).click();await page.getByText('思考强度已核对并保存。',{exact:true}).waitFor();
   assert.equal(repository.loadConfig().chatgptWeb.thinkingLevel,2);assert.equal(await panel.getByRole('button',{name:'高',exact:true}).getAttribute('aria-pressed'),'true');
-  await page.getByRole('button',{name:'关闭连接文字主模型',exact:true}).click();await page.getByLabel('回复语言',{exact:true}).selectOption('ja-JP');await page.getByRole('button',{name:'连接模型',exact:true}).click();assert.equal(await panel.getByRole('button',{name:'中',exact:true}).isDisabled(),true);assert.equal(repository.loadConfig().replyLanguage,'zh-CN');assert.deepEqual(calls,[undefined,2]);
+  await page.getByRole('button',{name:'关闭连接文字主模型',exact:true}).click();await page.getByLabel('回复语言',{exact:true}).selectOption('ja-JP');assert.equal(await panel.getByRole('button',{name:'中',exact:true}).isDisabled(),true);assert.equal(repository.loadConfig().replyLanguage,'zh-CN');assert.deepEqual(calls,[undefined,2]);
 });

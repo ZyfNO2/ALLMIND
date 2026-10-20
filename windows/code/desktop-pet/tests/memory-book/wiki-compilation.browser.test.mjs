@@ -19,9 +19,9 @@ test('Wiki compilation UI generates, reviews sources and applies only after conf
   const runtime=new BookRuntime(repository,{async complete(_binding,messages){calls++;if(calls===2){markStarted();await new Promise(resolve=>release=resolve)}if(calls===3){markRoleStarted();await new Promise(resolve=>releaseRole=resolve)}const input=JSON.parse(messages[1].content);return JSON.stringify({pages:input.pages.map(page=>({pageId:page.pageId,paragraphs:[{text:'用户指定称呼为小林，其他身份信息尚未提供。',entryIds:page.facts.map(fact=>fact.id)}]}))});}});
   const server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management')});let browser;
   t.after(async()=>{release?.();releaseRole?.();await browser?.close();await server.close();repository.close()});browser=await chromium.launch({headless:true});const page=await browser.newPage();page.setDefaultTimeout(10000);const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto(server.url);await page.getByRole('link',{name:'我们的回忆',exact:true}).click();
-  // V4 nests Wiki compilation inside the collapsed 高级工具与来源 panel on the memory page.
-  await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源',{exact:true}).click();
+  await page.goto(server.url);await page.getByRole('link',{name:'记忆',exact:true}).click();
+  // V2 keeps Wiki compilation inside the collapsed 高级工具与来源 panel on the memory page.
+  await page.getByRole('button',{name:'日常整理'}).click();await page.getByText('高级工具与来源',{exact:true}).click();
   await page.getByText('综合编纂任务',{exact:true}).click();const panel=page.locator('details').filter({has:page.locator('summary').filter({hasText:'综合编纂任务'})}).first();
   await panel.getByRole('checkbox').first().check();await panel.getByRole('button',{name:'加入编纂批次',exact:true}).click();
   await panel.getByRole('button',{name:'生成／重试',exact:true}).click();await panel.getByText('用户指定称呼为小林，其他身份信息尚未提供。',{exact:false}).waitFor();

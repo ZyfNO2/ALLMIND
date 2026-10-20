@@ -122,7 +122,7 @@ test('built UI uploads ZIP through authenticated production HTTP preview and app
   assert.equal((await post({ zipBase64: delivery.toString('base64') }, false)).status, 401);
   const browser = await chromium.launch({ headless: true }); t.after(async () => { await browser.close(); await server.close(); });
   const page = await browser.newPage(); page.setDefaultTimeout(10000); await page.goto(server.url);
-  await page.getByRole('link', { name: '我们的回忆', exact: true }).click(); await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源', { exact: true }).click(); await page.getByText('导入 / 导出', { exact: true }).click();
+  await page.getByRole('link', { name: '记忆', exact: true }).click(); await page.getByRole('button',{name:'日常整理'}).click();await page.getByText('高级工具与来源', { exact: true }).click(); await page.getByText('导入 / 导出', { exact: true }).click();
   // The page now also hosts the organization upload input (accept=".md,.markdown,.html,.htm,.txt"),
   // so the historical bare input[type=file] locator is ambiguous; scope to the ZIP import input.
   const input = page.locator('input[type=file][accept=".md,.markdown,.json,.zip"]'); assert.match(await input.getAttribute('accept'), /\.zip/);

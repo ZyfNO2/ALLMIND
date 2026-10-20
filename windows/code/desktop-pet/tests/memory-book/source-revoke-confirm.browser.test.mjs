@@ -22,8 +22,8 @@ test('source revoke previews impact, cancel sends nothing, stale confirmation re
   t.after(async()=>{await browser.close();await server.close();repository.close()});
   const page=await browser.newPage();page.setDefaultTimeout(10000);
   let posts=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().endsWith('/wiki/revoke'))posts++});
-  await page.goto(server.url);await page.getByRole('link',{name:'我们的回忆',exact:true}).click();
-  await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源',{exact:true}).click();await page.getByText('来源与版本',{exact:true}).click();
+  await page.goto(server.url);await page.getByRole('link',{name:'记忆',exact:true}).click();
+  await page.getByRole('button',{name:'日常整理'}).click();await page.getByText('高级工具与来源',{exact:true}).click();await page.getByText('来源与版本',{exact:true}).click();
   await page.getByRole('button',{name:'撤销来源',exact:true}).click();
   assert.equal(repository.snapshot(scope).wikiSources[0].enabled,true);
   const dialog=page.getByRole('dialog',{name:'确认撤销来源'});await dialog.waitFor();
@@ -39,7 +39,7 @@ test('source revoke previews impact, cancel sends nothing, stale confirmation re
   assert.equal((await conflict).status(),409);
   await page.getByRole('alert').filter({hasText:'Book 已修改，请回读当前版本。'}).waitFor();
   assert.equal(repository.snapshot(scope).wikiSources[0].enabled,true);
-  await page.reload();await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源',{exact:true}).click();await page.getByText('来源与版本',{exact:true}).click();
+  await page.reload();await page.getByRole('button',{name:'日常整理'}).click();await page.getByText('高级工具与来源',{exact:true}).click();await page.getByText('来源与版本',{exact:true}).click();
   await page.getByRole('button',{name:'撤销来源',exact:true}).click();
   const before=posts;
   await dialog.getByRole('button',{name:'确认撤销来源',exact:true}).click();

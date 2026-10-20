@@ -27,9 +27,9 @@ test('four AIKI concepts: compile Wiki, consume chat, record Memory, commit even
   const browser = await chromium.launch({ headless: true });
   t.after(async () => { await browser.close(); await server.close(); upstream.closeAllConnections(); await new Promise(done => upstream.close(done)); repo.close(); });
   const page = await browser.newPage({ viewport: { width: 1440, height: 950 } }); page.setDefaultTimeout(15000); page.on('pageerror', error => errors.push(error.message));
-  await page.goto(server.url); await page.getByRole('link', { name: '我们的回忆', exact: true }).click();
+  await page.goto(server.url); await page.getByRole('link', { name: '记忆', exact: true }).click();
   // V4 nests the fact wiki inside the collapsed 高级工具与来源 panel on the memory page.
-  await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源', { exact: true }).click();
+  await page.getByRole('button',{name:'日常整理'}).click();await page.getByText('高级工具与来源', { exact: true }).click();
   const wiki = page.getByRole('region', { name: '事实 Wiki' });
   await wiki.getByText('整理事实来源', { exact: true }).click();
   await wiki.getByLabel('Wiki 资料名称', { exact: true }).fill('AIKI 工程');
@@ -41,16 +41,16 @@ test('four AIKI concepts: compile Wiki, consume chat, record Memory, commit even
   await wiki.getByRole('button', { name: 'AI 整理并预览', exact: true }).click();
   await wiki.getByRole('button', { name: '确认事实并应用', exact: true }).click(); await wiki.getByText('用户 · 1 条事实', { exact: true }).waitFor();
   assert.equal(calls.length, 1); assert.equal(calls[0].model, 'wiki-fixture'); assert.equal(repo.snapshot(runtime.scope('aika', 'web-chat', 'other')).entries.length, 0);
-  await page.getByRole('link', { name: '聊天', exact: true }).click();
+  await page.getByRole('link', { name: '首页', exact: true }).click();
   await page.getByLabel('聊天消息', { exact: true }).fill('AIKI 的存储是啥？我已到机库'); await page.getByRole('button', { name: '发送', exact: true }).click();
   await page.waitForFunction(() => document.querySelector('textarea[aria-label="聊天消息"]').value === '');
   assert.ok(calls.at(-1).messages.some(message => message.content.includes('本地文件')));
-  await page.getByRole('link', { name: '我们的回忆', exact: true }).click();
-  await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源', { exact: true }).click();
+  await page.getByRole('link', { name: '记忆', exact: true }).click();
+  await page.getByRole('button',{name:'日常整理'}).click();await page.getByText('高级工具与来源', { exact: true }).click();
   const memory = page.getByRole('region', { name: '共同记忆' }); await memory.getByRole('button', { name: '记录最近一次共同聊天', exact: true }).click();
   await page.getByRole('button', { name: '列表与编辑', exact: true }).click();
   await page.waitForFunction(() => document.querySelectorAll('.mb-entry').length === 3);
-  await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();
+  await page.getByRole('button',{name:'日常整理'}).click();
   const tools = page.locator('details.mb-memory-tools');
   if (!(await tools.evaluate(node => node.open))) await tools.locator('summary').first().click();
   await memory.getByText('依据记忆更新当前状态', { exact: true }).click(); await memory.getByLabel('状态新值', { exact: true }).fill('机库');

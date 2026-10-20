@@ -26,7 +26,7 @@ test('built settings uses real Book activity routes, opt-in, coverage display an
   await checkbox.click();await page.getByText('来源：监听中',{exact:true}).waitFor();assert.equal(await checkbox.isChecked(),true);assert.equal(opened,1);
   activity.ingest('aika',{kind:'keyboard',op:'activity',requestId:'fixture',grantRevision:1,payload:{bucketStart:new Date(now-10000).toISOString(),bucketEnd:new Date(now).toISOString(),activityCount:17,foregroundAppId:null,countingPolicy:'keydown-repeat-v2'}});
   // Re-enter the real settings route, causing its normal mount refresh.
-  await page.getByRole('link',{name:'聊天',exact:true}).click();await page.getByRole('link',{name:'设置',exact:true}).click();
+  await page.getByRole('link',{name:'首页',exact:true}).click();await page.getByRole('link',{name:'设置',exact:true}).click();
   await page.getByText(/17 次按下通知/).waitFor();await page.getByText(/画像未知/).waitFor();
   await page.getByRole('button',{name:'清空当前角色活动记录',exact:true}).click();await page.getByText(/暂无样本：0 次按下通知/).waitFor();
   assert.equal(activity.view('aika').days.length,0);assert.deepEqual(errors,[]);

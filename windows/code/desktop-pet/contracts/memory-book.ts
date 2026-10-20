@@ -204,6 +204,8 @@ export interface SessionSummary {
   characterId: string; pairingId: string; sessionId: string;
   title: string; createdAt: string; updatedAt: string;
   turnCount: number; lastTurnId: string | null;
+  /** Hidden from recent sessions, still readable and eligible for memory processing. */
+  archivedAt?: string;
 }
 /** One explicit, minimal real chat request against a draft or saved binding. Never persists anything. */
 export interface ModelTestResult {
@@ -227,6 +229,7 @@ export interface RuntimeRepository {
   appendTurn(scope: BookScope, turn: SavedTurn): void;
   /** Additive (MB sessions v1): summaries of persisted sessions for one character/pairing, most recent first. */
   listSessions(characterId: string, pairingId: string): SessionSummary[];
+  setSessionArchived?(scope: BookScope, archived: boolean): void;
   /**
    * Durable pre-submit intent and terminal marker for an explicit turnId.
    * Implementations persist no message bodies. Optional so read-only/fake repositories degrade to

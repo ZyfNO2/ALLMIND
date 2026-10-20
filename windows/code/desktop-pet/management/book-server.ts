@@ -59,7 +59,7 @@ export interface ChatgptWebManagement {
   openLoginPage(options?: { standalone?: boolean }): Promise<void>;
 }
 
-export async function startBookServer(options: { runtime: BookRuntime; uiRoot: string; credentials: BookCredentials; port?: number; onConfig?: (config: RuntimeConfig) => void | Promise<void>; onErase?: (scope:import('../contracts/memory-book.js').BookScope,turnIds:string[])=>void; companionInteractions?:CompanionInteractionControls; companionLife?: {read(characterId:string):CompanionLifeState;change(characterId:string,action:"set_enabled"|"set_quiet"|"clear_history",expectedRevision:number,enabled?:boolean):CompanionLifeState}; activity?:import('../core/book-activity.js').BookActivity; appearance?: { skins: SkinManagement; host?: DesktopHostBridge; portraits?: PortraitStore; outfits?: OutfitService }; chatgptWeb?: ChatgptWebManagement; chatgptEmbedded?: { login(): Promise<unknown>; probe(): Promise<unknown> }; chatgptPairing?: (reset?: boolean) => Promise<{ url: string; code: string; connected: boolean }> }) {
+export async function startBookServer(options: { runtime: BookRuntime; uiRoot: string; credentials: BookCredentials; port?: number; onChatState?: (value:{state:'pending'|'completed'|'failed';scope:import('../contracts/memory-book.js').BookScope;text?:string;incognito?:boolean})=>void; onConfig?: (config: RuntimeConfig) => void | Promise<void>; onErase?: (scope:import('../contracts/memory-book.js').BookScope,turnIds:string[])=>void; companionInteractions?:CompanionInteractionControls; companionLife?: {read(characterId:string):CompanionLifeState;change(characterId:string,action:"set_enabled"|"set_quiet"|"clear_history",expectedRevision:number,enabled?:boolean):CompanionLifeState}; activity?:import('../core/book-activity.js').BookActivity; appearance?: { skins: SkinManagement; host?: DesktopHostBridge; portraits?: PortraitStore; outfits?: OutfitService }; chatgptWeb?: ChatgptWebManagement; chatgptEmbedded?: { login(): Promise<unknown>; probe(): Promise<unknown> }; chatgptPairing?: (reset?: boolean) => Promise<{ url: string; code: string; connected: boolean }> }) {
   const token = randomBytes(32).toString('hex'), instanceId = randomUUID();
   const sessionCookie = 'allmind-management-' + instanceId;
   const appearanceHost = options.appearance ? desktopHostManagement(options.appearance.host, { instanceId, skins: options.appearance.skins }) : undefined;
@@ -425,6 +425,11 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
       const receipt = options.runtime.wiki.revoke(scope, data.sourceId, data.expectedRevision, data.operationId); options.runtime.invalidate(characterId);
       json(response, 200, { receipt, book: options.runtime.repository.snapshot(scope) }); return;
     }
+    if (route === '/sessions/archive' && request.method === 'POST') {
+      if (!options.runtime.repository.setSessionArchived) throw new BookError('unavailable', '当前存储不支持会话归档。');
+      options.runtime.repository.setSessionArchived(scope, data.archived);
+      json(response, 200, { sessions: options.runtime.repository.listSessions(characterId, scope.pairingId) }); return;
+    }
     if (route === '/sessions' && request.method === 'GET') {
       // Session summaries derived from persisted turns: refresh here discovers every session of this
       // character/pairing (including the desktop pet's shared session) without a second index.
@@ -586,7 +591,10 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
     if(route==='/chat/incognito'&&request.method==='DELETE'){options.runtime.clearIncognito(scope);json(response,200,{cleared:true});return;}
     if (route === '/chat' && request.method === 'POST') {
       if (data.replyStyle !== undefined && data.replyStyle !== null && !TURN_REPLY_STYLES.includes(data.replyStyle)) throw new BookError('invalid_input', '本轮回复风格必须为沿用设置、简短、适中或详细。');
-      json(response, 200, await options.runtime.chat(scope, data.text, signal, { ...(data.inputResources===undefined?{}:{inputResources:data.inputResources}), ...(data.turnId === undefined || data.turnId === null ? {} : {turnId:data.turnId}), ...(data.incognito===undefined?{}:{incognito:data.incognito}), ...(data.replyStyle===undefined||data.replyStyle===null?{}:{replyStyle:data.replyStyle}) })); return; }
+      options.onChatState?.({state:'pending',scope,incognito:data.incognito===true});
+      try { const result=await options.runtime.chat(scope, data.text, signal, { ...(data.inputResources===undefined?{}:{inputResources:data.inputResources}), ...(data.turnId === undefined || data.turnId === null ? {} : {turnId:data.turnId}), ...(data.incognito===undefined?{}:{incognito:data.incognito}), ...(data.replyStyle===undefined||data.replyStyle===null?{}:{replyStyle:data.replyStyle}) });
+        options.onChatState?.({state:'completed',scope,...(data.incognito===true?{incognito:true}:{text:result.turn.assistant})});json(response,200,result);
+      } catch(error) { options.onChatState?.({state:'failed',scope,incognito:data.incognito===true});throw error; } return; }
     if (route === '/chat/cancel' && request.method === 'POST') { options.runtime.cancel(scope); json(response, 200, { cancelled: true }); return; }
     json(response, 404, { error: { message: '未知 Memory Book 路由。' } });
   }

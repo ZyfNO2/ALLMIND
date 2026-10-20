@@ -51,8 +51,8 @@ test('production management UI saves consent, displays automatic ledger, downloa
   t.after(async()=>{await browser?.close();await runtime.automaticMemory?.flush();await server.close();repository.close();});browser=await chromium.launch({headless:true});const page=await browser.newPage(),errors=[];page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));
   await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();await page.getByLabel('自动记忆',{exact:true}).check();await page.getByLabel('主动问候与事件跟进',{exact:true}).check();await page.getByRole('button',{name:'保存设置',exact:true}).click();await page.waitForFunction(()=>document.body.textContent.includes('当前配置已保存'));
   assert.equal(repository.loadConfig().companion.autoMemory,true);assert.equal(repository.loadConfig().companion.proactive,true);assert.equal(repository.loadConfig().companion.cloudMemoryConsent,false);
-  await page.getByRole('link',{name:'聊天',exact:true}).click();await page.getByLabel('聊天消息').fill('茶：伯爵茶');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('好的，已收到。',{exact:true}).waitFor();await runtime.automaticMemory.flush();
-  await page.getByRole('link',{name:'我们的回忆',exact:true}).click();await page.getByRole('button',{name:'入库队列',exact:true}).click();await page.getByRole('heading',{name:'记忆整理队列',exact:true}).waitFor();await page.getByText('更多管理工具',{exact:true}).click();assert.match(await page.locator('main').textContent(),/done/);
+  await page.getByRole('link',{name:'首页',exact:true}).click();await page.getByLabel('聊天消息').fill('茶：伯爵茶');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('好的，已收到。',{exact:true}).waitFor();await runtime.automaticMemory.flush();
+  await page.getByRole('link',{name:'记忆',exact:true}).click();await page.getByRole('button',{name:'入库队列',exact:true}).click();await page.getByRole('heading',{name:'记忆整理队列',exact:true}).waitFor();await page.getByText('更多管理工具',{exact:true}).click();assert.match(await page.locator('main').textContent(),/done/);
   const downloading=page.waitForEvent('download');await page.getByRole('button',{name:'导出本实例私有备份',exact:true}).click();const download=await downloading;assert.match(download.suggestedFilename(),/^private-backup-/);
   await page.getByText('清除最近一轮原文',{exact:true}).click();const erase=page.getByRole('button',{name:'执行所选原文清除',exact:true});assert.equal(await erase.isEnabled(),false);await page.getByLabel('明确清除这一轮原文和本实例应用备份',{exact:true}).check();const responseWait=page.waitForResponse(response=>response.url().includes('/memory/erase')&&response.request().method()==='POST');const navigation=page.waitForEvent('framenavigated',frame=>frame===page.mainFrame());await erase.click();const erasedResponse=await responseWait;assert.equal(erasedResponse.status(),200);await navigation;
   await page.getByRole('button',{name:'入库队列',exact:true}).click();await page.getByRole('heading',{name:'记忆整理队列',exact:true}).waitFor();await page.getByText('更多管理工具',{exact:true}).click();const scope={characterId:'aika',pairingId:'local-user',sessionId:'web-chat'};assert.equal(repository.readSession(scope).length,0);assert.equal(repository.snapshot(scope).entries.length,0);assert.equal(repository.snapshot(scope).wikiSources.length,0);assert.deepEqual(errors,[]);
@@ -71,7 +71,7 @@ test('management shows independent budgets, resumes paused contacts and explicit
   t.after(async()=>{await browser?.close();await runtime.automaticMemory.flush();await server.close();repository.close()});
   browser=await chromium.launch({headless:true});const page=await browser.newPage();page.setDefaultTimeout(10000);
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto(server.url);await page.getByRole('link',{name:'我们的回忆',exact:true}).click();
+  await page.goto(server.url);await page.getByRole('link',{name:'记忆',exact:true}).click();
   await page.getByRole('button',{name:'入库队列',exact:true}).click();await page.getByText(/连续未回应，主动交流已暂停/).waitFor();await page.getByText('更多管理工具',{exact:true}).click();
   await page.getByText(/今日主动生成 2\/2 次.*已确认展示 2\/2 次/).waitFor();
   const resumed=page.waitForResponse(response=>response.url().includes('/companion/resume')&&response.request().method()==='POST');
@@ -91,7 +91,7 @@ test('management shows independent budgets, resumes paused contacts and explicit
   await page.waitForFunction(()=>[...document.querySelectorAll('input[type=checkbox]')].some(input=>input.checked&&input.parentElement.textContent.includes('专注模式')));
   const unfocused=page.waitForResponse(response=>response.url().includes('/companion/focus')&&response.request().method()==='POST');await page.getByLabel('专注模式',{exact:true}).uncheck();assert.equal((await unfocused).status(),200);
   assert.equal(repository.loadCompanionData(scope).focus,false);
-  await page.getByRole('link',{name:'我们的回忆',exact:true}).click();await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源',{exact:true}).click();await page.getByLabel('查询个人 Wiki',{exact:true}).fill('新地址');await page.getByRole('button',{name:'搜索 Wiki',exact:true}).click();
+  await page.getByRole('link',{name:'记忆',exact:true}).click();await page.getByRole('button',{name:'日常整理'}).click();await page.getByText('高级工具与来源',{exact:true}).click();await page.getByLabel('查询个人 Wiki',{exact:true}).fill('新地址');await page.getByRole('button',{name:'搜索 Wiki',exact:true}).click();
   await page.getByText(/已编纂 [1-9]/).waitFor();
   assert.ok(repository.snapshot(scope).wikiPages.some(page=>page.body.includes('新地址')));
   assert.deepEqual(errors,[]);
@@ -105,7 +105,7 @@ test('ambiguous cancellation UI explicitly selects one evidenced event', {timeou
   assert.equal(repository.loadCompanionData(scope).events.filter(event=>event.status==='scheduled').length,2);
   const server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management')});let browser;
   t.after(async()=>{await browser?.close();await runtime.automaticMemory.flush();await server.close();repository.close()});browser=await chromium.launch({headless:true});const page=await browser.newPage();page.setDefaultTimeout(10000);
-  await page.goto(server.url);await page.getByRole('link',{name:'我们的回忆',exact:true}).click();
+  await page.goto(server.url);await page.getByRole('link',{name:'记忆',exact:true}).click();
   await page.getByRole('button',{name:'入库队列',exact:true}).click();const approved=page.waitForResponse(response=>response.url().includes('/companion/approve')&&response.request().method()==='POST');
   await page.getByRole('button',{name:/明确取消：.*2026-10-15/}).click();assert.equal((await approved).status(),200);
   const events=repository.loadCompanionData(scope).events;assert.equal(events.find(event=>event.date==='2026-10-15').status,'cancelled');assert.equal(events.find(event=>event.date==='2026-10-16').status,'scheduled');

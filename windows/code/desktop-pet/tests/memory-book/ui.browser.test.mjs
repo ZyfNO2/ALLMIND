@@ -27,7 +27,7 @@ test('built minimal UI imports real file, edits Entry, inspects recall and sends
   page.setDefaultTimeout(15000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto(server.url); await page.getByLabel('聊天消息',{exact:true}).waitFor();
-  await page.getByRole('link', { name: '我们的回忆', exact: true }).click();await page.getByRole('button',{name:'列表与编辑',exact:true}).click();await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源',{exact:true}).click();
+  await page.getByRole('link', { name: '记忆', exact: true }).click();await page.getByRole('button',{name:'列表与编辑',exact:true}).click();await page.getByRole('button',{name:'日常整理'}).click();await page.getByText('高级工具与来源',{exact:true}).click();
   await page.getByText('导入 / 导出', { exact: true }).click();
   const raw = readFileSync(resolve('../../../validation/fixtures/aiki-character-book/allmind.aiki.md'), 'utf8');
   await page.getByLabel('导入内容').fill(raw);
@@ -36,7 +36,7 @@ test('built minimal UI imports real file, edits Entry, inspects recall and sends
   await page.getByText('已导入，冲突条目保留手动修改。', { exact: true }).waitFor();
   assert.equal(repository.snapshot({ characterId: 'aika', pairingId: 'local-user', sessionId: 'web-chat' }).entries.length, 12);
   await page.locator('.mb-entry').filter({ has: page.getByText('测试机库', { exact: true }) }).click();
-  await page.getByRole('button',{name:'编辑条目',exact:true}).click();await page.getByLabel('正文', { exact: true }).fill('测试机库是共同测试地，Alice 的关系设定在这里核对。');
+  await page.getByRole('button',{name:'编辑当前笔记',exact:true}).click();await page.getByLabel('正文', { exact: true }).fill('测试机库是共同测试地，Alice 的关系设定在这里核对。');
   await page.getByRole('button', { name: '保存条目', exact: true }).click();
   await page.getByText('条目已保存，旧召回已失效。', { exact: true }).waitFor();
   assert.ok(repository.snapshot({ characterId: 'aika', pairingId: 'local-user', sessionId: 'web-chat' }).entries.some(entry => entry.body.includes('共同测试地')));
@@ -50,7 +50,7 @@ test('built minimal UI imports real file, edits Entry, inspects recall and sends
   await page.getByText('最终 Prompt / Context', { exact: true }).click();
   assert.ok(await page.locator('pre').last().innerText().then(text => text.includes('测试机库')));
   await page.screenshot({ path: join(evidence, 'inspector.png'), fullPage: true });
-  await page.getByRole('link', { name: '聊天', exact: true }).click();
+  await page.getByRole('link', { name: '首页', exact: true }).click();
   for (const message of ['测试机库是什么地方？', '第一次导入测试时发生了什么？']) {
     await page.getByLabel('聊天消息').fill(message); await page.getByRole('button', { name: '发送', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('textarea[aria-label="聊天消息"]')?.value === '');

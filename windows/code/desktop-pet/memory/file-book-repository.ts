@@ -467,6 +467,28 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
     const fd=openSync(join(this.directory,filename),'wx',0o600); try { writeFileSync(fd,text); fsyncSync(fd); } finally { closeSync(fd); } return { filename,text };
   }
   /** MB sessions v1: summaries derived from persisted session files; only this character/pairing, most recent first. */
+  private sessionArchiveFile(characterId: string, pairingId: string): string {
+    validateIdentity(characterId, 'characterId'); validateIdentity(pairingId, 'pairingId');
+    return join(this.directory, `session-archive-${digest(JSON.stringify([characterId, pairingId]))}.json`);
+  }
+  private sessionArchives(characterId: string, pairingId: string): Envelope<Record<string, string>> {
+    return this.readEnvelope(this.sessionArchiveFile(characterId, pairingId), () => ({}), value => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error('Invalid session archive');
+      for (const [id, date] of Object.entries(value)) {
+        validateIdentity(id, 'sessionId');
+        if (typeof date !== 'string' || !Number.isFinite(Date.parse(date))) throw Error('Invalid archive date');
+      }
+    });
+  }
+  setSessionArchived(scope: BookScope, archived: boolean): void {
+    this.assertOpen(); validateScope(scope);
+    if (typeof archived !== 'boolean') throw new BookError('invalid_input', '缺少归档状态。');
+    if (!this.readSession(scope).length) throw new BookError('invalid_input', '只能归档已保存的会话。');
+    const ledger = this.sessionArchives(scope.characterId, scope.pairingId);
+    if (archived && !Object.hasOwn(ledger.data, scope.sessionId)) ledger.data = { ...ledger.data, [scope.sessionId]: new Date().toISOString() };
+    else if (!archived) delete ledger.data[scope.sessionId];
+    this.write(this.sessionArchiveFile(scope.characterId, scope.pairingId), ledger);
+  }
   listSessions(characterId: string, pairingId: string): SessionSummary[] {
     this.assertOpen();
     validateIdentity(characterId, 'characterId'); validateIdentity(pairingId, 'pairingId');
@@ -475,6 +497,7 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
       try { return JSON.parse(line) as Partial<SavedTurn>; } catch { return null; }
     };
     const summaries: SessionSummary[] = [];
+    const archives = this.sessionArchives(characterId, pairingId).data;
     let examined = 0;
     for (const name of readdirSync(this.directory)) {
       if (!name.startsWith('session-') || !name.endsWith('.jsonl')) continue;
@@ -498,7 +521,8 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
       const updatedAt = typeof last.timestamp === 'string' && Number.isFinite(Date.parse(last.timestamp)) ? last.timestamp : first.timestamp;
       summaries.push({ characterId, pairingId, sessionId: first.sessionId, title: deriveSessionTitle(first.user),
         createdAt: first.timestamp, updatedAt, turnCount,
-        lastTurnId: typeof last.id === 'string' ? last.id : null });
+        lastTurnId: typeof last.id === 'string' ? last.id : null,
+        ...(Object.hasOwn(archives, first.sessionId) ? { archivedAt: archives[first.sessionId] } : {}) });
     }
     return summaries.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt) || a.sessionId.localeCompare(b.sessionId)).slice(0, SESSION_LIST_LIMIT);
   }

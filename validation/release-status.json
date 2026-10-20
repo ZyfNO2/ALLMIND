@@ -940,5 +940,28 @@
     "git": "One reachable root commit Init; no remote or push",
     "backup": "Outside repository in worker process directory",
     "scope": "Runtime and dependency directories remain ignored, not packaged"
+  },
+  "uiV2Worktree": {
+    "date": "2026-10-20",
+    "status": "INTEGRATED_SINGLE_COMMIT_CANDIDATE",
+    "scope": "Supplied editable V2 reference and management SPA integrated with the GPT-Niang WPF bridge changes in the published main candidate.",
+    "build": "check/build/build:desktop/build:character-ui PASS",
+    "core": {
+      "pass": 393,
+      "fail": 0
+    },
+    "fixedBrowserRegression": {
+      "pass": 29,
+      "fail": 0,
+      "files": 19
+    },
+    "v2FocusedBrowser": {
+      "pass": 2,
+      "fail": 0,
+      "note": "Overlaps the fixed browser suite; counts are not additive."
+    },
+    "modelEvidence": "Fixture HTTP/model ports only; real API and real ChatGPT not rerun.",
+    "nativeUI": "NOT_RUN; manual acceptance deferred to user.",
+    "freeze": "source-manifest.json is regenerated over the complete candidate tree, including the V2 UI and WPF bridge files; the candidate is intended for one release commit."
   }
 }

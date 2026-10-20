@@ -18,9 +18,9 @@ test('a late Wiki source application cannot overwrite the newly selected role Bo
   t.after(async()=>{release?.();await browser?.close();await server.close();repository.close()});browser=await chromium.launch({headless:true});const page=await browser.newPage();page.setDefaultTimeout(10000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
   let markApplied;const applied=new Promise(resolve=>markApplied=resolve);
   await page.route('**/wiki/apply',async route=>{const response=await route.fetch();assert.equal(response.status(),200);markApplied();await new Promise(resolve=>release=resolve);await route.fulfill({response})});
-  await page.goto(server.url);await page.getByRole('link',{name:'我们的回忆',exact:true}).click();
-  // V4 nests the fact-wiki source form inside the collapsed 高级工具与来源 panel on the memory page.
-  await page.getByRole('button',{name:'04 · 编纂与高级工具'}).click();await page.getByText('高级工具与来源',{exact:true}).click();await page.getByText('整理事实来源',{exact:true}).click();
+  await page.goto(server.url);await page.getByRole('link',{name:'记忆',exact:true}).click();
+  // V2 keeps the fact-wiki source form inside the collapsed 高级工具与来源 panel on the memory page.
+  await page.getByRole('button',{name:'日常整理'}).click();await page.getByText('高级工具与来源',{exact:true}).click();await page.getByText('整理事实来源',{exact:true}).click();
   await page.getByLabel('Wiki 资料名称',{exact:true}).fill('用户');await page.getByLabel('Wiki 事实资料',{exact:true}).fill('私密标记：旧角色密语青石');
   await page.getByRole('button',{name:'预览事实整理',exact:true}).click();await page.getByRole('button',{name:'确认事实并应用',exact:true}).click();await applied;
   await page.getByLabel(/当前角色/).selectOption('other');await page.getByText(/小周/).first().waitFor({state:'attached'});

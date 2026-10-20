@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-20T02:50:41.708Z",
-  "generatedBy": "ALLMIND sole Init release candidate, 2026-10-20; reviewed fixes and UX/graph, old demo images removed",
-  "scope": "tracked and non-ignored new working-tree source files; excludes manifest itself and runtime/build outputs",
-  "fileCount": 1476,
-  "totalBytes": 14849357,
+  "generatedAt": "2026-10-20T05:14:44.075Z",
+  "generatedBy": "ALLMIND single-commit release candidate",
+  "scope": "tracked and non-ignored source files (git ls-files --cached --others --exclude-standard); excludes this manifest and ignored runtime/build outputs",
+  "fileCount": 1486,
+  "totalBytes": 14916268,
   "sourceSnapshot": {
     "repository": "Aika-Next（只读源仓库；本机路径不记录）",
     "branch": "aika-next",
     "head": "311eb0dbf468105f460b44be960ea8813809eefd",
-    "note": "历史来源保留；本清单对应2026-10-20唯一Init发布候选的磁盘源码字节，排除清单自身和已忽略生成物。"
+    "note": "历史来源保留；本清单对应本次 UI V2 与 GPT-Niang WPF 桥接整合候选树，排除清单自身和已忽略生成物。"
   },
   "followUp": "见 validation/release-status.json 与 worker REPORT.md。",
   "files": [
     {
       "path": ".github/workflows/verify.yml",
-      "bytes": 2922,
-      "sha256": "304b990afc955e9e7d8cb6bd4b8ee3bb32926a86194de2623db27d58ae1784ec"
+      "bytes": 2963,
+      "sha256": "a804a462571b9b5e5b77f17cf7fb15be91c9fc85dab69ca3b566e51661593120"
     },
     {
       "path": ".gitignore",
@@ -40,8 +40,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 8754,
-      "sha256": "cc1ac6733fcfd22a8e8421f52da4c47d412b3527229be6e2d5fd49d038e016fc"
+      "bytes": 10515,
+      "sha256": "b53375764748e647713e1fc63c684a07c6cd301229f156094d60c800996e1572"
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
@@ -145,8 +145,8 @@
     },
     {
       "path": "validation/release-status.json",
-      "bytes": 40958,
-      "sha256": "929c4c528c868e15e7fb59263d26dca8a25fbab8285bf07330c11dd563453617"
+      "bytes": 42866,
+      "sha256": "41c6e3e08e545499604be98c48a192cc7d1f05d23ded9d2c97f4fc8a74ff1542"
     },
     {
       "path": "windows/.gitattributes",
@@ -185,8 +185,8 @@
     },
     {
       "path": "windows/code/desktop-pet/app/book-backend.ts",
-      "bytes": 45274,
-      "sha256": "75cfaf74769fd20430412eebeb0e8216e9d933be2db684c1d75284685876ba7e"
+      "bytes": 45468,
+      "sha256": "0ece58a4b6354d7880d3732669f47423b47614c1215398d5331771e602470c26"
     },
     {
       "path": "windows/code/desktop-pet/app/book-launcher.ts",
@@ -515,8 +515,8 @@
     },
     {
       "path": "windows/code/desktop-pet/contracts/desktop-bridge.ts",
-      "bytes": 10755,
-      "sha256": "f661742bd5d6477e4ccb09d1b2514a9508799619e7e8834df9d9f47e9e8d9a6a"
+      "bytes": 10945,
+      "sha256": "0501c7f174088d13184f8cd581db11981ae22ab63689c605a3ead1b6ff1f9a63"
     },
     {
       "path": "windows/code/desktop-pet/contracts/desktop-host-capture.ts",
@@ -575,8 +575,8 @@
     },
     {
       "path": "windows/code/desktop-pet/contracts/memory-book.ts",
-      "bytes": 16895,
-      "sha256": "c3b2e91930558804c23cfdd6626818d685ba49fde944a3566c160a9fc596e143"
+      "bytes": 17076,
+      "sha256": "53fe2a57f8c725c39962bff200069d7e17eaa28dca5091f8b8adbc3a425e6bfc"
     },
     {
       "path": "windows/code/desktop-pet/contracts/memory-dynamics.ts",
@@ -1419,6 +1419,21 @@
       "sha256": "4a87173e373aed241aa9b4f481898d6a179378150bcfbd9870efb053790f7c75"
     },
     {
+      "path": "windows/code/desktop-pet/desktop/wpf/browser-host.mjs",
+      "bytes": 1248,
+      "sha256": "689e73be97a7fb73d80b6cc75c34d7767e9f7c0ada51b76fd823dc84ea746711"
+    },
+    {
+      "path": "windows/code/desktop-pet/desktop/wpf/main.mjs",
+      "bytes": 12805,
+      "sha256": "3bbe3435ba0d927a6cba8331c83c0d7dfd462ceafc636befd580dae378069870"
+    },
+    {
+      "path": "windows/code/desktop-pet/desktop/wpf/pipe.mjs",
+      "bytes": 4304,
+      "sha256": "474b07ddef2dfc34d4210a65bf244ce17f9a9d0d09fd2107ed421be9acdd3c0e"
+    },
+    {
       "path": "windows/code/desktop-pet/harness/accounting.ts",
       "bytes": 920,
       "sha256": "65a8d9a4e6a3d090ae4069053ee9c3d8edfff24ba41ceec817f7d1186b8d2f06"
@@ -1540,8 +1555,8 @@
     },
     {
       "path": "windows/code/desktop-pet/management/book-server.ts",
-      "bytes": 62737,
-      "sha256": "d8f389c884d3919baeaea349d2c0e8777b114a3684890a5518bc93d8e2711362"
+      "bytes": 63661,
+      "sha256": "aa96ff893392d132e6c9f8852d52369fb01594564d1add057bedcc6e99e016fc"
     },
     {
       "path": "windows/code/desktop-pet/management/bootstrap.ts",
@@ -1620,8 +1635,8 @@
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/CharacterClient.tsx",
-      "bytes": 90882,
-      "sha256": "7d570fd3d61b9bc15cf0448b9d303f35928e3689e809f4dfce09fca2d9cf1d6e"
+      "bytes": 92029,
+      "sha256": "2b3fe7f1b5cfbf483ffcdea1e507b9033ab4bfe8283b11ffddfc6029a22dd565"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/MemoryBookApp.tsx",
@@ -1680,8 +1695,8 @@
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/CompanionLedger.tsx",
-      "bytes": 12583,
-      "sha256": "5c580dc319b27bf25fcd53b01bd46dde0f569c0e1107be28b53a4d1671500a25"
+      "bytes": 10696,
+      "sha256": "51c32a944b2883071da5f49ad180960ce5d4de800342745d74c6f0118258e23c"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/CompanionSettings.tsx",
@@ -1695,8 +1710,8 @@
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/DesktopCompanionControls.tsx",
-      "bytes": 9736,
-      "sha256": "f855f1c943a0a16fe4754aa4e911bc3445195a4ddda760e63f58f79ff9ff4bdb"
+      "bytes": 9976,
+      "sha256": "af35dda38db3983a2181e69f4c35b1559262fac23aefd3512b6507305299912b"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/DesktopPreferences.tsx",
@@ -1749,6 +1764,11 @@
       "sha256": "55474ed23d81022872ee194173ca58f18a54145c063883e89ec7bf88147337a5"
     },
     {
+      "path": "windows/code/desktop-pet/management/character-ui/src/components/NoteEvidence.tsx",
+      "bytes": 1804,
+      "sha256": "9705f60a7dbd0f29826af05e7932e32974e894e436677645d921029f474664cf"
+    },
+    {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/OrganizationReview.tsx",
       "bytes": 5741,
       "sha256": "3beb8b81d12660ffcae9c50b9e16f7e75e5f67fe6bb6fd451ffb99b172714356"
@@ -1795,13 +1815,18 @@
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/SessionPicker.tsx",
-      "bytes": 1987,
-      "sha256": "e9e4b7216531de221025b0c6668a92ca89e126e0f0e3e18c0978c2b456bf5998"
+      "bytes": 2244,
+      "sha256": "417e559dbd4a61f4294866a3ebb7d8207f8ce9ba6630346bdf22eaacbf941e1a"
+    },
+    {
+      "path": "windows/code/desktop-pet/management/character-ui/src/components/SessionRail.tsx",
+      "bytes": 2846,
+      "sha256": "1440299a41ccf536f71818a005e3d5ef9491238475482209752261b315076c5f"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/ThemeToggle.tsx",
-      "bytes": 1047,
-      "sha256": "8ed8c8f668a08e7c5557738ff84633d01530c3ab8b3a59301170294be58ee00d"
+      "bytes": 1410,
+      "sha256": "c395758472841a25ba443a268a75846d7bd61c44402e7baee7f2a7db5545fc18"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/Toast.tsx",
@@ -1825,8 +1850,8 @@
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/WikiSynthesis.tsx",
-      "bytes": 14701,
-      "sha256": "78d79ce3a41709d942d386b5c01e80c4749b010626643647004e90eada833bf2"
+      "bytes": 14697,
+      "sha256": "86db42575c2549a422333c0f6aa5460f5d10b34d9d3dded60930849585df18e7"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/character/AppearancePanel.tsx",
@@ -2192,6 +2217,11 @@
       "path": "windows/code/desktop-pet/management/character-ui/src/types.ts",
       "bytes": 3236,
       "sha256": "da881249465a748c1f10bbc91cd95b5f3db61e92b0c9dfb8b45d1c3af81c8a43"
+    },
+    {
+      "path": "windows/code/desktop-pet/management/character-ui/src/ui-v2.css",
+      "bytes": 18492,
+      "sha256": "1504873781c91b396dadcab2a104e0be1e886dda1741e4451585fa6d1c3f4d43"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/vite-env.d.ts",
@@ -2810,8 +2840,8 @@
     },
     {
       "path": "windows/code/desktop-pet/memory/file-book-repository.ts",
-      "bytes": 47536,
-      "sha256": "0f3f007ee6eb79d43afc90fe7ae6c890e01cad5fc40d96dce5d78d1c7b8c5617"
+      "bytes": 49267,
+      "sha256": "216a3a207b70c7a51c35834fc1139b5b63aad4bf3816448ce33b058e21da9307"
     },
     {
       "path": "windows/code/desktop-pet/memory/file-resource-store.ts",
@@ -4440,8 +4470,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/book-activity.browser.test.mjs",
-      "bytes": 3082,
-      "sha256": "11edf30529f410eebacc81b5b27fbc67ba2771ae5261eba41fc8b34a388510bc"
+      "bytes": 3115,
+      "sha256": "e1f56db9e153a1c27d883891d3177aeeefa3a7541c941b942bb9e48924e6dace"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/book-activity.test.ts",
@@ -4450,8 +4480,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/character-client.browser.test.mjs",
-      "bytes": 11214,
-      "sha256": "0cb28648e0f7f76b339bc84efa4a438897ec6f2a643f2f8fb06c6cb9e34f7936"
+      "bytes": 10912,
+      "sha256": "ab40b25903dbc51401ca4fc0b349fbba45651ae5720ee20fa9eceb9dc3cecc6a"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/character-client.test.ts",
@@ -4460,8 +4490,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/character-intelligence.browser.test.mjs",
-      "bytes": 7937,
-      "sha256": "1dd8e346c5b3977794decdc03af6b7bfd438d0e60dc468fe20e6bba316881223"
+      "bytes": 7874,
+      "sha256": "e0125fad17ec4792ef4659c62da7b26baba8d83a580f4485295f3c7e39d72956"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/character-intelligence.test.ts",
@@ -4575,8 +4605,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/companion-management.browser.test.mjs",
-      "bytes": 17227,
-      "sha256": "7fa9833400a175ebacaf67c0dbf40f69fa43140facaca7e049db3bc289f1e324"
+      "bytes": 17176,
+      "sha256": "e2325d88fdd9cd705bf87660914d8d998411ac28fc2189562d729ca69b9f629b"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/companion-proactive.browser.test.mjs",
@@ -4600,8 +4630,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/connection-setup.browser.test.mjs",
-      "bytes": 17814,
-      "sha256": "e6cce3350741d1e3ae66b76d4ddecc3402fd05faceb3ae0a7f665845b11c9039"
+      "bytes": 17553,
+      "sha256": "6babbdc05de3c800737ea97658539cf5b52fd77cfecc31bd7fb2c2c08c9b3b73"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/desktop-preferences.browser.test.mjs",
@@ -4635,8 +4665,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/governance.browser.test.mjs",
-      "bytes": 5715,
-      "sha256": "0067ddb2c5902f4729a69058359dc0dbe768cc012b3ff88f2c8f5d81591dd364"
+      "bytes": 5691,
+      "sha256": "c7ad927ea7e63b900a701d12da9a8a30e94091a49ae148da33aaa655f1d13765"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/gpt-niang-local.test.ts",
@@ -4660,8 +4690,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/incognito.browser.test.mjs",
-      "bytes": 3835,
-      "sha256": "1645560693c6b1138c9e00e429185789335cc93970a2576c3a4ef1824285ce60"
+      "bytes": 3847,
+      "sha256": "75842e4673b1793f037cf8c7610904173129b91e6e402209ccf79fa8eae10d01"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/incognito.test.ts",
@@ -4715,8 +4745,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/models-settings.browser.test.mjs",
-      "bytes": 6096,
-      "sha256": "fa28673bf0751f380731b3d660b5730a7914cec5ebcbfec7bc7814fbf3e54a89"
+      "bytes": 6185,
+      "sha256": "e4a0bc6394f31e7ef4938f166ecce05aa6529f028607c0aed22aa2ea79a2a32a"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/personal-wiki.test.ts",
@@ -4730,8 +4760,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/prompt-presets.browser.test.mjs",
-      "bytes": 10228,
-      "sha256": "be5d2dd0d9582adfb5edc64f93f91010feaf8645b80082a344610f910d7a86c2"
+      "bytes": 10717,
+      "sha256": "26031f9ef3e3804d0a805919345a32ee1a0962bacc4d8c85c5e1debd7e356461"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/prompt-presets.test.ts",
@@ -4770,8 +4800,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/reply-length.browser.test.mjs",
-      "bytes": 3732,
-      "sha256": "992285a0fda066bd01fd400ce2da7e4d10cd75d7770047f48f4d2b790b279812"
+      "bytes": 3754,
+      "sha256": "2f4424ef45645e56e0782c744d9d051c5b046e16c863d0940f5b5a965f6567de"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/reply-length.test.ts",
@@ -4796,7 +4826,7 @@
     {
       "path": "windows/code/desktop-pet/tests/memory-book/reply-style-ui.browser.test.mjs",
       "bytes": 8589,
-      "sha256": "dc3a377f066ff928261a3f2d8623d89364d296cd0cae69bb1215b76acac35ae1"
+      "sha256": "bb284f6f1a854861409b9c6e63cb6f5185387c86ba7ce77c4e811086effe5240"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/reply-style.test.ts",
@@ -4820,8 +4850,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/role-onboarding.browser.test.mjs",
-      "bytes": 6694,
-      "sha256": "2734dce523262b0d1730aea0452c3c2f89d11314603e57fbfc6bb072810fa4bc"
+      "bytes": 6909,
+      "sha256": "a784a63d7a0f9b442b61d22dedd788a4b721eaad720bb7067c3b3c55d18ef88a"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/runtime.test.ts",
@@ -4834,9 +4864,14 @@
       "sha256": "32f960530f83c7a37588223de26f7536619fa111beb38eea3867e62456631a9f"
     },
     {
+      "path": "windows/code/desktop-pet/tests/memory-book/session-archive.test.ts",
+      "bytes": 2136,
+      "sha256": "de23f15903aad6ae8698119fceda73143b83c5379afe1d9755983697bf6f0a66"
+    },
+    {
       "path": "windows/code/desktop-pet/tests/memory-book/source-revoke-confirm.browser.test.mjs",
-      "bytes": 3982,
-      "sha256": "1bed600b5c6f9773bc5967af757d3b2c63495bde7399371a19c1fa3365c3e571"
+      "bytes": 3991,
+      "sha256": "14d02bd8c68d9ac9eeab559b444fba18ad4b9fafd27370767565af8abd53182a"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/sprite-inspector.test.mjs",
@@ -4850,8 +4885,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/topic-forget.browser.test.mjs",
-      "bytes": 5666,
-      "sha256": "f2fe1010eed29aba89b7e4627757940b07f387eb33fc80747ba8d4735a2aed1b"
+      "bytes": 5679,
+      "sha256": "319798a6ea96665b41052f88d8b4a12209f1612177fae70ee6c04983847a3195"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/turn-freeze.test.ts",
@@ -4859,14 +4894,19 @@
       "sha256": "f518ad7df36d76e53c54b6c185088293e091a899c6eea2ce44ffad6bcb626c57"
     },
     {
+      "path": "windows/code/desktop-pet/tests/memory-book/ui-v2.browser.test.mjs",
+      "bytes": 11979,
+      "sha256": "3d3fc70366848f74c75694827d134ba3f56a9169fadf21f27f38f232638c5b29"
+    },
+    {
       "path": "windows/code/desktop-pet/tests/memory-book/ui-v4-acceptance.browser.test.mjs",
-      "bytes": 9028,
-      "sha256": "86c29a196caa5c36212cfe9192457025f131898484eab3d438e70226fe651191"
+      "bytes": 9141,
+      "sha256": "94842abdeb1384bf3bbc86bc82b2838537b3f508d1d41655bd7fdfd8cb6c3be1"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/ui-v4.browser.test.mjs",
-      "bytes": 10131,
-      "sha256": "48f195185f4f5c949aaff705f4bdfe252d662bed9fed719de7361dacbb464c2c"
+      "bytes": 9975,
+      "sha256": "11b1e3fa918d44b557c88523a1000398be6defe38b7f0187a4d6203e9abceb12"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/ui-worker-assets.test.ts",
@@ -4875,13 +4915,13 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/ui.browser.test.mjs",
-      "bytes": 11652,
-      "sha256": "623c17038dd051789f5b37325269082fd2b2de45cd18e39f2aa6f184f064ca17"
+      "bytes": 11634,
+      "sha256": "1708a58f04897a96049896e5f3dd17680808fb51526c24623a10683ad5383a3f"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/ux-binding.browser.test.mjs",
-      "bytes": 6217,
-      "sha256": "986324b19e1de86323ba223ad4eb8d33185cbc987bb402d7974d28a3290148b6"
+      "bytes": 6219,
+      "sha256": "0e5c84e0cba87f605a1893ddafaed737d3318c48e0506ea134a0335d35d733d9"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/w02-appearance.test.ts",
@@ -4910,8 +4950,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/w02-ui.browser.test.mjs",
-      "bytes": 7430,
-      "sha256": "105b908232be151269005a3ce9af8d47e7adfb01d57fb316c390822e8d1722bf"
+      "bytes": 7445,
+      "sha256": "02b1c3e8428a64feba7371173365a01ec67cbf50429d31f402d56b3ea6562617"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/w03-backend.test.mjs",
@@ -4930,8 +4970,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/w03-ui.browser.test.mjs",
-      "bytes": 3901,
-      "sha256": "fbe773503ca27700f9e49faa66ace12ec5ba363c59e794c39571a88ea1098563"
+      "bytes": 3940,
+      "sha256": "16d2f44ba288c991548e3e12cd8f787efb24448bad68a1cf2d4819b5ede0bf63"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/weekly-narrative.test.ts",
@@ -4950,8 +4990,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/wiki-compilation.browser.test.mjs",
-      "bytes": 6076,
-      "sha256": "655810b3d85872eac596959a036dd03cb847453293fee0a68edfe6eae00f7add"
+      "bytes": 6052,
+      "sha256": "a2cb1eb5dc157507e6035876fc753c5a7e076fc76a0496ef777d36ea7a07ae71"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/wiki-graph.test.mjs",
@@ -4960,8 +5000,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/wiki-maintenance.browser.test.mjs",
-      "bytes": 3935,
-      "sha256": "33ec444cbda2b66e7c3d3aaa9791fde97c3cbee3a5a1a127c4ae1817cfec8ef9"
+      "bytes": 3911,
+      "sha256": "9be90dd9fb7a6deafbaf8ef8096cb735803fc6f5a7af1db0c946a9f84653ac9f"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/wiki-synthesis-batches.test.ts",
@@ -4975,8 +5015,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/zip-import.test.mjs",
-      "bytes": 13117,
-      "sha256": "246c297384ce26f7b5fd5d7c686426d5e84d53025d5518328bb4f39cc55390b7"
+      "bytes": 13228,
+      "sha256": "d3e0c5251b468d156a71c9ec4810692b0283a886523e8fca155f98c7a1eb5b32"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory/aiki-context-recall.test.ts",
@@ -6642,6 +6682,16 @@
       "path": "windows/code/desktop-pet/tests/windows/transport.test.mjs",
       "bytes": 4876,
       "sha256": "48abc19fc108dd0dffbcab72168e8fa16f83e6ffb474db324a136e0ad2fc5e69"
+    },
+    {
+      "path": "windows/code/desktop-pet/tests/wpf/pipe.test.mjs",
+      "bytes": 2780,
+      "sha256": "d3009675f46166ac4872f5ba6f568cbc40d8238d96296cb5d8c0a413d1862e2b"
+    },
+    {
+      "path": "windows/code/desktop-pet/tests/wpf/visibility.test.mjs",
+      "bytes": 1232,
+      "sha256": "6bba136a170123fc397a60c9553e8b8a0a077724b7d3dc1dd462cdf54a1c762e"
     },
     {
       "path": "windows/code/desktop-pet/third-party/dijkstrajs.LICENSE",
