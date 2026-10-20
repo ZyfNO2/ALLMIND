@@ -33,6 +33,7 @@ function Set-AllmindPortrait($Message){
  }
 }
 function Show-AllmindReply([string]$Text,[long]$ReceivedAt){
+ if($script:allmindQuickChat){$script:allmindQuickChat.RememberReply($script:allmindRole,$script:allmindQuickSession,$Text);if($script:allmindQuickChat.Visible){return}}
  Update-AllmindVisibility
  if(!$script:allmindNotificationAllowed -or !$script:allmindVisibility.ReplyReminder -or $ReceivedAt-le $script:allmindVisibleSince){return}
  Show-Quote
@@ -44,11 +45,13 @@ function Read-AllmindEvents {
   $count++
   try{
    $value=$line|ConvertFrom-Json -ErrorAction Stop
-   if($value.error){$script:allmindStatus=$value.error;if(!$value.id){$script:allmindBackendReady=$false};continue}
+   if($value.error){$script:allmindStatus=$value.error;if($script:allmindQuickChat -and $script:allmindQuickChat.Pending -and $value.id -and $value.id-eq $script:allmindQuickPipeId){$script:allmindQuickChat.Receive($script:allmindQuickChat.RequestId,$script:allmindQuickChat.CharacterId,$script:allmindQuickChat.SessionId,$false,[string]$value.error)};if(!$value.id){$script:allmindBackendReady=$false};continue}
    $message=$value.event;if(!$message){continue}
    switch($message.channel){
     'wpf_state' {
+     if($script:allmindQuickChat -and ($script:allmindRole-ne $message.state.characterId -or $message.state.backend-ne 'ready')){$script:allmindQuickChat.Hide()}
      $script:allmindRole=$message.state.characterId;$script:allmindLabel=$message.state.characterLabel
+     $script:allmindQuickSession=$message.state.sessionId
      $script:allmindBackendReady=$message.state.backend-eq 'ready'
      $script:allmindStatus=switch($message.state.backend){'ready'{'后台已连接'};'starting'{'后台启动中…'};default{[string]$message.state.error}}
      $script:window.Title='ALLMIND · '+$script:allmindLabel
@@ -58,6 +61,9 @@ function Read-AllmindEvents {
     'wpf_visible' {Set-AllmindVisible ([bool]$message.visible)}
     'wpf_shutdown' {$script:allmindExiting=$true;$script:allmindVisibility.Exiting=$true;Update-AllmindVisibility;$script:window.Close()}
     'wpf_error' {$script:allmindStatus=$message.message}
+    'wpf_quick_chat' {
+     if($script:allmindQuickChat -and $message.phase-ne 'pending'){$ok=$message.phase-eq 'completed';$text=if($ok){[string]$message.text}else{[string]$message.message};$script:allmindQuickChat.Receive([string]$message.turnId,[string]$message.characterId,[string]$message.sessionId,$ok,$text)}
+    }
     'book_chat_notice' {
      if($message.scope.characterId-eq $script:allmindRole -and !$message.incognito){
       if($message.state-eq 'completed'){Show-AllmindReply ([string]$message.text) ([long]$message.hostReceivedAt)}
@@ -91,6 +97,36 @@ public sealed class AllmindPipe:IDisposable {
  $script:allmindFocus=$false;$script:allmindVisibleSince=[long]::MaxValue
  $hello=@{version=1;id=[Guid]::NewGuid().ToString('N');method='hello';client='widget';token=$script:config.token}|ConvertTo-Json -Compress
  $script:allmindPipe=[AllmindPipe]::new($script:config.pipeName,$hello)
+ Add-Type -Path (Join-Path $script:appDir 'runtime/allmind-quick-chat.cs') -ReferencedAssemblies @('PresentationFramework','PresentationCore','WindowsBase','System.Xaml','System.Windows.Forms','System.Drawing')
+ $script:allmindQuickSession='desktop'
+ $script:allmindQuickChat=[AllmindQuickChat]::new($script:window,$script:ui.SceneText)
+ $script:ui.Girl.ToolTip='点角色看回复；点气泡输入；拖动调整位置；右键打开管理'
+ $script:allmindQuickChat.Add_DisplayChanged({
+  $script:sceneDeadline=0
+  if($script:sceneTimer){$script:sceneTimer.Stop()}
+  if($script:closeTimer){$script:closeTimer.Stop()}
+  if($script:resetPhaseTimer){$script:resetPhaseTimer.Stop()}
+  $script:collapsed=!$script:allmindQuickChat.Visible
+  if(!$script:collapsed){
+   $script:bubbleMode='chat'
+   [Windows.Controls.Canvas]::SetLeft($script:ui.SceneText,63);[Windows.Controls.Canvas]::SetTop($script:ui.SceneText,28)
+   $script:ui.SceneText.Width=184;$script:ui.SceneText.Height=112
+   $script:ui.QuotaText.Visibility=[Windows.Visibility]::Collapsed;$script:ui.QuoteText.Visibility=[Windows.Visibility]::Collapsed
+   $script:ui.LiveDot.Visibility=[Windows.Visibility]::Collapsed
+   $script:ui.Bubble.ToolTip=$null
+  }
+  Set-BubbleState
+ })
+ $script:allmindQuickChat.Add_SendRequested({
+  $chat=$script:allmindQuickChat
+  try{
+   $script:allmindQuickPipeId=[Guid]::NewGuid().ToString('N')
+   $request=@{version=1;id=$script:allmindQuickPipeId;method='quick-chat';params=@{characterId=$chat.CharacterId;sessionId=$chat.SessionId;turnId=$chat.RequestId;text=$chat.RequestText}}
+   $script:allmindPipe.Send(($request|ConvertTo-Json -Depth 6 -Compress))
+  }catch{$chat.Receive($chat.RequestId,$chat.CharacterId,$chat.SessionId,$false,$_.Exception.Message)}
+ })
+ $script:allmindQuickChat.Add_OpenRequested({Invoke-AllmindMenu 'open' @{target='chat'}})
+ $script:window.Add_IsVisibleChanged({if(!$script:window.IsVisible -and $script:allmindQuickChat){$script:allmindQuickChat.Hide()}})
  $keepAppearance=$script:settingsMenuUi.Appearance;$keepAudio=$script:settingsMenuUi.Audio;$keepMusic=$script:settingsMenuUi.MusicEnabled
  $script:context.Items.Clear()
  function Add-AllmindItem([string]$Label,[scriptblock]$Click,[switch]$Check){$item=[Windows.Controls.MenuItem]::new();$item.Header=$Label;$item.IsCheckable=[bool]$Check;$item.Add_Click($Click);$null=$script:context.Items.Add($item);return $item}
@@ -126,10 +162,11 @@ public sealed class AllmindPipe:IDisposable {
  $script:window.Add_Closing({param($sender,$event)if(!$script:allmindExiting){$event.Cancel=$true;Set-AllmindVisible $false}})
  Initialize-AllmindVisibility $settings
  Set-MenuVisible $false
- [Windows.Automation.AutomationProperties]::SetHelpText($script:ui.Girl,'单击轻反馈；拖动调整位置；右键打开聊天、角色与设置。')
+ [Windows.Automation.AutomationProperties]::SetHelpText($script:ui.Girl,'单击打开头顶聊天框；Enter 发送，Shift+Enter 换行；拖动调整位置；右键打开角色与设置。')
  foreach($item in $script:allmindModeItems){$item.IsChecked=$item.Tag-eq $script:allmindVisibility.Mode};$clickThrough.IsChecked=$script:allmindVisibility.ClickThrough;$reminder.IsChecked=$script:allmindVisibility.ReplyReminder
 }
 function Stop-AllmindHost {
+ if($script:allmindQuickChat){$script:allmindQuickChat.Dispose()}
  if($script:allmindPolicyTimer){$script:allmindPolicyTimer.Stop()}
  if($script:allmindObserver){$script:allmindObserver.Dispose()}
  if($script:allmindTimer){$script:allmindTimer.Stop()}

@@ -509,10 +509,11 @@ function Switch-Scene([string]$mode){
 }
 function Next-Bubble {
   if($script:collapsed){return}
+  if($script:allmindMode -and $script:allmindQuickChat -and $script:allmindQuickChat.Visible){if(!$script:allmindQuickChat.Editing){$script:allmindQuickChat.Edit()};return}
   if($script:bubbleMode-eq 'quota'){Switch-Scene 'quote'}else{Hide-Quota}
 }
 function Click-Character {
-  if($script:allmindMode){return}
+  if($script:allmindMode){if($script:allmindQuickChat){$script:allmindQuickChat.Show($script:allmindRole,$script:allmindLabel,$script:allmindQuickSession)};return}
   if($script:collapsed){Show-Quota}
   elseif($script:bubbleTapAdvance){Next-Bubble}
   elseif($script:bubbleMode-ne 'quota'){Switch-Scene 'quota'}
@@ -563,6 +564,7 @@ function Open-WidgetBubble([ValidateSet('quota','quote','completion')][string]$M
   Restart-SceneTtl 520;Save-Settings
 }
 function Hide-Quota([switch]$KeepCompletion) {
+  if($script:allmindQuickChat -and $script:allmindQuickChat.Visible){$script:allmindQuickChat.Hide();return}
   if($script:collapsed){return}
   if($script:bubbleMode-eq 'completion' -and !$KeepCompletion){Dismiss-CompletionNotification}
   Reset-WidgetAutoQuoteSchedule

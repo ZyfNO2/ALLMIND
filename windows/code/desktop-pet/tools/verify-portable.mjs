@@ -54,6 +54,10 @@ try{
  const prefs=read(data+'/host/visibility.json');assert.equal(prefs.manualHidden,true);checks++;
  releaseReply();releaseReply=null;const reply=await chat;assert.equal(reply.turn.assistant,'Synthetic reply survives a hidden pet.');checks++;
  const history=await api('/chat/history?characterId='+state.characterId+'&sessionId=floating-fixture');assert.equal(history.turns.at(-1).assistant,'Synthetic reply survives a hidden pet.');checks++;
+ const quickTurn='portable-quick-chat-turn';const quick=await command('quick-chat',{characterId:state.characterId,sessionId:state.sessionId,turnId:quickTurn,text:'Synthetic desktop composer input.'});assert.equal(quick.accepted,true);checks++;
+ for(let i=0;replyRequests<2&&i<200;i++)await delay(25);assert.equal(replyRequests,2);assert.ok(releaseReply);releaseReply();releaseReply=null;
+ let desktopHistory;for(let i=0;i<100;i++){desktopHistory=await api('/chat/history?characterId='+state.characterId+'&sessionId='+state.sessionId);if(desktopHistory.turns.some(turn=>turn.id===quickTurn))break;await delay(50);}assert.equal(desktopHistory.turns.find(turn=>turn.id===quickTurn)?.assistant,'Synthetic reply survives a hidden pet.');checks+=2;
+ await assert.rejects(command('quick-chat',{characterId:'different-role',sessionId:state.sessionId,turnId:'wrong-scope',text:'not sent'}),/范围/);checks++;
  const before=state.visibility.revision;await delay(1300);state=await command('state');assert.equal(state.visibility.manualHidden,true);assert.ok(state.visibility.revision>=before);checks+=2;
  facts.push('Manual hide persists while the original backend stays alive; no UI event injection.');
  await stop();state=await start();assert.equal(state.hidden,true);assert.equal(state.visibility.manualHidden,true);checks+=2;
@@ -61,7 +65,7 @@ try{
  const ownerPid=descriptor().pid;
  const duplicate=spawn('wscript.exe',[join(root,'Start-ALLMIND.vbs'),data],{cwd:root,windowsHide:true,stdio:'ignore'});const [duplicateCode]=await once(duplicate,'exit');assert.equal(duplicateCode,0);checks++;
  state=await wait(s=>!s.hidden&&!s.visibility.manualHidden,'explicit duplicate-launch reveal');assert.equal(descriptor().pid,ownerPid);checks++;
- assert.equal(replyRequests,1);checks++;facts.push('A real local HTTP fixture request completed and persisted while hidden; restart/reveal did not resend it.');
+ assert.equal(replyRequests,2);checks++;facts.push('Desktop quick-chat command persisted its reply in the desktop session; wrong-role submission was rejected; restart did not resend it.');facts.push('A real local HTTP fixture request completed and persisted while hidden; restart/reveal did not resend it.');
  facts.push('Full process restart preserves manual hide; an explicit duplicate launch restores the same controller.');
  const malformed={...state.visibility,revision:0};await assert.rejects(command('presence',{visibility:malformed}),/状态/);checks++;
  await stop();

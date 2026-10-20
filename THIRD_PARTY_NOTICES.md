@@ -54,7 +54,7 @@
 - 本轮新增 npm 依赖：Graphology 0.26.0、graphology-layout-forceatlas2 0.10.1、graphology-communities-louvain 2.0.2、Sigma 3.0.3，均为 MIT；精确版本与传递依赖见两处 package-lock.json，许可随 npm 包分发。
 - 技术路线参考 [nashsu/llm_wiki](https://github.com/nashsu/llm_wiki) 提交 `48fd970e206a02a6d2028d1dbfc41b7a0345bf0b` 的布局 Worker、Sigma 渲染与社区分析；ALLMIND 独立实现适配组件，未复制其完整运行时、文档或截图。
 - 管理界面延续用户提供的 `allmind_companion_studio_ui.html` 视觉元素。交互核对参考 [Anthropic frontend-design skill](https://github.com/anthropics/skills/tree/main/skills/frontend-design) 与 [Vercel Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines)，未将这些 skill 全文或第三方演示资产打入源码包。
-- README 截图为隔离 ALLMIND 实例的实际界面，使用项目自编合成角色/图谱资料和本机 fixture 模型，不含原游戏图片、本地 GPT 娘图片或私人聊天。
+- 早期 `assets/readme/screenshot-*.png` 为隔离 ALLMIND 实例与合成资料的实际界面，本次 README 不再引用。2026-10-20 更新的 `wiki-*.jpg` 为当前管理界面与真实 ChatGPT High 编纂测试内容截图；`pet-*.png` 为生产 WPF 控件渲染的布局预览，包含第 7 节 GPT-Niang 形象，适用其独立素材许可。配图不含 Key、登录态或私人聊天；完整范围见 [配图说明](assets/readme/README.md)。
 
 2026-10-20 空白源码收口：移除旧 UI 示例图 avatar-aika.png、avatar-sakura.png、avatar-yoruko.png、hero-aika.png；旧页面引用改用既有 avatar-neutral.svg。上述旧图不再包含于发布 Init。
 

@@ -50,14 +50,15 @@ function Update-AllmindVisibility([switch]$Force) {
  if($Force -or $script:allmindObserver.Dirty -or $now-$script:allmindLastSample-ge 1000 -or $script:allmindLastCenter-ne $centerKey){
   $script:allmindObservation=$script:allmindObserver.Sample($center[0],$center[1]);$script:allmindLastSample=$now;$script:allmindLastCenter=$centerKey
  }
- $busy=[bool]($script:drag -or $script:context.IsOpen -or $script:settingsSizePreview -or ($script:characterGallery -and $script:characterGallery.IsVisible))
+ $busy=[bool](($script:allmindQuickChat -and $script:allmindQuickChat.Visible) -or $script:drag -or $script:context.IsOpen -or $script:settingsSizePreview -or ($script:characterGallery -and $script:characterGallery.IsVisible))
  $connected=[bool]($script:allmindPipe -and $script:allmindPipe.Connected -and $script:allmindBackendReady)
  $decision=$script:allmindVisibility.Evaluate($script:allmindObservation,$now,$busy,($script:allmindQuiet -or $script:allmindFocus),$connected)
  $script:allmindDecision=$decision;$script:allmindHidden=!$decision.Visible;$script:allmindNotificationAllowed=$decision.NotificationAllowed;$script:desktopTopmost=$decision.Topmost
  $script:allmindPolicyTimer.Interval=[TimeSpan]::FromMilliseconds([Math]::Min(100,$script:allmindVisibility.DelayUntilTransition($now)))
  if($decision.Revision-ne $script:allmindLastRevision){
   $script:allmindLastRevision=$decision.Revision
-  if(!$decision.NotificationAllowed){Hide-Quota;Stop-WidgetAudio}
+  if($decision.ClickThrough -and $script:allmindQuickChat){$script:allmindQuickChat.Hide()}
+  if(!$decision.NotificationAllowed){if(!$script:allmindQuickChat -or !$script:allmindQuickChat.Visible){Hide-Quota};Stop-WidgetAudio}
   if(!$decision.Visible){
    if($script:drag){$control=$script:drag.control;$script:drag=$null;if($control){$control.ReleaseMouseCapture()};Animate-Press $false}
    $script:context.IsOpen=$false;Suspend-AllmindMusic

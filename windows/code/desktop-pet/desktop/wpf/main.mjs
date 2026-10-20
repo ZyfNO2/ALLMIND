@@ -7,6 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {randomUUID,randomBytes} from 'node:crypto';
 import {restrictPrivatePathSync,isPrivateFileSync} from '../../dist/core/platform-files.js';
 import {startBrowserHost} from './browser-channel.mjs';
+import {createQuickChat} from './quick-chat.mjs';
 import {createWpfPipe,pipeRequest,validateVisibility} from './pipe.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..'),option=(name,fallback)=>{const i=process.argv.indexOf(name);return i<0?fallback:process.argv[i+1];};
@@ -29,6 +30,7 @@ let presence={hidden:true,dnd:true};
 const pendingBrowser=new Map();
 const sendBackend=value=>{if(backend?.stdin.writable)backend.stdin.write(JSON.stringify(value)+'\n');else throw Error('后台尚未就绪。');};
 const publish=value=>pipe.publish(value);
+const quickChat=createQuickChat({getState:()=>state,getSession:async()=>{await readManagement();return JSON.parse(readFileSync(join(bookData,'management-session.json'),'utf8'));},publish});
 function publicState(){return {...state,managementOrigin:management?.origin??null};}
 async function readManagement(){
  const file=join(bookData,'management-session.json');if(!isPrivateFileSync(file))throw Error('管理会话权限无效。');const value=JSON.parse(readFileSync(file,'utf8'));const url=new URL(value.url);if(value.pid!==backend.pid||url.hostname!=='127.0.0.1'||url.protocol!=='http:')throw Error('管理会话不属于当前后台。');management={origin:url.origin};
@@ -72,7 +74,8 @@ const pipe=createWpfPipe({endpoint,token,onConnect:sync,onDisconnect:()=>{state=
   case 'state':return publicState();
   case 'visible':if(typeof p.visible!=='boolean')throw Error('显示参数无效。');publish({channel:'wpf_visible',visible:p.visible});return {accepted:true,requestedVisible:p.visible,effectiveVisible:state.visibility?.visible??false,revision:state.visibility?.revision??null};
   case 'exit':setTimeout(()=>void shutdown(),50);return {exiting:true};
-  case 'open':{const routes={chat:'/chat',character:'/character',memory:'/memory-book',settings:'/settings'};const route=Object.hasOwn(routes,p.target)?routes[p.target]:null;if(!route||state.backend!=='ready'||!management)throw Error('后台尚未就绪，请稍后重试。');const url=management.origin+route;const opener=spawn('rundll32.exe',['url.dll,FileProtocolHandler',url],{windowsHide:true,stdio:'ignore'});opener.on('error',fail);return {opened:true};}
+  case 'open':{const routes={chat:'/chat?'+new URLSearchParams({characterId:state.characterId??'',sessionId:state.sessionId}),character:'/character',memory:'/memory-book',settings:'/settings'};const route=Object.hasOwn(routes,p.target)?routes[p.target]:null;if(!route||state.backend!=='ready'||!management)throw Error('后台尚未就绪，请稍后重试。');const url=management.origin+route;const opener=spawn('rundll32.exe',['url.dll,FileProtocolHandler',url],{windowsHide:true,stdio:'ignore'});opener.on('error',fail);return {opened:true};}
+  case 'quick-chat':return quickChat.send(p);
   case 'appearance-result':if(!appearance||p.requestId!==appearance.requestId||p.characterId!==state.characterId)throw Error('形象请求已经过期。');if(p.ok===true){sendBackend({channel:'ack',requestId:p.requestId});state={...state,appearanceSkinId:appearance.skinId};}else sendBackend({channel:'rpc_error',requestId:p.requestId,message:'WPF 未能解码该图片，保留原形象。'});return {accepted:true};
   case 'presence':{const visibility=validateVisibility(p.visibility);if(state.visibility&&visibility.revision<state.visibility.revision)throw Error('窗口状态已过期。');state={...state,visibility,hidden:!visibility.visible};presence={hidden:!visibility.visible,dnd:p.dnd===true||!visibility.notificationAllowed};if(state.backend==='ready')sendBackend({channel:'companion_presence',...presence});return {accepted:true,revision:visibility.revision,effectiveVisible:visibility.visible};}
   case 'companion-action':if(!['set_enabled','set_quiet'].includes(p.action)||typeof p.enabled!=='boolean'||p.characterId!==state.characterId)throw Error('陪伴操作无效。');sendBackend({channel:'companion_action',characterId:state.characterId,pairingId:'local-user',action:p.action,enabled:p.enabled});return {accepted:true};

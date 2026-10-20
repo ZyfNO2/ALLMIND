@@ -55,6 +55,7 @@ jobs:
           npm.cmd run build:wpf
           node --test tests/wpf/*.test.mjs
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/allmind-visibility.test.ps1
+          powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/allmind-quick-chat.test.ps1
 
       - name: Install and record Chromium for browser tests
         run: |

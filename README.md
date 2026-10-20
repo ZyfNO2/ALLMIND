@@ -1,109 +1,179 @@
 # ALLMIND
 
-Windows 桌面角色陪伴与本地知识管理 Beta。创建你的角色，写入人设或导入角色包，连接模型后开始聊天；角色资料、Wiki 与对话记录保存在本机。
+让角色住在桌面上，也让相处留下可以查证的记忆。
 
-**0.1.0-beta.1 · 开发预览版**。当前工作树已整合 GPT-Niang WPF 桌宠与 ALLMIND 后台，可构建免安装目录包；不提供安装器、签名或自动更新。首次启动提供 GPT-Niang 初始角色与静态龙娘形象，人设与 Wiki 等待补充；不附带私人资料、Key、登录态或聊天历史。
+ALLMIND 是一个 Windows 桌面角色陪伴与本地知识管理项目。你可以创建角色、补充人设与世界观，通过 API 或 ChatGPT 网页聊天，再把资料整理成带来源的 Wiki，并查看知识之间的关系。
 
-## 从空白到第一句对话
+**0.1.0-beta.1 · 开发预览版** · Windows x64 · WPF 桌宠 + 本地后台 + Web 管理界面
 
-1. **准备角色**：左侧打开“角色”，编辑当前角色的基本资料，或点“新增角色”。
-2. **写入设定**：在“人设与说话方式”写下身份、性格和说话习惯并保存；已有角色包可切到“导入角色包”，选择文件并预览后确认应用。
-3. **连接模型**：打开“设置 → AI 与对话 → API Key 接入”。API 路径填写服务地址、Key 和模型，获取模型或手动输入 → 测试连接 → 保存连接设置。测试不会自动保存；失败后输入仍保留。
-4. **开始聊天**：保存连接后点“开始对话”。首页就是聊天，默认续接当前角色上次选择的会话；左侧“记忆”可查看笔记、关系图谱和引用来源。
+[快速开始](#快速开始) · [Wiki 与图谱](#wiki-与图谱) · [模型连接](#模型连接) · [已知限制](#已知限制与验证范围) · [后续更新](#后续更新)
 
-编辑角色与导入资料只影响当前角色；模型连接由应用共用。角色页按基本资料、人设、形象与动作、导入分开操作。更换角色时不复制上一角色的设定或会话。
+## 桌面上的陪伴
 
-## UI V2 导航
+基于 GPT-Niang 的 WPF 桌宠底座，接入 ALLMIND 的角色、聊天、预设与记忆能力。
 
-- **首页**：左侧最近对话，中间聊天；“切换会话”可搜索历史。“会话操作”用于新建、无痕、归档或确认清除本地会话。
-- **陪伴**：互动、可暂停和恢复的专注计时、提醒与相处记录。
-- **记忆**：笔记目录、正文、关联与来源；关系图谱使用同一份资料。知识页阅读保留在目录入口。“日常整理”生成草稿，审核确认后才写入。
-- **角色**：新增与修改角色、人设、形象、角色包预览导入。
-- **设置**：API 与 ChatGPT 网页接入直接在页面编辑；对话预设、外观、隐私、数据和归档分别管理。高级检索与感知配置收在高级工具。
+| 点击桌宠，显示回复 | 点击气泡，直接输入 |
+| :---: | :---: |
+| <img src="assets/readme/pet-reply.png" width="340" alt="GPT 龙娘头顶气泡回复预览"> | <img src="assets/readme/pet-input.png" width="340" alt="原有气泡内的淡紫色聊天输入框"> |
 
-归档只从最近对话中收起会话，不删除聊天或记忆；可在“设置 → 归档的会话”恢复。清除会话是另一项需要确认的操作，会删除本地原文及相关派生记忆，不负责清除模型服务商的远端记录。
+上图由当前生产 WPF 控件渲染，示例文字用于展示布局，**不是桌面实机截图或真实模型回复**。形象来自 [GPT-Niang](https://github.com/T7moris/GPT-Niang)，适用独立的[非商业素材声明](windows/code/desktop-pet/desktop/wpf/shell/assets/CHARACTER-NOTICE.txt)。
 
-V2 使用提供的可编辑界面稿重构。旧版界面截图不再用于描述当前工作树；验收截图保存在隔离过程目录，不随空白源码包分发。
+- 单击桌宠先看最近回复；没有回复时显示简短招呼。再点气泡进入输入态，发送后在同一气泡显示回复。
+- `Enter` 发送，`Shift+Enter` 换行，`Esc` 返回回复，`×` 收起，`↗` 打开完整聊天。
+- 空闲约 15 秒收起；聚焦且有草稿或正在等待回复时保持打开，回复完成后约 30 秒收起。失败保留草稿，不自动重发。
+- 支持拖动、缩放、按压反馈与托盘驻留。右键桌宠进入聊天、角色、记忆或设置；托盘右键“退出 ALLMIND”才结束后台。
 
-## 安装与运行
+全新安装带有 **GPT 龙娘初始角色与静态形象**，人设、Wiki 和陪伴记录为空，等待你补充。已有实例不会被初始角色覆盖。截图中的演示资料不随首次启动导入。
 
-环境：Windows，Node.js **>=22.12.0** 与 npm。首次安装需要网络。以下命令从仓库根目录执行：
+## 可以做什么
+
+| 能力 | 当前实现 |
+| --- | --- |
+| 自定义角色 | 新增、修改角色，分别管理人设、外观和资料；切换角色不复制其他角色的会话 |
+| 两种模型来源 | OpenAI 兼容 API；独立 ChatGPT 登录页面，默认跟随网页当前模型 |
+| 角色知识库 | 世界设定、人设、客观知识、陪伴记录四类目录，支持查看、编辑与来源追踪 |
+| Wiki 编纂 | 产品准备材料、规范、Schema 与自检脚本；模型生成后独立校验，审核确认才应用 |
+| 知识图谱 | 二维布局、连接社区、分类着色、连接度大小、方向关系与来源引用 |
+| RP 预设 | 导入酒馆 Chat Completion JSON，编译顺序、Role、Depth、常用宏与动态插槽 |
+| 对话与隐私 | 会话续接、归档、本地无痕；查看召回依据及最终 Prompt |
+
+## 快速开始
+
+### 从源码运行
+
+需要 **Windows x64、Node.js ≥ 22.12.0、npm、Windows PowerShell 5.1 与 .NET Framework WPF**。首次安装需要网络。
 
 ```powershell
-cd windows/code/desktop-pet
+git clone https://github.com/ZyfNO2/ALLMIND.git
+cd ALLMIND/windows/code/desktop-pet
 npm.cmd ci
 npm.cmd --prefix management/character-ui ci
 npm.cmd run build:allmind
 npm.cmd run start:wpf
 ```
 
-WPF 构建还需要 Windows PowerShell 5.1 与 Windows 自带的 .NET Framework WPF。完成构建后，也可双击仓库根目录 `Start-ALLMIND.vbs` 隐藏启动；无需安装另一份 GPT-Niang。若 npm 跳过 Electron 的安装脚本，且 `node_modules/electron/dist/electron.exe` 缺失，补跑 `node node_modules/electron/install.js`。
+构建后也可双击仓库根目录的 `Start-ALLMIND.vbs` 隐藏启动，无需另外安装 GPT-Niang。如果 Electron 安装脚本被跳过且缺少 `node_modules/electron/dist/electron.exe`，在上述项目目录运行 `node node_modules/electron/install.js` 后重试。
 
-WPF 入口默认数据目录是 `%LOCALAPPDATA%/ALLMIND/`，其中 `book/` 保存角色、模型与记忆，`host/` 保存窗口状态。需要独立试用时指定一个新目录：
+### 完成第一句对话
 
-```powershell
-npm.cmd run start:wpf -- --data E:/ALLMIND-demo-data
-```
+1. **准备角色**：右键桌宠打开管理，在“角色”编辑 GPT 龙娘，或新增你的角色。
+2. **写入人设**：进入“人设与说话方式”，保存身份、性格与说话习惯；已有结构化角色包可先预览再导入。
+3. **连接模型**：在“设置 → AI 与对话”选择 API 或 ChatGPT 网页接入，完成测试并保存。
+4. **开始聊天**：进入首页聊天，或点击桌宠、再点击头顶气泡输入。管理页与气泡均使用当前角色；气泡消息保存到该角色的“桌宠对话”。
 
-首次打开管理界面且模型未配置时，首页会显示连接入口；角色与资料可以分别从左侧导航准备。右键桌宠可打开管理界面。关闭窗口或“收起到系统托盘”会保留后台，托盘右键“退出 ALLMIND”才真正退出。
+模型连接由应用共用，角色资料与对话按角色隔离。网页正式聊天默认**非临时**；“临时聊天”控制远端网页记录，“本地无痕”控制本机记录，二者独立。
 
-构建单目录包（输出必须是尚不存在的目录）：
+### 使用免安装目录包
+
+在 `windows/code/desktop-pet` 中构建，输出目录必须尚不存在：
 
 ```powershell
 npm.cmd run pack:allmind -- --output E:/ALLMIND-portable
 ```
 
-将整个目录复制到另一台 Windows x64 电脑，双击其中的 `Start-ALLMIND.vbs`。包内包含 Node、Electron、WPF 宿主、后台与管理页面，目标机器无需安装 Node/npm；仍需系统 Windows PowerShell 5.1 与 .NET Framework WPF。`package-manifest.json` 记录逐文件哈希。此入口不启动原 GPT-Niang 的 Codex 额度监控、更新器或启动项。旧 `npm start` / `windows/Start-Windows.cmd` 仍是 Electron 开发入口，使用原有 `windows/.local/memory-book/` 数据，不会自动迁移到 WPF 目录。
+将**整个目录**复制到 Windows x64 电脑，双击其中的 `Start-ALLMIND.vbs`。包内包含 Node、Electron、WPF 宿主和管理页面，目标机器无需 Node/npm，仍依赖系统 PowerShell 5.1 与 .NET Framework WPF。当前不提供安装器、签名或自动更新。
 
-开发者可运行 `npm.cmd run verify:portable -- --package E:/ALLMIND-portable --data E:/ALLMIND-unused-test-data --report E:/portable-result.json`。此检查核对文件哈希，使用真实 WPF/后台和包内 Electron，聊天模型使用本地合成服务，不消耗真实模型额度；数据目录必须尚不存在，测试后进程退出、测试数据保留。不要与其他占用 Chat Bridge 端口 17643 的 ALLMIND 实例同时运行。检查不代替原生鼠标操作、全屏避让或真实模型验收。
+默认数据在 `%LOCALAPPDATA%/ALLMIND/`：`book/` 保存角色、连接与记忆，`host/` 保存窗口状态。独立试用可指定新目录：
 
-## 两种模型连接
+```powershell
+npm.cmd run start:wpf -- --data E:/ALLMIND-demo-data
+```
 
-- **API Key 接入**：使用服务商提供的 OpenAI 兼容服务地址、Key 和模型 ID。支持获取模型，也可手动填写。连接测试不写入配置，确认后保存才生效。
-- **ChatGPT 网页接入**：在“设置 → AI 与对话”打开网页接入，选择“ALLMIND 独立常驻页面”，在独立登录窗口完成登录，再检查并绑定、测试和保存。默认跟随网页当前模型（`current`）。内置来源无需额外 CLI；只有备选浏览器自动化工具才需要另装 `chatgpt-use` / `chrome-use`。
+旧 Electron 开发入口 `npm start` / `windows/Start-Windows.cmd` 使用另一数据目录，不会自动迁移到 WPF 数据目录。
 
-网页预设与 Wiki 请求发送前会核实 High，无法核验时拒绝发送。账号、模型权限与服务可用性取决于实际服务。**本轮 API 交互用 fixture 验证；真实 API 服务此前返回 HTTP 403，仍为 DEFERRED。**
+## 模型连接
 
-网页正式聊天默认**非临时**，可在聊天标题栏“网页聊天”直接切换并保存，也可在设置中的“正式聊天模式”修改。连接测试仍单独默认临时聊天。网页模式不决定 ALLMIND 本地记录是否保存；本地无痕是另一项独立选择。绑定模型后，输入区的新手提示自动收起；未绑定时可点 × 关闭并记住选择。
+**API Key 接入**：在“设置 → AI 与对话 → API Key 接入”填写 OpenAI 兼容地址、Key、模型 ID；可获取模型列表或手动输入。先测试、再保存，测试成功不会自动覆盖已保存连接。
 
-## 角色、资料与预设
+**ChatGPT 网页接入**：选择“ALLMIND 独立常驻页面”，打开独立登录窗完成登录，再检查、绑定并保存。默认使用网页当前模型 `current`。内置来源无需额外 CLI；备选浏览器工具才需要另装 `chatgpt-use` / `chrome-use`。可用模型与服务状态取决于你的账号。
 
-- **角色包**：角色页可导入 ZIP、Book JSON 或 `.aiki.md`，单文件上限 1 MiB。选择文件先预览，确认目标角色、条目和冲突后再应用。诊断不通过时禁止应用；取消预览不写入。
-- **核心人设**：支持直接编辑已有条目和增加条目，启用的人设合计上限 4 KiB。离开未保存的编辑会提示；导入包不会抹掉角色已有的其他资料。
-- **四类资料**：世界设定、人设、客观知识、陪伴记录。角色知情范围同时作用于管理视图与召回；导入的模拟故事不等于用户真实经历。
-- **酒馆预设**：设置 → AI 与对话 → 对话预设。支持 Chat Completion JSON 的顺序、Role、Depth、常用宏与动态 Marker；不执行第三方脚本。未知宏或 Marker 明确阻断。随树 Nano Bear 样例仅供手动选择，见 [第三方声明](THIRD_PARTY_NOTICES.md)。
-- **GPT-Niang 初始角色**：全新安装默认选择 GPT 龙娘并绑定随包静态形象；核心人设、Wiki 和陪伴记录为空，可在角色页补充或导入。已有实例只新增，不覆盖当前角色；修改或删除后不会被重新初始化。原图适用独立非商业素材声明。另可在“角色 → 形象与动作”读取本地 GPT-Niang 图片及额度快照，见 [适配范围](validation/GPT-NIANG.md)。
+网页预设和 Wiki 请求发送前核实 **High**，不能核验时拒绝发送。失败、取消、超时或结果未知时不自动重发；已提交请求需先核对原回执。
 
-更多资料导入、导出与维护位于“记忆 → 日常整理 → 高级工具与来源”。
+## Wiki 与图谱
 
-## Wiki、图谱与召回
+### 从资料到可核对的知识页
 
-日常整理（Wiki 编纂）由 ALLMIND 准备材料和完整提示词，调用所选模型，再独立校验结构、逐字证据、资料域、关系端点与覆盖清单。**生成草稿后还要审核并明确应用**，才会更新角色资料。
+“记忆 → 日常整理”的流程是：**准备材料 → 发送模型 → 独立校验 → 查看草稿与原文依据 → 确认应用**。它不会把模型返回的文字直接覆盖到角色书中。
 
-单次输出有上限，因此较大材料集会自动分批。历史真实网页验收中，189 条材料分 12 批约用 24 分钟；第一次任务因证据不符失败，另建任务后通过。跨批同名主题未自动合并，中断不保存可续算的部分正文，也不会自动重发。限制与步骤见 [Wiki 编纂](validation/WIKI-SYNTHESIS.md)。
+以下是 **2026-10-20 当前管理界面的真实截图**，内容来自本地 GPT 龙娘测试材料，经 ALLMIND 调用 ChatGPT High 编纂。虚构设定不代表官方设定或真实共同经历；这些测试记录不随空白包导入。
 
-图谱采用 ForceAtlas2 二维布局、Louvain 连接社区与 WebGL 渲染。颜色可按四类知识或连接社区区分，大小反映连接度；箭头表示有据语义方向，浅色线表示来源引用。支持搜索、缩放、拖动、全屏、键盘选中与右侧依据详情。**视觉接近不代表事实关系**。最多显示 128 节点 / 2048 边，超出部分明确显示省略数量。
+![Wiki：云栖城、金库与关键物件，以及关联与来源](assets/readme/wiki-world.jpg)
 
-聊天侧的“为什么想起这些？”和 Prompt Inspector 可检查实际装配内容、预设、预算、生效参数及省略原因，区分编译预览与模型请求已完成。无痕会话不持久化聊天和记忆，但所选模型仍会收到请求内容。
+<details>
+<summary>查看另外两个知识页：角色资料与事件叙事</summary>
 
-## Beta 边界与验证
+**角色资料**：保留社区描述、作者虚构与未证实传言的边界。
 
-| 项目 | 当前记录 |
+![Wiki：GPT 龙娘与 DeepSeek 鲸娘](assets/readme/wiki-characters.jpg)
+
+**事件叙事**：保留事件日期、未知凶手与虚构经历标记。
+
+![Wiki：雾历 214 年事件与叙事](assets/readme/wiki-events.jpg)
+
+</details>
+
+<details>
+<summary>查看真实编纂任务与 High 回执</summary>
+
+本次生成 3 个综合页、3 条页间语义关系。结构、逐字依据、资料域与覆盖检查通过后，经界面确认应用。
+
+![Wiki 编纂：已应用任务、High 核实与任务包哈希](assets/readme/wiki-synthesis.jpg)
+
+</details>
+
+角色包支持 ZIP、`memory-book/v1` JSON 与**结构化** `.aiki.md`，单文件上限 1 MiB。普通 Markdown 可以作为聊天资料上传，**仅修改扩展名不会成为可导入角色包**；当前编纂从角色书取材料，普通 Markdown 尚不能一键上传后直接编纂。核心人设合计上限 4 KiB。
+
+较大材料集会分批处理，全部校验通过后再统一审核应用。历史 189 条材料曾分 12 批完成；跨批同名主题尚未自动合并，中断后不会自动续算或重发。详见 [Wiki 编纂说明](validation/WIKI-SYNTHESIS.md)。
+
+### 看见知识之间的关系
+
+![实际知识图谱与节点依据面板](assets/readme/wiki-graph.jpg)
+
+图谱采用 ForceAtlas2 布局、Louvain 连接社区和 WebGL 渲染。支持搜索、缩放、拖动、全屏、键盘选中与右侧依据详情。颜色按四类知识或连接社区区分，节点大小反映连接度；箭头表示语义方向，浅色线表示来源引用。位置接近本身不表示事实关系。
+
+上图共 **5 个节点、10 条连线**，其中 **3 条是模型生成的页间语义关系**，其余为来源、依据和页面关联。当前编纂偏向 1–3 个主题页，还不是完整的细粒度实体关系抽取。图谱显示上限为 128 节点 / 2048 边，超过时提示省略数量。
+
+### 检查“为什么想起这些”
+
+聊天中的引用入口与 Prompt Inspector 可检查实际召回条目、预设、预算和省略原因。酒馆预设兼容正文、顺序、Role、Depth、常用宏与 Marker；未知宏或 Marker 会明确阻断，不执行第三方脚本。预设在“设置 → AI 与对话 → 对话预设”管理。
+
+## 已知限制与验证范围
+
+- 自动编纂可能继承原始资料分类。本次三个派生页都落在“客观知识”，尚未自动分入人设与世界设定，也没有自动启用核心人设。
+- 模拟派生页在 `story-rp` 模式可召回，在默认 `smart` 模式会被隔离；原始模拟材料与派生页的资格判断仍有不一致。这部分尚未完成统一。
+- ChatGPT 网页长期历史仍有省略或空回复的已知问题；空回复会显式报错。真实 API 此前遇到服务 HTTP 403，不能用 fixture 成功代替真实服务通过。
+- 当前默认静态形象；Live2D SDK、私人模型和语音模型不随包分发。气泡的真实鼠标、中文输入法手感，以及全屏/锁屏场景仍需单独验收。
+
+| 验证范围 | 最近记录，不代表本次重新跑全量 |
 | --- | --- |
-| 构建 / 本地核心 | 构建通过；L1 **395/395**，生产模块与合成数据 |
-| 固定浏览器回归 | **29/29**（19 个文件）；另有 V2 专项 **2/2**、聊天与预览专项 **4/4**；包含从空白创建角色、人设、导入、API 测试/保存、聊天及角色隔离 |
-| 图谱交互 | 124 节点合成图实际渲染、社区着色、节点检查、全屏退出及 390/320 px 布局通过 |
-| 真实网页模型 | 本轮独立页面登录、绑定、High level 2 与最小连接测试通过；先前预设聊天及分批 Wiki 是历史记录，本轮未重跑 Wiki |
-| 真实 API | **DEFERRED**：此前服务 HTTP 403；fixture 不替代真实服务验收 |
-| 网页长期历史 | **未通过**：默认窗口会显式省略旧轮次，调大窗口后曾返回空回复；产品报错，不冒充成功 |
-| 桌宠原生操作 / Live2D / 语音 | 本轮未验收；源码包不分发私人模型或 Cubism SDK，默认静态形象 |
-| WPF 整合目录包 | 统一构建通过；修复 Windows 网页宿主 stdin 提前关闭，改用命名管道；当前便携包 1672 文件哈希核对、42 项隔离检查通过。真实独立页面登录、绑定保存、High 核实和最小连接测试已通过；原生鼠标、全屏/锁屏及真实 Wiki/长历史仍需分别验收 |
-| 安装器 / 签名 / 自动更新 | 暂不提供 |
+| 本地核心 / 固定浏览器回归 | 历史 L1 395/395；固定浏览器 29/29，详细范围见验证记录 |
+| 本次真实 Wiki 编纂 | ChatGPT High、3 页 / 3 关系、独立校验、界面应用、刷新与后台重启留存通过；RP 召回 3/3 |
+| 气泡交互组件 | WPF 34 项断言，包含原 HWND 复用、焦点切换、草稿与回执隔离；不等于实际鼠标/IME验收 |
+| WPF 与便携包 | Node WPF 套件 7/7；悬浮策略 53 项；当前测试目录包 1674 文件哈希核对、46 项隔离检查，模型使用 fixture |
+| 全量冷复现 / 安装器 / 签名 | 本轮未做新的全量冷复现；安装器、签名、自动更新尚未提供 |
 
-失败、取消、超时或结果未知的请求保留提交意图，不自动重发；写入意图失败时拒绝发送。详细限制与历次首错分别保留在验证记录中。
+复跑入口：[RUNBOOK](validation/RUNBOOK.md) · [固定用例](validation/CASES.json) · [交互与图谱范围](validation/UX-GRAPH.md) · [历次验证记录](validation/release-status.json)。[源码清单](validation/source-manifest.json) 是此前冻结记录，不包含后续所有 WPF 与聊天修改。
 
-复跑命令：[RUNBOOK](validation/RUNBOOK.md)；固定选择：[CASES.json](validation/CASES.json)；本轮交互范围：[UX-GRAPH.md](validation/UX-GRAPH.md)；完整历史：[release-status.json](validation/release-status.json)；最近一次冻结清单：[source-manifest.json](validation/source-manifest.json)（历史冻结清单，不包含后续 V2/WPF 与聊天修复）。本次源码提交包含 V2 UI、WPF 整合及聊天修复，提交身份以 Git 历史为准；历史 `Init` 不代表本轮验收。未做新的全量冷安装复现。以前的冷复现结果不能代替当前改动的冷复现。
+便携包隔离检查（在项目目录运行，测试数据目录须尚不存在）：
+
+```powershell
+npm.cmd run verify:portable -- --package E:/ALLMIND-portable --data E:/ALLMIND-unused-test-data --report E:/portable-result.json
+```
+
+不要与其他占用 Chat Bridge 端口 17643 的 ALLMIND 实例并行运行该检查。它使用本地合成模型服务，不消耗真实模型额度。
+
+## 后续更新
+
+以下是计划方向，**尚不作为当前可用功能承诺**：
+
+- **QQ 桥接**：把角色对话接到 QQ，明确会话路由、权限和记忆写入边界。
+- **ACP 桥接**：对接兼容 ACP 的 Agent，区分角色陪伴与外部任务执行。
+- **Wiki 与导入**：普通 Markdown 直接编纂、自动分类、实体级关系、跨批主题合并，统一模拟资料召回规则。
+- **桌宠与交互**：继续完善气泡聊天、外观与动作、场景避让和原生验收。
+- **发布体验**：干净安装复现、安装包、签名及更新流程。
 
 ## 来源与许可
 
-ALLMIND 从 AAAAGENT / Aika-Next Windows 工作线整理并继续开发，沿用 [phoiex/AAAAGENT](https://github.com/phoiex/AAAAGENT) 底座及贡献者代码，适用原样保留的 [AAAAGENT 非商业使用及署名许可](LICENSE)。来源链、第三方依赖与素材声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+ALLMIND 沿用 [phoiex/AAAAGENT](https://github.com/phoiex/AAAAGENT) 底座，经 Aika-Next Windows 工作线继续开发，适用原样保留的 [AAAAGENT 非商业使用及署名许可](LICENSE)。WPF 桌宠基于 [T7moris/GPT-Niang](https://github.com/T7moris/GPT-Niang) 增量改造；其代码与角色图片分别适用对应许可，不将角色图片解释为代码许可资产。
+
+完整来源、依赖与素材声明：[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。本页配图来源与拍摄范围：[配图说明](assets/readme/README.md)。

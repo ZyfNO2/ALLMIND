@@ -2,7 +2,7 @@ import net from 'node:net';
 import {timingSafeEqual,randomUUID} from 'node:crypto';
 
 export const WPF_PROTOCOL_VERSION=1;
-const methods=new Set(['hello','state','open','visible','exit','appearance-result','presence','companion-action','restart-backend','claim']);
+const methods=new Set(['hello','state','open','visible','exit','appearance-result','presence','companion-action','restart-backend','claim','quick-chat']);
 export function validateVisibility(value){
  if(!value||!Number.isSafeInteger(value.revision)||value.revision<1||!['VISIBLE','HIDDEN','SUSPENDED','EXITING'].includes(value.state)||!['smart','resident','normal'].includes(value.mode)||!Array.isArray(value.reasons)||value.reasons.length>10||value.reasons.some(reason=>!['exiting','session-unknown','session-unavailable','power-suspended','manual','presentation','fullscreen','detector-degraded'].includes(reason)))throw Error('窗口状态无效。');
  for(const field of ['visible','manualHidden','topmost','notificationAllowed'])if(typeof value[field]!=='boolean')throw Error('窗口状态字段无效。');

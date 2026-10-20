@@ -150,6 +150,22 @@
         "New browser harness initially had missing brace; syntax repaired; unchanged product requirements passed",
         "Prior preview crash left writer.lock; verified PID 25916 dead, backed up exact lock then removed; restarted without touching chat/profile"
       ]
+    },
+    "desktopQuickChat": {
+      "date": "2026-10-20",
+      "status": "IMPLEMENTED",
+      "nodeTests": {
+        "pass": 7,
+        "fail": 0
+      },
+      "nativeComponentAssertions": 34,
+      "presentation": "Existing portrait bubble; pet click shows reply, bubble click opens embedded purple composer; no separate chat window",
+      "portableAssertions": 46,
+      "portableFixtureModel": true,
+      "realModel": "NOT_RUN this change",
+      "nativeMouseAndIME": "NOT_RUN; native WPF components tested",
+      "currentPackageUpdated": true,
+      "userDataPreserved": true
     }
   },
   "assetEvidenceRequired": [],
