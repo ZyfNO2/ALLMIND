@@ -45,5 +45,11 @@ export async function inspectSprite(file: string, input: Partial<SpriteFrames> =
       || !Number.isSafeInteger(clip.frameCount) || clip.frameCount < 1 || clip.start + clip.frameCount > frameCount
       || (clip.fps !== undefined && (!Number.isFinite(clip.fps) || clip.fps <= 0 || clip.fps > 120))) throw new ManagementError('invalid_request', '角色状态动画帧范围或 FPS 无效。');
   }
-  return { rows, columns, frameCount, fps, width: size.width, height: size.height, contentBounds, alpha, ...(input.clips ? { clips: input.clips } : {}), ...(input.framing === 'full' || input.framing === 'bust' ? { framing: input.framing } : {}) };
+  // Whole-atlas alpha bounds do not describe any individual frame.
+  // Use per-frame dimensions for a multi-frame atlas until per-tile alpha
+  // inspection is available; preserve tight bounds for a static image.
+  const frameBounds = rows * columns > 1
+    ? { x: 0, y: 0, width: size.width / columns, height: size.height / rows }
+    : contentBounds;
+  return { rows, columns, frameCount, fps, width: size.width, height: size.height, contentBounds: frameBounds, alpha, ...(input.clips ? { clips: input.clips } : {}), ...(input.framing === 'full' || input.framing === 'bust' ? { framing: input.framing } : {}) };
 }
