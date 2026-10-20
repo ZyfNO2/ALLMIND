@@ -503,7 +503,7 @@ export class ChatgptBackgroundBridge {
     if (this.warming) return this.warming;
     this.warmModel=model ?? this.warmModel;
     this.warmProject=project;
-    const mode=project?false:this.options.config().conversationMode !== 'regular';
+    const mode=project?false:this.options.config().conversationMode === 'temporary';
     this.warmDetail='后台页面预热中';
     this.warming=(async()=>{
       let page: Record<string, any>;

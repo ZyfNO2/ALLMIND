@@ -2,8 +2,8 @@ import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 /** Build fixed local routes from the trusted installed manifest. Never resolve a requested path. */
-export async function presentationAssetRoutes(projectRoot: string): Promise<ReadonlyMap<string, string>> {
-  const desktop = resolve(projectRoot, 'code/desktop-pet/desktop'), base = resolve(desktop, 'assets/local-model');
+export async function presentationAssetRoutes(projectRoot: string, desktopRoot?: string): Promise<ReadonlyMap<string, string>> {
+  const desktop = desktopRoot ?? resolve(projectRoot, 'code/desktop-pet/desktop'), base = resolve(desktop, 'assets/local-model');
   const routes = new Map<string, string>();
   routes.set('/preview-runtime/presentation-preview.js', resolve(desktop, '../management/preview-runtime/presentation-preview.js'));
   if (!existsSync(base)) {

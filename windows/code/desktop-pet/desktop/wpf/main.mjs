@@ -6,10 +6,11 @@ import {resolve,join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomUUID,randomBytes} from 'node:crypto';
 import {restrictPrivatePathSync,isPrivateFileSync} from '../../dist/core/platform-files.js';
+import {startBrowserHost} from './browser-channel.mjs';
 import {createWpfPipe,pipeRequest,validateVisibility} from './pipe.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..'),option=(name,fallback)=>{const i=process.argv.indexOf(name);return i<0?fallback:process.argv[i+1];};
-const data=resolve(option('--data',join(process.env.LOCALAPPDATA??root,'ALLMIND'))),shellRoot=resolve(option('--shell-root',join(root,'wpf-shell')));
+const data=resolve(option('--data',join(process.env.LOCALAPPDATA??root,'ALLMIND'))),shellRoot=resolve(option('--shell-root',join(root,'desktop/wpf/shell')));
 const hostData=join(data,'host'),bookData=join(data,'book');mkdirSync(hostData,{recursive:true});mkdirSync(bookData,{recursive:true});restrictPrivatePathSync(data);restrictPrivatePathSync(hostData);
 const lock=join(hostData,'controller.json');
 if(existsSync(lock)){
@@ -22,7 +23,7 @@ const descriptor={version:1,pid:process.pid,instanceId,endpoint,pipeName,token,d
 const fd=openSync(lock,'wx',0o600);try{writeFileSync(fd,JSON.stringify(descriptor)+'\n');}finally{closeSync(fd);}restrictPrivatePathSync(lock);
 const config=join(hostData,'widget-config.json');writeFileSync(config,JSON.stringify(descriptor)+'\n',{mode:0o600});restrictPrivatePathSync(config);
 const log=createWriteStream(join(hostData,'runtime.log'),{flags:'a',mode:0o600});
-let backend=null,widget=null,browser=null,browserReady=null,management=null,appearance=null,stopping=false,backendExpected=false,widgetExpected=false;
+let backend=null,widget=null,browser=null,browserStarting=null,management=null,appearance=null,stopping=false,backendExpected=false,widgetExpected=false;
 let state={instanceId,backend:'starting',characterId:null,characterLabel:'ALLMIND',sessionId:'desktop',hidden:true,visibility:null,capabilities:{staticPortrait:true,live2d:false,chatgptWeb:true}};
 let presence={hidden:true,dnd:true};
 const pendingBrowser=new Map();
@@ -35,13 +36,11 @@ async function readManagement(){
 function sync(){publish({channel:'wpf_state',state:publicState()});if(appearance)publish(appearance);}
 function fail(error){log.write('[host] '+String(error.stack??error)+'\n');state={...state,backend:'failed',error:error.message};publish({channel:'wpf_state',state:publicState()});}
 async function browserRequest(request){
- if(!browser){
-  const electron=createRequire(import.meta.url)('electron');
-  browser=spawn(electron,[join(root,'desktop/wpf/browser-host.mjs'),'--data',join(data,'chatgpt')],{windowsHide:true,stdio:['pipe','pipe','pipe'],env:{...process.env,ELECTRON_RUN_AS_NODE:undefined}});browser.stderr.pipe(log,{end:false});
-  const child=browser;browserReady=new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('网页辅助宿主启动超时。')),20000);child.once('error',reject);const lines=createInterface({input:child.stdout});lines.on('line',line=>{try{const message=JSON.parse(line);if(message.ready){clearTimeout(timer);resolve();return;}const waiter=pendingBrowser.get(message.requestId);if(waiter){clearTimeout(waiter.timer);pendingBrowser.delete(message.requestId);message.ok?waiter.resolve(message.value):waiter.reject(Error(message.error));}}catch{log.write('[browser] Invalid protocol output.\n');}});child.once('exit',()=>{clearTimeout(timer);browser=null;reject(Error('网页辅助宿主已关闭。'));for(const item of pendingBrowser.values()){clearTimeout(item.timer);item.reject(Error('网页宿主已断开，请核对请求状态。'));}pendingBrowser.clear();});});
+ if(!browser||browser.closed){
+  browserStarting??=startBrowserHost({executable:createRequire(import.meta.url)('electron'),script:join(root,'desktop/wpf/browser-host.mjs'),data:join(data,'chatgpt'),onDiagnostic:text=>log.write(text)});
+  try{browser=await browserStarting;}finally{browserStarting=null;}
  }
- await browserReady;
- return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{pendingBrowser.delete(request.requestId);reject(Error('网页宿主请求超时，结果需要核对。'));},70000);pendingBrowser.set(request.requestId,{resolve,reject,timer});browser.stdin.write(JSON.stringify({requestId:request.requestId,params:request.params})+'\n');});
+ return browser.request(request.requestId,request.params);
 }
 async function backendMessage(message){
  if(message.channel==='backend_ready'){
@@ -65,7 +64,7 @@ function startBackend(){
 }
 async function stopChild(child){if(!child||child.exitCode!==null||child.signalCode!==null)return;await new Promise(resolve=>{const timer=setTimeout(()=>{child.kill();},12000);const final=setTimeout(resolve,15000);child.once('exit',()=>{clearTimeout(timer);clearTimeout(final);resolve();});child.stdin?.end();});}
 async function shutdown(){
- if(stopping)return;stopping=true;publish({channel:'wpf_shutdown'});backendExpected=true;widgetExpected=true;await Promise.all([stopChild(backend),stopChild(browser)]);if(widget)await new Promise(resolve=>{if(widget.exitCode!==null)return resolve();const t=setTimeout(()=>{widget.kill();resolve();},5000);widget.once('exit',()=>{clearTimeout(t);resolve();});});await pipe.close();for(const file of [lock,config])if(existsSync(file)&&JSON.parse(readFileSync(file,'utf8')).instanceId===instanceId)unlinkSync(file);log.end();
+ if(stopping)return;stopping=true;publish({channel:'wpf_shutdown'});backendExpected=true;widgetExpected=true;await Promise.all([stopChild(backend),browser?.close()]);if(widget)await new Promise(resolve=>{if(widget.exitCode!==null)return resolve();const t=setTimeout(()=>{widget.kill();resolve();},5000);widget.once('exit',()=>{clearTimeout(t);resolve();});});await pipe.close();for(const file of [lock,config])if(existsSync(file)&&JSON.parse(readFileSync(file,'utf8')).instanceId===instanceId)unlinkSync(file);log.end();
 }
 const pipe=createWpfPipe({endpoint,token,onConnect:sync,onDisconnect:()=>{state={...state,hidden:true,visibility:null};presence={hidden:true,dnd:true};if(!stopping&&state.backend==='ready'&&backend?.stdin.writable)sendBackend({channel:'companion_presence',...presence});},async onCommand(request){
  const p=request.params??{};
@@ -85,7 +84,7 @@ const pipe=createWpfPipe({endpoint,token,onConnect:sync,onDisconnect:()=>{state=
 try{
  await pipe.listen();startBackend();
  if(!process.argv.includes('--no-widget')){
-  const script=join(shellRoot,'widget.ps1');if(!existsSync(script))throw Error('没有找到 GPT-Niang WPF 源码，请用 --shell-root 指定 gpt-niang-usage 目录。');
+  const script=join(shellRoot,'widget.ps1');if(!existsSync(script))throw Error('缺少随包 WPF 宿主源码，请重新构建或重新解压 ALLMIND。');
   const native=join(shellRoot,'bin/ALLMIND.Widget.exe');if(!existsSync(native))throw Error('请先运行 runtime/build-allmind-host.ps1 构建 WPF 宿主。');
   widget=spawn(native,[config],{windowsHide:true,stdio:['ignore','pipe','pipe']});widget.stdout.pipe(log,{end:false});widget.stderr.pipe(log,{end:false});widget.on('error',error=>{fail(error);void shutdown();});widget.once('exit',code=>{if(!stopping&&!widgetExpected){if(code)process.exitCode=code;void shutdown();}});
  }

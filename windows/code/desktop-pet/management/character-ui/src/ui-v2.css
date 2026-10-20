@@ -36,3 +36,8 @@ body{background:var(--mb-bg);color:var(--mb-ink)}
 @media(max-width:760px){.v2-app .mb-page-chat{min-height:0}.v2-app .mb-composer-hint{height:68px}}
 @media(max-height:650px){.v2-app .mb-chat-log{min-height:0;padding-block:8px}.v2-app .mb-composer{gap:5px;padding:8px}.v2-app .mb-composer textarea{height:40px;min-height:40px}.v2-app .mb-composer-hint{height:42px;padding:4px 8px}.v2-app .mb-chat-toolbar{padding:6px 10px}.v2-app .mb-chat-main>details.mb-card summary{padding:4px 0}}
 .v2-app input[type=file]{max-width:100%;min-width:0;width:100%;font-size:12px}
+
+.v2-app .mb-profile-avatar img,.v2-app .mb-empty-avatar img{width:100%;height:100%;object-fit:contain}
+.v2-app .mb-empty-avatar:has(img){width:100px;height:100px;background:transparent}
+
+.mb-chat-setup-hint{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.mb-chat-setup-hint>button:last-child{margin-left:auto}.mb-web-chat-mode{display:flex;gap:8px;align-items:center;font-size:12px}.mb-web-chat-mode select{max-width:200px}

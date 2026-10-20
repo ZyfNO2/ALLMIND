@@ -57,3 +57,11 @@
 - README 截图为隔离 ALLMIND 实例的实际界面，使用项目自编合成角色/图谱资料和本机 fixture 模型，不含原游戏图片、本地 GPT 娘图片或私人聊天。
 
 2026-10-20 空白源码收口：移除旧 UI 示例图 avatar-aika.png、avatar-sakura.png、avatar-yoruko.png、hero-aika.png；旧页面引用改用既有 avatar-neutral.svg。上述旧图不再包含于发布 Init。
+
+## 7. GPT-Niang 初始角色形象（2026-10-20）
+
+WPF 整合版本另在 `windows/code/desktop-pet/desktop/wpf/shell/` 保留 GPT-Niang 的宿主源码、音效与素材，增量修改及基线见同目录 `UPSTREAM.md`；MIT 代码署名保留在 `LICENSE`，图片、语录分别适用 `assets/CHARACTER-NOTICE.txt` 与 `assets/quotes-LICENSE.txt`。便携包随附 Node 运行时，其完整许可见 `runtime/NODE-LICENSE.txt`；Electron 与 Chromium 许可随 `node_modules/electron/dist/` 分发。源码仓库不保存这些运行时二进制，打包时从本地安装复制。
+
+按用户要求随附 GPT-Niang 的 `gpt-dragon-niang-bust.png`，来源 https://github.com/T7moris/GPT-Niang ，原路径 `gpt-niang-usage/assets/gpt-dragon-niang-bust.png`。固定素材提交 `f906d61bb3a19b6a7004507274fdd2165d3f14b6`，SHA-256 `7787b108d9c972d06228acf4c41721217ae88489b79dc116e2a78d4f81767204`。图片保持原字节，未改绘。随附于 `windows/code/desktop-pet/desktop/assets/gpt-niang/`，同目录保留上游 `CHARACTER-NOTICE.txt` 与 `生成说明.md`。
+
+该图片及副本**不适用代码 MIT 许可**。上游声明在维护者有权许可的范围内，允许随非商业项目副本用于挂件和项目展示，要求保留素材声明与来源；不许可商业素材用途或独立素材包分发，第三方参考设计权利归各自权利人。以随附原声明为准。初始角色只注册名称与静态形象，不随附用户 Wiki、私人设定或聊天记录。

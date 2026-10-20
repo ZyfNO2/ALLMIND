@@ -46,7 +46,7 @@ export default function ChatgptSourceSettings({ config, onChange, action, savePr
     <label className="mb-toggle">允许发送整理材料<input type="checkbox" checked={source.authorizedPurposes.includes('wiki')} onChange={event => purpose('wiki', event.target.checked)} /></label>
     <label>提交方式<select value={source.submitMechanism} onChange={event => onChange({ ...config, chatgptWeb: { ...source, submitMechanism: event.target.value as typeof source.submitMechanism } })}><option value="page">后台网页</option><option value="auto">自动（当前使用后台网页）</option><option value="token" disabled>内部接口（实验，未启用）</option></select></label>
     <label className="mb-toggle">连接测试使用临时聊天<input type="checkbox" checked={source.temporaryChatTests} onChange={event => onChange({ ...config, chatgptWeb: { ...source, temporaryChatTests: event.target.checked } })} /></label>
-    <label>正式聊天模式<select aria-label="正式聊天模式" value={source.conversationMode ?? 'temporary'} onChange={event => onChange({ ...config, chatgptWeb: { ...source, conversationMode: event.target.value as 'temporary' | 'regular' } })}><option value="temporary">临时聊天（默认）</option><option value="regular">非临时聊天</option></select></label>
+    <label>正式聊天模式<select aria-label="正式聊天模式" value={source.conversationMode ?? 'regular'} onChange={event => onChange({ ...config, chatgptWeb: { ...source, conversationMode: event.target.value as 'temporary' | 'regular' } })}><option value="temporary">临时聊天</option><option value="regular">非临时聊天（默认）</option></select></label>
     <p className="mb-muted">临时模式不进入 ChatGPT 网页历史；ALLMIND 本地记忆仍由记忆权限控制。非临时模式会保留网页聊天记录，每次调用仍使用独立对话。</p>
     <ChatgptProjectSettings config={config} save={saveProjects} action={action}/>
     {!source.temporaryChatTests && <p>连接测试会进入账号聊天历史。</p>}

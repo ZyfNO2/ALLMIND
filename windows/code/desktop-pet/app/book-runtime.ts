@@ -413,7 +413,7 @@ export class BookRuntime {
     const selections = normalizeResourceSelections(options?.inputResources);
     const incognito=options?.incognito===true,key=JSON.stringify(scope);
     if(incognito&&selections.length)throw new BookError('conflict','无痕会话不支持附件输入，未发送；请结束无痕或移除附件。');
-    if(incognito&&isChatgptWebBinding(config.mainModel)&&(config.chatgptWeb?.conversationMode==='regular'||config.chatgptProjects?.some(row=>row.enabled&&row.characterId===scope.characterId&&row.pairingId===scope.pairingId)))throw new BookError('conflict','本地无痕与非临时网页/项目归档冲突，尚未发送；请明确选择临时且不绑定项目的来源或使用其他模型。');
+    if(incognito&&isChatgptWebBinding(config.mainModel)&&(config.chatgptWeb?.conversationMode!=='temporary'||config.chatgptProjects?.some(row=>row.enabled&&row.characterId===scope.characterId&&row.pairingId===scope.pairingId)))throw new BookError('conflict','本地无痕与非临时网页/项目归档冲突，尚未发送；请明确选择临时且不绑定项目的来源或使用其他模型。');
     if(!incognito&&this.privateTurns.has(key))throw new BookError('conflict','当前仍有无痕上下文，请结束无痕并开始新的普通会话。');
     if (!config.mainModel) throw new BookError('unavailable', '请先在设置中绑定文字主模型。');
     if (isChatgptWebBinding(config.mainModel)) assertWebPurposeAuthorized(config, 'reply');

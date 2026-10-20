@@ -86,3 +86,8 @@ validation/output/
 *.p12
 *.pfx
 *.mobileprovision
+
+# Integrated WPF build output and isolated upstream component tests
+windows/code/desktop-pet/desktop/wpf/shell/bin/
+windows/code/desktop-pet/desktop/wpf/shell/tests/.tmp/
+windows/code/desktop-pet/desktop/wpf/shell/.test-output/

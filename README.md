@@ -2,7 +2,7 @@
 
 Windows 桌面角色陪伴与本地知识管理 Beta。创建你的角色，写入人设或导入角色包，连接模型后开始聊天；角色资料、Wiki 与对话记录保存在本机。
 
-**0.1.0-beta.1 · 源码预览版**。目前提供源码构建，不提供安装器。首次启动是空白角色，不附带私人角色、Key、登录态或聊天历史。
+**0.1.0-beta.1 · 开发预览版**。当前工作树已整合 GPT-Niang WPF 桌宠与 ALLMIND 后台，可构建免安装目录包；不提供安装器、签名或自动更新。首次启动提供 GPT-Niang 初始角色与静态龙娘形象，人设与 Wiki 等待补充；不附带私人资料、Key、登录态或聊天历史。
 
 ## 从空白到第一句对话
 
@@ -33,21 +33,29 @@ V2 使用提供的可编辑界面稿重构。旧版界面截图不再用于描�
 cd windows/code/desktop-pet
 npm.cmd ci
 npm.cmd --prefix management/character-ui ci
-npm.cmd run build
-npm.cmd run build:desktop
-npm.cmd start
+npm.cmd run build:allmind
+npm.cmd run start:wpf
 ```
 
-也可双击 `windows/Start-Windows.cmd` 完成安装、构建与启动。若 npm 跳过 Electron 的安装脚本，且 `node_modules/electron/dist/electron.exe` 缺失，补跑 `node node_modules/electron/install.js`。
+WPF 构建还需要 Windows PowerShell 5.1 与 Windows 自带的 .NET Framework WPF。完成构建后，也可双击仓库根目录 `Start-ALLMIND.vbs` 隐藏启动；无需安装另一份 GPT-Niang。若 npm 跳过 Electron 的安装脚本，且 `node_modules/electron/dist/electron.exe` 缺失，补跑 `node node_modules/electron/install.js`。
 
-默认数据目录是 `windows/.local/memory-book/`。需要独立试用时，在启动前指定一个新目录：
+WPF 入口默认数据目录是 `%LOCALAPPDATA%/ALLMIND/`，其中 `book/` 保存角色、模型与记忆，`host/` 保存窗口状态。需要独立试用时指定一个新目录：
 
 ```powershell
-$env:AIKI_BOOK_DATA = Join-Path $env:TEMP ("allmind-demo-" + [guid]::NewGuid().ToString('N'))
-npm.cmd start
+npm.cmd run start:wpf -- --data E:/ALLMIND-demo-data
 ```
 
 首次打开管理界面且模型未配置时，首页会显示连接入口；角色与资料可以分别从左侧导航准备。右键桌宠可打开管理界面。关闭窗口或“收起到系统托盘”会保留后台，托盘右键“退出 ALLMIND”才真正退出。
+
+构建单目录包（输出必须是尚不存在的目录）：
+
+```powershell
+npm.cmd run pack:allmind -- --output E:/ALLMIND-portable
+```
+
+将整个目录复制到另一台 Windows x64 电脑，双击其中的 `Start-ALLMIND.vbs`。包内包含 Node、Electron、WPF 宿主、后台与管理页面，目标机器无需安装 Node/npm；仍需系统 Windows PowerShell 5.1 与 .NET Framework WPF。`package-manifest.json` 记录逐文件哈希。此入口不启动原 GPT-Niang 的 Codex 额度监控、更新器或启动项。旧 `npm start` / `windows/Start-Windows.cmd` 仍是 Electron 开发入口，使用原有 `windows/.local/memory-book/` 数据，不会自动迁移到 WPF 目录。
+
+开发者可运行 `npm.cmd run verify:portable -- --package E:/ALLMIND-portable --data E:/ALLMIND-unused-test-data --report E:/portable-result.json`。此检查核对文件哈希，使用真实 WPF/后台和包内 Electron，聊天模型使用本地合成服务，不消耗真实模型额度；数据目录必须尚不存在，测试后进程退出、测试数据保留。不要与其他占用 Chat Bridge 端口 17643 的 ALLMIND 实例同时运行。检查不代替原生鼠标操作、全屏避让或真实模型验收。
 
 ## 两种模型连接
 
@@ -56,13 +64,15 @@ npm.cmd start
 
 网页预设与 Wiki 请求发送前会核实 High，无法核验时拒绝发送。账号、模型权限与服务可用性取决于实际服务。**本轮 API 交互用 fixture 验证；真实 API 服务此前返回 HTTP 403，仍为 DEFERRED。**
 
+网页正式聊天默认**非临时**，可在聊天标题栏“网页聊天”直接切换并保存，也可在设置中的“正式聊天模式”修改。连接测试仍单独默认临时聊天。网页模式不决定 ALLMIND 本地记录是否保存；本地无痕是另一项独立选择。绑定模型后，输入区的新手提示自动收起；未绑定时可点 × 关闭并记住选择。
+
 ## 角色、资料与预设
 
 - **角色包**：角色页可导入 ZIP、Book JSON 或 `.aiki.md`，单文件上限 1 MiB。选择文件先预览，确认目标角色、条目和冲突后再应用。诊断不通过时禁止应用；取消预览不写入。
 - **核心人设**：支持直接编辑已有条目和增加条目，启用的人设合计上限 4 KiB。离开未保存的编辑会提示；导入包不会抹掉角色已有的其他资料。
 - **四类资料**：世界设定、人设、客观知识、陪伴记录。角色知情范围同时作用于管理视图与召回；导入的模拟故事不等于用户真实经历。
 - **酒馆预设**：设置 → AI 与对话 → 对话预设。支持 Chat Completion JSON 的顺序、Role、Depth、常用宏与动态 Marker；不执行第三方脚本。未知宏或 Marker 明确阻断。随树 Nano Bear 样例仅供手动选择，见 [第三方声明](THIRD_PARTY_NOTICES.md)。
-- **本地 GPT 娘**：支持草案角色包，以及本地 GPT-Niang 静态图片和额度快照读取。入口在“角色 → 形象与换装面板”，不提供原挂件完整行为迁移；见 [适配范围](validation/GPT-NIANG.md)。
+- **GPT-Niang 初始角色**：全新安装默认选择 GPT 龙娘并绑定随包静态形象；核心人设、Wiki 和陪伴记录为空，可在角色页补充或导入。已有实例只新增，不覆盖当前角色；修改或删除后不会被重新初始化。原图适用独立非商业素材声明。另可在“角色 → 形象与动作”读取本地 GPT-Niang 图片及额度快照，见 [适配范围](validation/GPT-NIANG.md)。
 
 更多资料导入、导出与维护位于“记忆 → 日常整理 → 高级工具与来源”。
 
@@ -80,31 +90,19 @@ npm.cmd start
 
 | 项目 | 当前记录 |
 | --- | --- |
-| 构建 / 本地核心 | 构建通过；L1 **393/393**，生产模块与合成数据 |
-| 固定浏览器回归 | **29/29**（19 个文件）；另有 V2 专项 **2/2**；包含从空白创建角色、人设、导入、API 测试/保存、聊天及角色隔离 |
+| 构建 / 本地核心 | 构建通过；L1 **395/395**，生产模块与合成数据 |
+| 固定浏览器回归 | **29/29**（19 个文件）；另有 V2 专项 **2/2**、聊天与预览专项 **4/4**；包含从空白创建角色、人设、导入、API 测试/保存、聊天及角色隔离 |
 | 图谱交互 | 124 节点合成图实际渲染、社区着色、节点检查、全屏退出及 390/320 px 布局通过 |
-| 真实网页模型 | 先前有 High、预设聊天及分批 Wiki 记录；本轮 UI 改动未重跑真实服务 |
+| 真实网页模型 | 本轮独立页面登录、绑定、High level 2 与最小连接测试通过；先前预设聊天及分批 Wiki 是历史记录，本轮未重跑 Wiki |
 | 真实 API | **DEFERRED**：此前服务 HTTP 403；fixture 不替代真实服务验收 |
 | 网页长期历史 | **未通过**：默认窗口会显式省略旧轮次，调大窗口后曾返回空回复；产品报错，不冒充成功 |
 | 桌宠原生操作 / Live2D / 语音 | 本轮未验收；源码包不分发私人模型或 Cubism SDK，默认静态形象 |
+| WPF 整合目录包 | 统一构建通过；修复 Windows 网页宿主 stdin 提前关闭，改用命名管道；当前便携包 1672 文件哈希核对、42 项隔离检查通过。真实独立页面登录、绑定保存、High 核实和最小连接测试已通过；原生鼠标、全屏/锁屏及真实 Wiki/长历史仍需分别验收 |
 | 安装器 / 签名 / 自动更新 | 暂不提供 |
 
 失败、取消、超时或结果未知的请求保留提交意图，不自动重发；写入意图失败时拒绝发送。详细限制与历次首错分别保留在验证记录中。
 
-复跑命令：[RUNBOOK](validation/RUNBOOK.md)；固定选择：[CASES.json](validation/CASES.json)；本轮交互范围：[UX-GRAPH.md](validation/UX-GRAPH.md)；完整历史：[release-status.json](validation/release-status.json)；本次候选树清单：[source-manifest.json](validation/source-manifest.json)。V2 UI 与 WPF 宿主改动已纳入本次发布候选的单次提交；历史 `Init` 及已发布版本不代表本轮验收。未做新的全量冷安装复现。以前的冷复现结果不能代替当前改动的冷复现。
-
-## 后续更新（规划中）
-
-以下为后续路线图，尚未作为本 Beta 的完整可用能力交付；具体适配协议、实现顺序与支持范围会随开发和验收更新。
-
-| 方向 | 计划内容 |
-| --- | --- |
-| 桌宠重建 | 基于 GPT-Niang 增量改造，接入 ALLMIND 的角色、聊天和记忆后台，完善独立启动、拖动缩放、互动反馈、托盘驻留与退出。 |
-| UI 与交互重做 | 按新的设计稿重做桌宠及管理入口，进一步简化新增/修改角色、导入资料、配置模型和开始聊天的流程。 |
-| QQ 桥接 | 接入 QQ 消息收发，提供联系人/群聊白名单、角色绑定、会话隔离、消息去重及发送结果反馈；群聊资料不自动并入私人记忆。 |
-| ACP 桥接 | 对接外部 Agent 的会话与任务能力，提供连接配置、角色/会话绑定、任务进度、取消与结果回执，以及工具操作的权限确认。 |
-| 多入口配套 | 桌宠、管理页与桥接入口共用角色和记忆后台；明确账号绑定、会话路由、记忆写入范围、无痕和主动消息开关，避免串角色或重复执行。 |
-| Wiki 与模型体验 | 改进跨批主题归并、维护任务恢复与图谱阅读；继续补齐 API 真实服务兼容性、网页长历史及预设效果的验收。 |
+复跑命令：[RUNBOOK](validation/RUNBOOK.md)；固定选择：[CASES.json](validation/CASES.json)；本轮交互范围：[UX-GRAPH.md](validation/UX-GRAPH.md)；完整历史：[release-status.json](validation/release-status.json)；最近一次冻结清单：[source-manifest.json](validation/source-manifest.json)（历史冻结清单，不包含后续 V2/WPF 与聊天修复）。本次源码提交包含 V2 UI、WPF 整合及聊天修复，提交身份以 Git 历史为准；历史 `Init` 不代表本轮验收。未做新的全量冷安装复现。以前的冷复现结果不能代替当前改动的冷复现。
 
 ## 来源与许可
 

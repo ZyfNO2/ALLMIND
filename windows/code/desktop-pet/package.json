@@ -59,7 +59,12 @@
     "eval:retrieval": "node tools/run-eval.mjs --suite retrieval --mode offline",
     "eval:latency": "node tools/run-eval.mjs --suite latency --mode offline",
     "eval:robustness": "node tools/run-eval.mjs --suite robustness --mode offline",
-    "test:emotion:ui": "node --test dist/tests/integration/emotion-http-51.test.js"
+    "test:emotion:ui": "node --test dist/tests/integration/emotion-http-51.test.js",
+    "build:wpf": "node tools/build-wpf.mjs",
+    "build:allmind": "npm run build && npm run build:desktop && npm run build:wpf",
+    "start:wpf": "node desktop/wpf/main.mjs",
+    "pack:allmind": "node tools/package-allmind.mjs",
+    "verify:portable": "node tools/verify-portable.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

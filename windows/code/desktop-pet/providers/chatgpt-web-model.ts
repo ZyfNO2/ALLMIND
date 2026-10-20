@@ -169,7 +169,7 @@ export class ChatgptWebModel implements BookModelPort {
     const purpose = options.purpose ?? 'reply';
     const config = this.config();
     const projectBinding = options.scope && purpose==='reply' ? this.runtime?.().chatgptProjects?.find(row => row.enabled && row.characterId === options.scope!.characterId && row.pairingId === options.scope!.pairingId) : undefined;
-    if(options.incognito&&(projectBinding||config.conversationMode==='regular'))throw new BookError('conflict','无痕请求不允许非临时或项目归档，未发送。');
+    if(options.incognito&&(projectBinding||config.conversationMode!=='temporary'))throw new BookError('conflict','无痕请求不允许非临时或项目归档，未发送。');
     if (projectBinding && config.transport !== 'embedded') throw new BookError('unavailable','项目聊天需要独立页面来源，不会退回普通聊天。');
     // W01: images require a source that can actually attach them. Reject BEFORE the request is built so
     // the provider never submits a request that quietly dropped the user's selected image.
@@ -184,7 +184,7 @@ export class ChatgptWebModel implements BookModelPort {
     const requestId = recoverableCompletion ? 'aiki-reply-'+createHash('sha256').update(JSON.stringify([options.scope,options.nextTurnId])).digest('hex').slice(0,40) : this.newRequestId(purpose);
     this.lastImageReceipts = []; this.lastRequestId = requestId; this.lastConversationId = null; this.lastMessageId = null;
     const result: ChatgptWebAskResult = await this.bridge.ask({
-      temporary: options.incognito ? true : projectBinding ? false : purpose === 'test' ? config.temporaryChatTests : config.conversationMode !== 'regular',
+      temporary: options.incognito ? true : projectBinding ? false : purpose === 'test' ? config.temporaryChatTests : config.conversationMode === 'temporary',
       ...(projectBinding && options.scope ? {project:{binding:projectBinding,scope:options.scope,localTurnId:options.localTurnId??null,nextTurnId:options.nextTurnId??null},continuationContext:options.promptCompilation?'':formatContext(messages.slice(0,-1).filter(message=>message.role==='system'))} : {}),
       prompt,
       ...(context !== undefined ? { context } : {}),

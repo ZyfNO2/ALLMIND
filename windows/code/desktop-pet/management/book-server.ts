@@ -64,7 +64,7 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
   const sessionCookie = 'allmind-management-' + instanceId;
   const appearanceHost = options.appearance ? desktopHostManagement(options.appearance.host, { instanceId, skins: options.appearance.skins }) : undefined;
   const gptNiang=new GptNiangLocal();
-  const previewAssets = options.appearance ? await presentationAssetRoutes(resolve(options.uiRoot, '../../..')) : new Map<string, string>();
+  const previewAssets = options.appearance ? await presentationAssetRoutes(resolve(options.uiRoot, '../../..'), resolve(options.uiRoot, '../desktop')) : new Map<string, string>();
   const runtimeIdentity = { pid: process.pid, instanceId, sourceRevision: 'memory-book/v1' };
   let changingThinking=false;
   const server = createServer((request, response) => {
@@ -78,6 +78,7 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
       // Unknown internal errors retain server-side stack; never leak credentials in provider bodies.
       if (!(error instanceof BookError) && !controller.signal.aborted) process.stderr.write(`Memory Book ${code}: ${error instanceof Error ? error.stack : String(error)}\n`);
       const message = known ? error.message : timedOut ? '请求超过时限已停止；未自动重试。确认服务状态后可手动重试。' : '操作失败，详细原因已记录于本机运行日志。';
+      if(response.headersSent){response.destroy();return;}
       json(response, status, { error: { code, message } });
     });
   });
@@ -87,7 +88,7 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
     if (!path.startsWith('/api/')) {
       if (request.method !== 'GET') { json(response, 405, { error: { message: 'Method 不支持。' } }); return; }
       const previewAsset = previewAssets.get(path);
-      if (previewAsset && !path.startsWith('/presentation-assets/')) { response.writeHead(200, { 'Content-Type': path.endsWith('.js') ? 'text/javascript' : 'text/plain', 'Cache-Control': 'no-store' }); response.end(await readFile(previewAsset)); return; }
+      if (previewAsset && !path.startsWith('/presentation-assets/')) { const content=await readFile(previewAsset);response.writeHead(200, { 'Content-Type': path.endsWith('.js') ? 'text/javascript' : 'text/plain', 'Cache-Control': 'no-store' }); response.end(content); return; }
       const asset = characterUiAsset(options.uiRoot, path);
       if (!asset) { json(response, 404, { error: { message: '页面不可用。' } }); return; }
       // Only an address-bar/same-origin document navigation may establish a browser session.
@@ -95,7 +96,7 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
       if (asset.mime.startsWith('text/html') && request.headers['sec-fetch-mode'] === 'navigate' && request.headers['sec-fetch-dest'] === 'document' && ['none', 'same-origin'].includes(String(request.headers['sec-fetch-site'])) && (!request.headers.origin || request.headers.origin === address.origin)) {
         response.setHeader('Set-Cookie', `${sessionCookie}=${token}; HttpOnly; SameSite=Strict; Path=/api/management-session`);
       }
-      response.writeHead(200, { 'Content-Type': asset.mime, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' }); response.end(await readFile(asset.path)); return;
+      const content=await readFile(asset.path);response.writeHead(200, { 'Content-Type': asset.mime, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' }); response.end(content); return;
     }
     if (path === '/api/management-session' && request.method === 'GET') {
       const cookie = request.headers.cookie?.split(';').map(value => value.trim()).find(value => value.startsWith(sessionCookie + '='))?.slice(sessionCookie.length + 1) ?? '';

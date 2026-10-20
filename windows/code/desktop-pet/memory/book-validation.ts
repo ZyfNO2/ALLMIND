@@ -156,6 +156,7 @@ export function validateChatgptWebSource(source: ChatgptWebSourceConfig): void {
   }
 }
 export function validateRuntime(config: RuntimeConfig): void {
+  if(config?.gptNiangStarterVersion!==undefined&&config.gptNiangStarterVersion!==1)throw new BookError('invalid_input','初始角色版本无效。');
   if(config?.promptPresets!==undefined){
     if(!Array.isArray(config.promptPresets)||config.promptPresets.length>32)throw new BookError('invalid_input','对话预设最多32份。');
     const ids=new Set<string>();for(const preset of config.promptPresets){validateStoredPreset(preset);if(ids.has(preset.id))throw new BookError('invalid_input','预设 ID 重复。');ids.add(preset.id);}

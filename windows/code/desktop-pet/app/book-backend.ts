@@ -19,6 +19,7 @@ import { DEFAULT_CHATGPT_WEB_SOURCE } from '../contracts/memory-book.js';
 import { BookCredentials } from '../management/book-credentials.js';
 import { startBookServer } from '../management/book-server.js';
 import { restrictPrivatePathSync } from '../core/platform-files.js';
+import {ensureGptNiangStarter} from '../management/starter-characters.js';
 import { SkinStore, BUILT_IN_SKIN_ID } from '../management/skin-store.js';
 import { PortraitStore } from '../management/portrait-store.js';
 import { OutfitService, writeTempImage } from '../management/outfit-service.js';
@@ -238,6 +239,8 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
   try {
     if (chatgptConfig().transport === 'bridge') await extension.pairing();
     skins = await SkinStore.open(join(directory, 'appearance-registry.json'), join(directory, 'appearance-packs'), desktop);
+    await ensureGptNiangStarter(repository,skins,desktop);
+    activeCharacter=repository.loadConfig().currentCharacterId;
     portraits = await PortraitStore.open(join(directory, 'portraits.json'), skins);
     portraits.onChange=presentPortrait;
     const outfits = new OutfitService(join(directory, 'outfits.json'), portraits, resourceService, createWebOutfitGenerator(chatgptBridge, () => repository.loadConfig()), () => repository.loadConfig(), async (bytes, mime) => {

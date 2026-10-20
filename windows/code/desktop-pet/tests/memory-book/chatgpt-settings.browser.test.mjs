@@ -26,7 +26,7 @@ test('actual settings UI: explicit bridge/CLI selection, authenticated pairing a
   await page.getByRole('link', { name: '设置', exact: true }).click();await page.getByRole('button',{name:'连接模型',exact:true}).click();await page.getByRole('dialog',{name:'连接文字主模型',exact:true}).getByRole('button',{name:'ChatGPT 网页接入',exact:true}).click();
   const card = page.getByRole('region', { name: 'ChatGPT 普通 Chat', exact: true });
   assert.equal(await card.getByLabel('ChatGPT 连接方式', { exact: true }).inputValue(), 'bridge');
-  assert.equal(await card.getByLabel('正式聊天模式',{exact:true}).inputValue(),'temporary');
+  assert.equal(await card.getByLabel('正式聊天模式',{exact:true}).inputValue(),'regular');
   await card.getByRole('button',{name:'准备独立页面登录（不切换来源）',exact:true}).click();
   assert.equal(embeddedLogins,1);assert.equal(repository.loadConfig().chatgptWeb.transport,'bridge');
   await card.getByRole('button',{name:'检查独立页面',exact:true}).click();
@@ -76,7 +76,7 @@ test('project settings check and bind only current role, retain default mode, an
   await region.getByRole('checkbox',{name:'我已确认此项目使用仅项目记忆',exact:true}).check();
   await region.getByRole('button',{name:'保存项目绑定',exact:true}).click();await region.getByText('项目绑定已保存并回读。',{exact:true}).waitFor();
   await page.waitForFunction(()=>document.querySelector('.mb-save-bar small')?.textContent.includes('当前配置已保存'));
-  const saved=repository.loadConfig();assert.equal(saved.chatgptProjects[0].characterId,saved.currentCharacterId);assert.equal(saved.chatgptProjects[0].memory,'user-confirmed-project-only');assert.equal(saved.chatgptWeb.conversationMode,'temporary','explicit role project does not rewrite the global default');
+  const saved=repository.loadConfig();assert.equal(saved.chatgptProjects[0].characterId,saved.currentCharacterId);assert.equal(saved.chatgptProjects[0].memory,'user-confirmed-project-only');assert.equal(saved.chatgptWeb.conversationMode,'regular','explicit role project does not rewrite the global default');
   active=true;await region.getByRole('button',{name:'暂停项目绑定',exact:true}).click();await page.getByRole('alert').filter({hasText:/未确认|未决|进行|请求/}).waitFor();assert.equal(repository.loadConfig().chatgptProjects[0].enabled,true);
   const url=new URL(server.url);assert.equal((await fetch(url.origin+'/api/memory-book/v1/chatgpt-web/projects/check',{method:'POST',body:JSON.stringify({url:'https://chatgpt.com/g/'+projectId+'/project'})})).status,401);
 });

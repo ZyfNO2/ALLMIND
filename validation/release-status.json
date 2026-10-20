@@ -5,12 +5,11 @@
   "version": "0.1.0-beta.1",
   "stage": "LOCAL_BETA_CANDIDATE",
   "publicRelease": "NOT_RELEASED",
-  "publicReleaseNote": "本次交付只建立唯一根提交 Init（无 remote、未推送、无 tag、无安装包）。",
+  "publicReleaseNote": "Source repository is published to GitHub; no GitHub Release, installer, signing or auto-update is claimed. Historical Init-only records below describe the earlier freeze.",
   "git": {
     "branch": "main",
-    "commit": "Init",
-    "remote": "NOT_CONFIGURED",
-    "note": "Single root Init amended by explicit user authorization on 2026-10-20; includes reviewed fixes and UX/graph. No remote, push, tag or release."
+    "remote": "https://github.com/ZyfNO2/ALLMIND.git",
+    "note": "Published Init and subsequent V2 commit are preserved; WPF integration and chat fixes use a normal additive commit. Resolve exact commit identities from Git history."
   },
   "initialBaseline": "baseline.json",
   "baselineInterpretation": "P2/P3 describe the initial prepared source candidate. Later metadata/docs changes are recorded here; they do not turn fixture results into real-model results.",
@@ -57,6 +56,100 @@
       "dependencyUpgrades": 0,
       "checkedBy": "primary agent",
       "date": "2026-10-17"
+    },
+    "wpfIntegration": {
+      "date": "2026-10-20",
+      "scope": "Source delivery: bundled WPF shell, unified build, portable packaging and chat repairs",
+      "unifiedBuild": "PASS",
+      "typeCheck": "PASS",
+      "portable": {
+        "status": "PASS",
+        "files": 1672,
+        "assertions": 42,
+        "usesBundledNodeAndElectron": true,
+        "chatModel": "local HTTP fixture",
+        "launcher": "actual VBS duplicate launch"
+      },
+      "components": {
+        "pipeTests": 4,
+        "visibilityAssertions": 53,
+        "observerAssertions": 10,
+        "notificationAssertions": 5,
+        "musicAssertions": 8
+      },
+      "nativeMouse": "NOT_RUN",
+      "realFullscreenAndLock": "NOT_RUN",
+      "realModel": "PASS: minimal embedded web connection only; see browserTransportFix",
+      "firstFailures": [
+        "Initial package omitted image validation helper; corrected explicit runtime tool inventory.",
+        "ChatGPT helper top-level await app.whenReady blocked handshake; changed to readiness callback and independently verified packaged Electron.",
+        "Harness expected undefined mainModel instead of contract null; harness corrected, fresh data rerun."
+      ],
+      "browserTransportFix": {
+        "status": "PASS",
+        "rootCause": "Windows GUI Electron stdin EOF immediately stopped the host; previous handshake-only check did not exercise a request",
+        "transport": "authenticated Windows named pipe; no stdin ownership",
+        "regressionTests": 7,
+        "actualLoginEndpoint": "HTTP 200, login window opened",
+        "authenticatedBinding": "PASS",
+        "realModel": {
+          "status": "PASS",
+          "scope": "minimal real embedded web connection test",
+          "high": 2,
+          "model": "current",
+          "durationMs": 7249
+        }
+      },
+      "chatRepair": {
+        "status": "PASS",
+        "core": {
+          "pass": 395,
+          "fail": 0
+        },
+        "browserAndHttp": {
+          "pass": 4,
+          "fail": 0
+        },
+        "formalWebChatDefault": "regular",
+        "connectionTestDefault": "temporary",
+        "hint": "dismissible and automatically hidden after binding",
+        "preview": "portable asset path and headersSent guards corrected; original persisted turn visible"
+      }
+    },
+    "chatUsabilityFix": {
+      "date": "2026-10-20",
+      "status": "PASS",
+      "rootCause": "Portable presentation preview used source-layout path; read failure after writeHead caused ERR_HTTP_HEADERS_SENT and backend exit",
+      "fixes": [
+        "Explicit installed desktopRoot for preview routes",
+        "Read static resource before headers; never send duplicate error headers",
+        "Default regular web chat with visible immediate-save chat toolbar switch",
+        "Dismissible persistent setup hint, auto hidden after model binding"
+      ],
+      "l1": {
+        "pass": 395,
+        "fail": 0
+      },
+      "browserAndHttp": {
+        "pass": 4,
+        "fail": 0
+      },
+      "portable": {
+        "assertions": 42,
+        "files": 1672
+      },
+      "userData": {
+        "originalTurnsPreserved": 1,
+        "mode": "regular",
+        "previewHTTP": 200,
+        "projectFieldsUnchanged": true
+      },
+      "realModel": "No new model request this turn; prior real web test remains separate",
+      "firstFailures": [
+        "L1 initial 393/395: two old default-temporary assertions, updated to regular requirement; full rerun 395/395",
+        "New browser harness initially had missing brace; syntax repaired; unchanged product requirements passed",
+        "Prior preview crash left writer.lock; verified PID 25916 dead, backed up exact lock then removed; restarted without touching chat/profile"
+      ]
     }
   },
   "assetEvidenceRequired": [],
@@ -943,8 +1036,8 @@
   },
   "uiV2Worktree": {
     "date": "2026-10-20",
-    "status": "INTEGRATED_SINGLE_COMMIT_CANDIDATE",
-    "scope": "Supplied editable V2 reference and management SPA integrated with the GPT-Niang WPF bridge changes in the published main candidate.",
+    "status": "INTEGRATED",
+    "scope": "Supplied editable V2 reference and management SPA integrated with bundled GPT-Niang WPF host.",
     "build": "check/build/build:desktop/build:character-ui PASS",
     "core": {
       "pass": 393,
@@ -962,6 +1055,28 @@
     },
     "modelEvidence": "Fixture HTTP/model ports only; real API and real ChatGPT not rerun.",
     "nativeUI": "NOT_RUN; manual acceptance deferred to user.",
-    "freeze": "source-manifest.json is regenerated over the complete candidate tree, including the V2 UI and WPF bridge files; the candidate is intended for one release commit."
+    "freeze": "source-manifest.json retains the previous published V2/bridge freeze; later WPF integration and chat repairs are identified by their Git commit."
+  },
+  "gptNiangStarter": {
+    "date": "2026-10-20",
+    "status": "INTEGRATED",
+    "freshDefaultRole": "gpt-niang",
+    "personaWikiMemories": "EMPTY_PENDING_USER_CONTENT",
+    "sourceAsset": "GPT-Niang, original bytes with CHARACTER-NOTICE and generation notes",
+    "initializationTests": {
+      "pass": 2,
+      "fail": 0
+    },
+    "browserTests": {
+      "pass": 1,
+      "fail": 0
+    },
+    "repositoryRuntimeRegression": {
+      "pass": 14,
+      "fail": 0
+    },
+    "productionBackendFirstStart": "PASS; real composition root; graceful shutdown and lock release",
+    "nativeRendering": "NOT_RUN; WPF uses registered single-frame skin",
+    "realModel": "NOT_RUN"
   }
 }

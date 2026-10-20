@@ -153,11 +153,13 @@ export const DEFAULT_CHATGPT_WEB_SOURCE: ChatgptWebSourceConfig = {
   transport: 'bridge',
   profile: 'auto', session: 'chatgpt-web', binDir: null,
   replyBudgetMs: 300_000, wikiBudgetMs: 300_000,
-  temporaryChatTests: true, conversationMode: 'temporary', submitMechanism: 'auto', authorizedPurposes: [],
+  temporaryChatTests: true, conversationMode: 'regular', submitMechanism: 'auto', authorizedPurposes: [],
 };
 export interface RuntimeCharacter { id: string; name: string; intro: string; appearancePath: string | null; appearanceSkinId?: string | null; knowledgeView?: KnowledgeView; replyLength?:import('./reply-length.js').ReplyLengthSettings; promptPresetId?:string|null;userName?:string; /** B03 default reply style; absent keeps legacy natural. */ replyStyle?:import('./reply-length.js').ReplyStyle }
 export type ReplyLanguage = 'zh-CN' | 'ja-JP' | 'en' | 'zh-ja-ruby';
 export interface RuntimeConfig {
+  /** One-time starter installation; retained after the user edits/removes the role. */
+  gptNiangStarterVersion?: 1;
   promptPresets?:import('./prompt-preset.js').StoredPromptPreset[];
   incognitoDefault?: boolean;
   companion?: import('./book-companion.js').CompanionSettings;
