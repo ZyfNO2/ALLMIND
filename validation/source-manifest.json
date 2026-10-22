@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-22T11:20:16.655Z",
-  "generatedBy": "ALLMIND screen-image supplement",
+  "generatedAt": "2026-10-22T11:26:14.106Z",
+  "generatedBy": "ALLMIND README stage clarification after screen-image production supplement",
   "scope": "Current publishable source bytes; sourceHash excludes generated status/manifest pair. Tested current-source package and earlier snapshot identities are separately recorded in release-status.",
-  "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a",
+  "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff",
   "fileCount": 1700,
-  "totalBytes": 22971138,
+  "totalBytes": 22973238,
   "sourceSnapshot": {
     "repository": "Aika-Next（只读源仓库；本机路径不记录）",
     "branch": "aika-next",
@@ -40,8 +40,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 35756,
-      "sha256": "36f956df06b3b69a7a77cdf737614ea17ba0d1c00613a351b4348e55d2093cca"
+      "bytes": 36166,
+      "sha256": "7fe5454cb9a507e5ab89b5dc3bb9716296178f6d23029a66a9be32aa63a874f7"
     },
     {
       "path": "Start-ALLMIND.vbs",
@@ -235,8 +235,8 @@
     },
     {
       "path": "validation/release-status.json",
-      "bytes": 137354,
-      "sha256": "7960f928257477c721851a6f7d50cd9545a612a5b58e6a40fced568ba70c1679"
+      "bytes": 139044,
+      "sha256": "17776ac3cd55dee12f4dd076c4b443fb8623adfe321acd420b815a12128244f5"
     },
     {
       "path": "windows/.gitattributes",

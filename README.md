@@ -33,7 +33,7 @@ ALLMIND 是一个 Windows 桌面角色陪伴与本地知识管理项目。你可
 
 ![beta.2 聊天界面：场景选择、回复信息与演示对话](assets/readme/ui-chat.jpg)
 
-本页界面图于 **2026-10-22** 从当前版本的隔离实例重新截取。聊天与 Wiki 使用明确标注的演示设定和受控回复（fixture），展示操作流程，**不作为真实模型能力的验收证据**；没有配置真实 Key、账号或私人资料。截图中的资料不随首次启动导入。
+本页界面图于 **2026-10-22** 从隔离实例重新截取，拍摄早于本轮屏幕图片附件功能，尚未补拍该功能截图。聊天与 Wiki 使用明确标注的演示设定和受控回复（fixture），展示操作流程，**不作为真实模型能力的验收证据**；没有配置真实 Key、账号或私人资料。截图中的资料不随首次启动导入。
 
 <details>
 <summary>查看角色、模型配置与知识库界面</summary>
@@ -320,7 +320,7 @@ QQ 的网页模型调用在提交前核实 High，使用临时页面且不绑定
 
 beta.2 当前真实 API 检查返回 HTTP 429，真实服务发布门槛仍受阻，没有自动重试或替换模型。当前候选的结果以 [release-status.json](validation/release-status.json) 的 `currentSummary` 为准；历史真实网页、QQ 好友和 Wiki 样例保留原来的日期与限制，不替代本次代码回归。完整复跑入口见 [RUNBOOK](validation/RUNBOOK.md)，新功能与人工边界见 [用户操作验收矩阵](validation/PRODUCT-COMPLETION.md)。
 
-2026-10-22 本次更新仅涉及 README、配图和来源清单，未改生产代码或依赖，也未重新打包。上述包验收结果绑定此前测试快照；本次文档树的来源哈希与截图核对范围另见 `currentSummary.documentationRefresh`。
+2026-10-22 早先的截图更新阶段仅调整 README、配图与来源清单；当时未改生产代码或重新打包，历史范围见 `currentSummary.documentationRefresh`。后续屏幕图片小补已修改 API 图片输入和管理界面、重新构建并生成新包，本地 517 项核心、4 项屏幕浏览器、6 项闭环与新包 56 项检查通过。图片均为受控测试；当前来源与验收范围见 `currentSummary.screenImageSupplement` 和 `finalCandidate`。旧安装 22 项及升级 12 项保留历史来源，本次生产包未重跑这两组，不作为当前包已通过的证明。
 
 便携包隔离检查（在项目目录运行，测试数据目录须尚不存在）：
 

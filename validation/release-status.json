@@ -10,7 +10,7 @@
     "version": "0.1.0-beta.2",
     "status": "BLOCKED",
     "implementation": "PASS: scoped engineering and user-operation regression; see validation/PRODUCT-COMPLETION.md",
-    "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a",
+    "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff",
     "sourceFiles": 1699,
     "sourceExclusions": [
       "validation/release-status.json",
@@ -66,10 +66,12 @@
         "status": "PASS",
         "checks": 56,
         "files": 1733,
-        "manifestSha256": "7c40199ad02ff7a788e47f746fc819300f3a87f5c9a5377d86774a0bdd91128a",
-        "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a",
+        "manifestSha256": "fcd31e7d9ac312baf279c26e4225bbfa38fb1dd87d717ca54bf6447c1d38ec6d",
+        "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff",
         "evidence": "portable-report.json",
-        "scope": "Fresh run against current production package; local model/media fixtures, no physical input or true VLM quality claim."
+        "scope": "Fresh56 run belonged to c150 production package; current README-only rebind has all1733 payload bytes identical. No rerun with new manifest claimed.",
+        "testedPackageManifestSha256": "7c40199ad02ff7a788e47f746fc819300f3a87f5c9a5377d86774a0bdd91128a",
+        "testedPackageSourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a"
       },
       "installedLifecycle": {
         "status": "NOT_RUN",
@@ -127,12 +129,12 @@
       {
         "id": "source-binding",
         "status": "PASS",
-        "reason": "Current source inventory and complete package manifest independently verified; new supplement evidence bound to these identities."
+        "reason": "Current documentation source and package binding verified; actual c150 production evidence reused only after complete runtime payload equality."
       },
       {
         "id": "blank-install",
         "status": "PASS",
-        "reason": "Fresh56 isolated portable checks on current newly built package."
+        "reason": "Fresh56 c150 production package checks apply to README-only source rebind via all1733 runtime payload equality; not rerun under new manifest."
       },
       {
         "id": "upgrade",
@@ -207,7 +209,7 @@
       "scope": "older process-directory recursive cleanup was rejected by automatic approval; retained, no bypass"
     },
     "supplement": "Screen image/OCR optional paths, API explicit imageInput, manual-send only and cancellation/late-response regression verified. Physical audio deferred by user; real VLM/picker not claimed.",
-    "sourceIdentityScope": "Current screen-image supplement production source and newly built1733-file package bound to sourceHash. Fresh backend/UI build,517-core,4screen-browser,6closure-browser,56portable. Prior package installation22/upgrade12 and old full browser/WPF evidence remain history, not fresh acceptance of this changed production payload.",
+    "sourceIdentityScope": "Current README correction is documentation-only after ab4f432 production supplement; newly bound package1733 payload bytes verified identical to c150 production test package. Actual517/4+6/56 evidence retains tested production source/package; old22/12 remain historical only.",
     "documentationRefresh": {
       "date": "2026-10-22",
       "status": "PASS",
@@ -241,11 +243,11 @@
     "finalCandidate": {
       "date": "2026-10-22",
       "status": "BLOCKED",
-      "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a",
+      "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff",
       "package": {
-        "manifestSha256": "7c40199ad02ff7a788e47f746fc819300f3a87f5c9a5377d86774a0bdd91128a",
+        "manifestSha256": "fcd31e7d9ac312baf279c26e4225bbfa38fb1dd87d717ca54bf6447c1d38ec6d",
         "files": 1733,
-        "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a"
+        "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff"
       },
       "archive": {
         "status": "NOT_RUN",
@@ -280,7 +282,19 @@
         "status": "NOT_RUN",
         "historicalChecks": 12
       },
-      "scope": "New production API-image and management UI payload. Older installer/upgrade/full-browser/WPF results kept with exact historical source; no false whole-payload identity reuse. New head CI reported by PR checks."
+      "scope": "New production API-image and management UI payload. Older installer/upgrade/full-browser/WPF results kept with exact historical source; no false whole-payload identity reuse. New head CI reported by PR checks. Later README-only source rebinding independently proves all1733 runtime payloads identical to the fresh-tested c150 production package.",
+      "productionTestedPackage": {
+        "manifestSha256": "7c40199ad02ff7a788e47f746fc819300f3a87f5c9a5377d86774a0bdd91128a",
+        "files": 1733,
+        "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a"
+      },
+      "documentationCorrection": {
+        "sourceFiles": 1,
+        "productionChanges": 0,
+        "payloadFilesByteIdentical": 1733,
+        "testedProductionCommit": "ab4f4327c9cd9e19b1b5b883ae7b0f221dff8125",
+        "scope": "No tests rerun for README-only delta; CI exact current head is reported separately in PR."
+      }
     },
     "previousCandidate": {
       "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
@@ -565,11 +579,11 @@
       "date": "2026-10-22",
       "status": "PASS",
       "scope": "Single-frame screenshot may be confirmed as image attachment or local OCR; image path requires explicit consent, supported source and later manual chat send. API imageInput defaults off. No text-only fallback or auto-resend on image failure.",
-      "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a",
+      "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff",
       "package": {
-        "manifestSha256": "7c40199ad02ff7a788e47f746fc819300f3a87f5c9a5377d86774a0bdd91128a",
+        "manifestSha256": "fcd31e7d9ac312baf279c26e4225bbfa38fb1dd87d717ca54bf6447c1d38ec6d",
         "files": 1733,
-        "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a"
+        "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff"
       },
       "coreTests": 517,
       "screenBrowserTests": 4,
@@ -593,7 +607,22 @@
         "status": "NOT_RUN for current candidate",
         "note": "Earlier scoped results retained in candidateHistory; no whole-payload equality or inheritance to changed production package claimed."
       },
-      "archive": "NOT_RUN: no ZIP generated this supplement"
+      "archive": "NOT_RUN: no ZIP generated this supplement",
+      "testedProductionSourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a",
+      "testedProductionPackage": {
+        "manifestSha256": "7c40199ad02ff7a788e47f746fc819300f3a87f5c9a5377d86774a0bdd91128a",
+        "files": 1733,
+        "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a"
+      },
+      "documentationCorrection": {
+        "status": "PASS",
+        "files": [
+          "README.md"
+        ],
+        "scope": "Capture date and historical docs-only paragraph clarified; no production changes or new screenshots",
+        "payloadByteIdentity": true,
+        "identityEvidence": "source-package-identity.json"
+      }
     }
   },
   "publicReleaseNote": "Local portable package and installer/update/rollback/uninstall were verified. No GitHub Release, signing, unattended auto-update or new publication is claimed by this user-closure task. Historical Git/publication records are retained below.",
