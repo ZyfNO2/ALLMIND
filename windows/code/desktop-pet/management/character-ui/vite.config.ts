@@ -5,6 +5,6 @@ export default defineConfig({
   base: '/',
   // LUI-07: the compiled SPA no longer lives inside the retired `management/ui/` directory. It is the
   // only management shell, so it gets its own root that survives the legacy deletion.
-  build: { outDir: '../character-app', emptyOutDir: true },
+  build: { assetsInlineLimit: 0, outDir: '../character-app', emptyOutDir: true },
   server: { host: '127.0.0.1', port: 5217 },
 })

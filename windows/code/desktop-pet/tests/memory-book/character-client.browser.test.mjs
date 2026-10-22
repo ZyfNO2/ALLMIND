@@ -43,8 +43,8 @@ test('character client preserves failed input, freezes the failed identity, rest
       window.composerSampler = setInterval(() => window.composerTops.push(document.querySelector('.mb-composer textarea').getBoundingClientRect().top), 16);
     });
     await input.pressSequentially('测试，看看最近的情况', { delay: 200 });
-    await page.waitForFunction(() => document.querySelector('.mb-composer-hint') === null);
-    assert.equal(await page.locator('.mb-style-preview').count(),0,'bound model never shows the yellow pre-send banner');
+    await page.waitForFunction(() => document.querySelector('.mb-chat-setup-hint') === null && document.querySelector('.mb-style-preview')?.textContent.includes('发送前：'));
+    assert.equal(await page.locator('.mb-style-preview').count(),1,'bound model retains policy preview in reserved space');
     await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
     const tops = await page.evaluate(() => { clearInterval(window.composerSampler); return window.composerTops; });
     assert.ok(tops.length > 10);
@@ -54,14 +54,14 @@ test('character client preserves failed input, freezes the failed identity, rest
   await input.press('Shift+Enter'); assert.ok((await input.inputValue()).includes('\n'));
   await input.dispatchEvent('keydown', { key: 'Enter', code: 'Enter', isComposing: true }); assert.equal(modelRequests.length, 0, 'IME composition must not send');
   nextFault = 'fail'; await input.fill('失败后仍保留这句话'); await input.press('Enter');
-  await page.getByRole('button', { name: '重试发送', exact: true }).waitFor(); assert.equal(await input.inputValue(), '失败后仍保留这句话');
+  await page.getByRole('button', { name: '核对原请求结果（不重发）', exact: true }).waitFor(); assert.equal(await input.inputValue(), '失败后仍保留这句话');
   assert.equal(repository.readSession(runtime.scope('aika', 'web-chat')).length, 0);
   // P0 4.2-1: a provider failure is terminal for that turnId. The durable freeze marker makes the
   // explicit retry a NEW turn instead of recompiling/resubmitting the failed identity.
   const failedTurnId = submitted[0].turnId, failedScope = runtime.scope('aika', 'web-chat');
   assert.equal(runtime.repository.readTurnFreeze(failedScope, failedTurnId)?.state, 'failed');
   await assert.rejects(runtime.chat(failedScope, '失败后仍保留这句话', new AbortController().signal, { turnId: failedTurnId }), { code: 'conflict' });
-  await page.getByRole('button', { name: '重试发送', exact: true }).click(); await page.waitForFunction(() => document.querySelector('textarea[aria-label="聊天消息"]').value === '');
+  await page.getByRole('button', { name: '核对原请求结果（不重发）', exact: true }).click();await page.getByLabel('我已核对来源，理解重新请求可能重复生成或计费',{exact:true}).check();await page.getByRole('button',{name:'明确准备新请求',exact:true}).click();await page.getByRole('button',{name:'发送',exact:true}).click(); await page.waitForFunction(() => document.querySelector('textarea[aria-label="聊天消息"]').value === '');
   assert.equal(submitted.length, 2, '失败后只有用户显式重试才发第二次');
   assert.notEqual(submitted[1].turnId, failedTurnId, '已失败轮次冻结；重试必须是新的一轮编号');
   assert.equal(repository.readSession(runtime.scope('aika', 'web-chat')).length, 1, '只有成功的新轮次落库');
@@ -79,9 +79,10 @@ test('character client preserves failed input, freezes the failed identity, rest
   await page.reload(); await input.waitFor(); await page.waitForFunction(() => (document.querySelector('textarea[aria-label="聊天消息"]') && !document.querySelector('textarea[aria-label="聊天消息"]').disabled));
   assert.equal(new URL(page.url()).searchParams.get('sessionId'), secondSession); assert.ok(await page.locator('.mb-user').innerText().then(text => text.includes('第二个会话')));
   await selectSession(page,'web-chat'); await page.waitForFunction(() => (document.querySelector('textarea[aria-label="聊天消息"]') && !document.querySelector('textarea[aria-label="聊天消息"]').disabled));
-  // The page reload discarded in-memory drafts, while committed session records survived.
+  // Ordinary drafts and committed records both survive a page reload; private drafts never persist.
+  assert.equal(await input.inputValue(),'第一个会话草稿');
   await input.fill('取消后保留'); nextFault = 'hold'; await page.getByRole('button', { name: '发送', exact: true }).click(); await page.getByRole('button', { name: '停止', exact: true }).click();
-  await page.getByText('本轮已停止，输入已保留；该轮不会自动重发，再次发送将作为新的一轮。', { exact: true }).waitFor(); assert.equal(await input.inputValue(), '取消后保留'); assert.equal(repository.readSession(runtime.scope('aika', 'web-chat')).length, 1);
+  await page.getByText('本地等待已停止，输入与请求编号已保留；请先核对原请求结果。', { exact: true }).waitFor(); assert.equal(await input.inputValue(), '取消后保留'); assert.equal(repository.readSession(runtime.scope('aika', 'web-chat')).length, 1);
   await input.fill(''); await page.getByRole('link', { name: '设置', exact: true }).click();
 
   const card = page.locator('.mb-model-card').filter({ has: page.getByRole('heading', { name: '文字主模型', exact: true }) });

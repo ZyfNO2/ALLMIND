@@ -59,7 +59,9 @@ test('extension bridge: lost submit receipt times out without replay; stale repl
   const pair = await host.pairing();
   const post = (path: string, body: object) => fetch(pair.url + path, { method: 'POST', headers: { Origin: origin, Authorization: 'Bearer ' + pair.code }, body: JSON.stringify({ client: 'extension', ...body }) });
   try {
-    const pull = post('/pull', {}); await new Promise(resolve => setTimeout(resolve, 15));
+    // Prove the authenticated relay is paired before timing a lost submission receipt.
+    assert.equal((await post('/result', { id: 'pairing-check', value: {} })).status, 409);
+    const pull = post('/pull', {});
     const command = host.execute('submit', { id: 'turn-1' });
     const rejection = assert.rejects(command, /不自动重放/);
     const delivered = await (await pull).json() as any; assert.equal(delivered.action, 'submit');

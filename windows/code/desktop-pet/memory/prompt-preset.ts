@@ -32,7 +32,7 @@ export function validateStoredPreset(preset:StoredPromptPreset):void{
   parsePreset(preset.original);const document=parsePreset(JSON.stringify(preset.document));
   if(!document.prompt_order.some(block=>block.character_id===preset.orderBlock))fail('请选择存在的 order block。');
 }
-const knownMacros=new Set(['char','charIfNotGroup','user','description','personality','scenario','persona','trim']);
+const knownMacros=new Set(['char','charIfNotGroup','user','description','personality','scenario','persona','trim','date','time']);
 export function presetCompatibility(preset:StoredPromptPreset):{errors:string[];warnings:string[]}{
   const errors:string[]=[],warnings:string[]=[];
   const order=preset.document.prompt_order.find(block=>block.character_id===preset.orderBlock)?.order??[];

@@ -1,0 +1,43 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdirSync,mkdtempSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {chromium} from '@playwright/test';
+import {FileBookRepository} from '../../dist/memory/file-book-repository.js';
+import {BookRuntime} from '../../dist/app/book-runtime.js';
+import {BookCredentials} from '../../dist/management/book-credentials.js';
+import {startBookServer} from '../../dist/management/book-server.js';
+import {emptyEntry} from '../../dist/contracts/memory-book.js';
+import {classifyEntry} from '../../dist/memory/knowledge-category.js';
+
+test('synthesis UI reviews category and core persona, invalidates confirmation on edits, saves and disables through editor',{timeout:90000},async t=>{
+ const output=resolve('.local/goal-completion/review-browser');mkdirSync(output,{recursive:true});
+ const directory=mkdtempSync(join(output,'data-')),repo=new FileBookRepository(directory),scope={characterId:'aika',pairingId:'local-user',sessionId:'web-chat'},config=repo.loadConfig();
+ repo.commitConfig({...config,wikiModel:{baseUrl:'http://127.0.0.1:1/v1',model:'synthetic-wiki',credentialId:'none',inputTokens:64000,outputTokens:8192}},config.revision,'seed-config');
+ repo.commit(scope,{upsert:[emptyEntry('raw','wiki','待整理原始材料','温柔坚定，回复简洁，不机械追问。')]},0,'seed');
+ let calls=0;const runtime=new BookRuntime(repo,{async complete(_binding,messages){calls++;const task=JSON.parse(messages[1].content);return JSON.stringify({schemaVersion:'allmind-wiki/v1',inputHash:task.inputHash,pages:[{id:'style',title:'角色表达方式',domain:'external',pageType:'topic',category:'persona',paragraphs:[{text:'温柔坚定，简洁表达，少用追问。',evidence:[{entryId:'raw',quote:'温柔坚定，回复简洁，不机械追问。'}]}]}],relations:[],coverage:[{entryId:'raw',pageIds:['style'],reason:''}]});}});
+ const server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management')}),browser=await chromium.launch({headless:true});
+ t.after(async()=>{await browser.close();await server.close();repo.close();});
+ const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(10000);
+ await page.goto(server.url);await page.getByRole('navigation',{name:'主导航'}).getByRole('link',{name:'记忆',exact:true}).click();await page.getByRole('button',{name:'日常整理',exact:true}).click();
+ const panel=page.getByRole('region',{name:'日常整理',exact:true});
+ await panel.getByRole('button',{name:'准备当前角色整理材料',exact:true}).click();await panel.getByRole('checkbox',{name:/允许把本次角色整理材料/}).check();
+ await panel.getByRole('button',{name:'发送模型并生成整理草稿',exact:true}).click();
+ const category=panel.getByRole('combobox',{name:'角色表达方式：归入分类',exact:true}),core=panel.getByRole('checkbox',{name:/将“角色表达方式”作为核心人设启用/}),confirm=panel.getByRole('checkbox',{name:'我已核对综合内容、原文依据、关系和未采用资料',exact:true}),apply=panel.getByRole('button',{name:'确认整理并应用',exact:true});
+ await category.waitFor();assert.equal(await panel.getByRole('group',{name:'角色表达方式 · external · 主题',exact:true}).count(),1);assert.equal(await category.inputValue(),'persona');assert.equal(await core.isChecked(),false);assert.equal(await apply.isEnabled(),false);assert.equal(repo.snapshot(scope).entries.length,1);
+ await confirm.check();assert.equal(await apply.isEnabled(),true);await core.focus();await page.keyboard.press('Space');assert.equal(await core.isChecked(),true);assert.equal(await confirm.isChecked(),false);assert.equal(await apply.isEnabled(),false);
+ await category.selectOption('world');assert.equal(await core.count(),0);await category.selectOption('persona');assert.equal(await core.isChecked(),false);await core.check();
+ await panel.getByText('核对综合正文与逐字依据',{exact:true}).click();await panel.getByText('本段原文依据',{exact:true}).click();await panel.getByText('温柔坚定，回复简洁，不机械追问。',{exact:false}).waitFor();
+ await confirm.check();await page.screenshot({path:join(output,'review-ready.png'),fullPage:true});const committed=page.waitForResponse(r=>r.url().endsWith('/wiki/synthesis/apply'));await apply.click();assert.equal((await committed).status(),200);
+ await panel.getByText('已应用核对后的分类与核心人设选择，原始条目保持原样。',{exact:true}).waitFor();
+ const book=repo.snapshot(scope),entry=book.entries.find(row=>row.synthesis);assert.equal(entry.corePersona,true);assert.equal(classifyEntry(entry,book.entries).category,'persona');assert.equal(calls,1);
+ await page.screenshot({path:join(output,'review-applied.png'),fullPage:true});
+ await page.reload();await page.getByRole('button',{name:'日常整理',exact:true}).click();await panel.getByRole('combobox',{name:'角色表达方式：归入分类',exact:true}).waitFor();assert.equal(await core.isChecked(),true);
+ for(const width of [320,768,1440]){await page.setViewportSize({width,height:1000});await category.scrollIntoViewIfNeeded();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'no page overflow at '+width);}
+ await page.setViewportSize({width:1440,height:1000});await page.getByRole('button',{name:'列表与编辑',exact:true}).click();
+ await page.locator('button.mb-entry').filter({hasText:'角色表达方式'}).click();const detail=page.getByRole('region',{name:'回忆详情',exact:true});await detail.getByRole('button',{name:'编辑当前笔记',exact:true}).click();
+ const toggle=detail.getByRole('checkbox',{name:/作为核心人设启用/});await toggle.uncheck();
+ const saved=page.waitForResponse(r=>r.request().method()==='PUT'&&r.url().endsWith('/entries'));await detail.getByRole('button',{name:'保存条目',exact:true}).click();assert.equal((await saved).status(),200);
+ assert.equal(repo.snapshot(scope).entries.find(row=>row.id===entry.id).corePersona,false);
+ assert.deepEqual(errors,[]);
+});

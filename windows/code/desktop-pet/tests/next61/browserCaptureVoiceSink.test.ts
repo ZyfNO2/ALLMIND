@@ -20,10 +20,10 @@ type Handler = (event: { data: Record<string, unknown> }) => void;
 
 function environment() {
   let node: { port: { onmessage: Handler | null; close(): void; postMessage(value: unknown): void } };
-  const seen = { trackStops: 0, finishPosts: 0 };
+  const seen = { trackStops: 0, finishPosts: 0, requests: [] as MediaStreamConstraints[] };
   const tracks = [{ stop() { seen.trackStops++; } }];
   const restores = [
-    replace('navigator', { mediaDevices: { async getUserMedia() { return { getTracks: () => tracks, getAudioTracks: () => [tracks[0]], getVideoTracks: () => [] }; } } }),
+    replace('navigator', { mediaDevices: { async getUserMedia(constraints:MediaStreamConstraints) { seen.requests.push(constraints);return { getTracks: () => tracks, getAudioTracks: () => [tracks[0]], getVideoTracks: () => [] }; } } }),
     replace('AudioContext', class {
       state = 'running'; sampleRate = 48000; destination = {};
       audioWorklet = { async addModule() {} };
@@ -104,4 +104,13 @@ test('08-B a stopped capture forwards nothing further', async () => {
     assert.deepEqual(observed, [[0.5]]);
     await tick();
   } finally { h.restore(); }
+});
+
+
+test('voice-only capture never requests a camera and cancellation releases microphone',async()=>{
+ const h=environment();try{
+  const controller=new AbortController(),driver=new BrowserCaptureDriver({cameraEnabled:false,sampleRate:16000,cameraWidth:320,jpegQuality:0.7,maxBufferedSamples:48000});
+  const session=await driver.open(controller.signal);assert.equal(h.seen.requests.length,1);assert.equal(h.seen.requests[0]?.video,false);
+  controller.abort();assert.equal(h.seen.trackStops,1);session.stop();assert.equal(h.seen.trackStops,1);
+ }finally{h.restore();}
 });

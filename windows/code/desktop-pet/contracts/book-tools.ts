@@ -1,0 +1,3 @@
+import type {BookScope} from './memory-book.js';
+export interface BookToolProfile {id:string;label:string;protocol:'mcp'|'acp'|'plugin';command:string;args:string[];cwd:string;permission:'read-only'|'confirm'|'write';policies:Record<string,{readOnly:boolean;requiredGrant?:string}>;revision:number;commandHash:string;argumentFiles:{path:string;sha256:string}[]}
+export interface BookToolJob {id:string;scope:BookScope;profileId:string;profileRevision:number;protocol:BookToolProfile['protocol'];toolName:string|null;arguments:Record<string,unknown>;instruction:string;grants:string[];hash:string;state:'prepared'|'running'|'succeeded'|'failed'|'unknown'|'cancelled';createdAt:string;updatedAt:string;result:string|null;error:string|null}

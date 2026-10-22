@@ -7,9 +7,24 @@ using System.Diagnostics;
 public sealed class AllmindWindowObservation {
  public bool SessionKnown,SessionAvailable,PowerSuspended,GeometryKnown,Fullscreen,Presentation,ShellAllowsNotifications;
  public long Foreground,Monitor,PetMonitor;
+ public int WindowLeft,WindowTop,WindowRight,WindowBottom,WorkLeft,WorkTop,WorkRight,WorkBottom;
  public string Error;
  public string OwnerKey { get { return Foreground+":"+Monitor+":"+PetMonitor; } }
  public bool SameScreenFullscreen { get { return Fullscreen && Monitor==PetMonitor && Monitor!=0; } }
+}
+// Opt-in placement and motion calculations. No focus changes or input simulation.
+public static class AllmindPerchPolicy {
+ public static int[] Position(AllmindWindowObservation o,int width,int height,bool blocked) {
+  if(blocked||o==null||!o.SessionKnown||!o.SessionAvailable||!o.GeometryKnown||o.Fullscreen||o.Presentation||o.Foreground==0||o.Monitor!=o.PetMonitor||width<=0||height<=0||width>32768||height>32768||o.WindowRight<=o.WindowLeft||o.WindowBottom<=o.WindowTop||o.WorkRight-o.WorkLeft<width||o.WindowTop-o.WorkTop<height)return null;
+  return new[]{Math.Max(o.WorkLeft,Math.Min(o.WorkRight-width,o.WindowRight-width)),o.WindowTop-height};
+ }
+ public static double[] Motion(string activity,bool enabled,bool blocked) {
+  if(!enabled||blocked)return new[]{0.0,0.0,1000.0};
+  if(activity=="walking")return new[]{2.0,-2.0,350.0};
+  if(activity=="resting")return new[]{0.0,1.0,1800.0};
+  if(activity=="idle")return new[]{0.0,-1.0,2200.0};
+  return new[]{0.0,0.0,1000.0};
+ }
 }
 public sealed class AllmindVisibilityDecision {
  public string State,Mode;

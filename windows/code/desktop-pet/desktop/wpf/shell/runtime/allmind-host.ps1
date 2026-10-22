@@ -4,6 +4,16 @@ function Send-AllmindCommand([string]$Method,$Parameters=@{}) {
   $request=@{version=1;id=[Guid]::NewGuid().ToString('N');method=$Method;params=$Parameters}
   $script:allmindPipe.Send(($request|ConvertTo-Json -Depth 8 -Compress))
 }
+function Update-AllmindLifeMotion {
+ if(!$script:ui.LifeMotion -or !('AllmindPerchPolicy' -as [type])){return}
+ $blocked=[bool]($script:allmindHidden -or $script:allmindQuiet -or $script:allmindFocus -or $script:drag -or $script:context.IsOpen -or ($script:allmindQuickChat -and $script:allmindQuickChat.Visible) -or ![Windows.SystemParameters]::ClientAreaAnimation)
+ $key="$($script:allmindLifeActivity):$($script:allmindEnabled):$blocked";if($script:allmindLifeMotionKey-eq $key){return};$script:allmindLifeMotionKey=$key
+ $values=[AllmindPerchPolicy]::Motion([string]$script:allmindLifeActivity,[bool]$script:allmindEnabled,$blocked)
+ foreach($row in @(@{property=[Windows.Media.TranslateTransform]::XProperty;value=$values[0]},@{property=[Windows.Media.TranslateTransform]::YProperty;value=$values[1]})){
+  $script:ui.LifeMotion.BeginAnimation($row.property,$null);$script:ui.LifeMotion.SetValue($row.property,[double]0)
+  if($row.value-ne 0){$animation=[Windows.Media.Animation.DoubleAnimation]::new();$animation.From=0;$animation.To=$row.value;$animation.Duration=[Windows.Duration]::new([TimeSpan]::FromMilliseconds($values[2]));$animation.AutoReverse=$true;$animation.RepeatBehavior=[Windows.Media.Animation.RepeatBehavior]::Forever;$script:ui.LifeMotion.BeginAnimation($row.property,$animation)}
+ }
+}
 function Invoke-AllmindMenu([string]$Method,$Parameters=@{}) {
   if($Method-eq 'visible'){try{Set-AllmindVisible ([bool]$Parameters.visible)}catch{Write-AllmindWindowError $_};return}
   if($Method-eq 'exit' -and $script:allmindVisibility){$script:allmindVisibility.Exiting=$true;Update-AllmindVisibility;Tick-Widget}
@@ -70,7 +80,7 @@ function Read-AllmindEvents {
       $script:allmindStatus=switch($message.state){'pending'{'正在回复…'};'failed'{'本轮未完成，请在聊天页核对。'};default{'后台已连接'}}
      }
     }
-    'companion_state' {if($message.state.characterId-eq $script:allmindRole){$script:allmindQuiet=[bool]$message.state.quiet;$script:allmindFocus=[bool]$message.focus;$script:allmindEnabled=[bool]$message.state.enabled}}
+    'companion_state' {if($message.state.characterId-eq $script:allmindRole){$script:allmindQuiet=[bool]$message.state.quiet;$script:allmindFocus=[bool]$message.focus;$script:allmindEnabled=[bool]$message.state.enabled;$script:allmindLifeActivity=[string]$message.state.activity;Update-AllmindLifeMotion}}
     'companion_offer' {Update-AllmindVisibility;if($message.characterId-eq $script:allmindRole -and $script:allmindNotificationAllowed){Send-AllmindCommand 'claim' @{id=$message.id;characterId=$message.characterId;sessionId=$message.sessionId}}}
     'companion_message' {if($message.characterId-eq $script:allmindRole){Show-AllmindReply ([string]$message.delivery.text) ([long]$message.hostReceivedAt)}}
    }
@@ -109,12 +119,11 @@ public sealed class AllmindPipe:IDisposable {
   $script:collapsed=!$script:allmindQuickChat.Visible
   if(!$script:collapsed){
    $script:bubbleMode='chat'
-   [Windows.Controls.Canvas]::SetLeft($script:ui.SceneText,63);[Windows.Controls.Canvas]::SetTop($script:ui.SceneText,28)
-   $script:ui.SceneText.Width=184;$script:ui.SceneText.Height=112
    $script:ui.QuotaText.Visibility=[Windows.Visibility]::Collapsed;$script:ui.QuoteText.Visibility=[Windows.Visibility]::Collapsed
    $script:ui.LiveDot.Visibility=[Windows.Visibility]::Collapsed
    $script:ui.Bubble.ToolTip=$null
   }
+  $script:allmindQuickChat.ApplyLayout($script:ui.BubbleShape,$script:ui.Bubble)
   Set-BubbleState
  })
  $script:allmindQuickChat.Add_SendRequested({
@@ -140,6 +149,7 @@ public sealed class AllmindPipe:IDisposable {
  $script:allmindActivityItem=Add-AllmindItem '自主活动' {param($sender,$event)Invoke-AllmindMenu 'companion-action' @{characterId=$script:allmindRole;action='set_enabled';enabled=[bool]$sender.IsChecked}} -Check
  foreach($item in @($keepAppearance,$keepAudio,$keepMusic)){$null=$script:context.Items.Add($item)}
  $modeMenu=Add-AllmindItem '悬浮与显示' {};$script:allmindModeItems=@()
+ $script:allmindPerchItem=Add-AllmindItem '坐到当前窗口上沿（只观察几何）' {param($sender,$event)$script:allmindPerchEnabled=[bool]$sender.IsChecked;Save-Settings;$script:lastPosition=$null;Update-AllmindVisibility -Force;Tick-Widget} -Check;$script:allmindPerchItem.IsChecked=[bool]$script:allmindPerchEnabled
  foreach($row in @(@{mode='smart';label='智能悬浮（全屏自动收起）'},@{mode='resident';label='常驻悬浮'},@{mode='normal';label='普通窗口层级'})){
   $item=[Windows.Controls.MenuItem]::new();$item.Header=$row.label;$item.Tag=$row.mode;$item.IsCheckable=$true;$item.Add_Click({param($sender,$event)Set-AllmindWindowMode $sender.Tag});$null=$modeMenu.Items.Add($item);$script:allmindModeItems+=$item
  }

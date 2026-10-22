@@ -1,7 +1,7 @@
 import {spawn} from 'node:child_process';
 import {existsSync,readFileSync,writeFileSync,lstatSync} from 'node:fs';
 import {resolve,join} from 'node:path';
-import {pathToFileURL} from 'node:url';
+import {pathToFileURL,fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
@@ -43,7 +43,26 @@ try{
  const token=new URLSearchParams(new URL(session.url).hash.slice(1)).get('token');
  async function api(path,method='GET',body){const response=await fetch(origin+'/api/memory-book/v1'+path,{method,headers:{authorization:'Bearer '+token,'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(30000)});const value=await response.json();assert.equal(response.status,200,JSON.stringify(value));return value;}
  const preview=await fetch(origin+'/preview-runtime/presentation-preview.js');assert.equal(preview.status,200);assert.ok((await preview.text()).length>100);checks+=2;
- const loaded=await api('/runtime');const config=loaded.config;assert.equal(config.mainModel,null);checks++;config.mainModel={baseUrl:'http://127.0.0.1:'+fixture.address().port+'/v1',model:'synthetic-fixture',credentialId:'local-no-auth',inputTokens:8192,outputTokens:512};
+ const loaded=await api('/runtime');let config=loaded.config;assert.equal(config.mainModel,null);checks++;
+ const voiceCapabilities=await api('/voice/capabilities'),screenCapabilities=await api('/screen/capabilities');assert.equal(typeof voiceCapabilities.available,'boolean');assert.equal(typeof screenCapabilities.available,'boolean');checks+=2;
+ const voice=voiceCapabilities.voices?.find(row=>voiceCapabilities.recognizers?.some(recognizer=>recognizer.culture===row.culture));
+ if(voiceCapabilities.available&&voice){
+  config={...config,characters:config.characters.map(role=>role.id===state.characterId?{...role,voice:{enabled:true,language:voice.culture,voiceName:voice.name,autoRead:false}}:role)};
+  config=(await api('/runtime','PUT',{config,expectedRevision:config.revision,operationId:'portable-local-voice'})).config;
+  const scope={characterId:state.characterId,sessionId:'portable-local-media'},spoken=await api('/voice/synthesize','POST',{...scope,text:voice.culture==='zh-CN'?'你好，今天的天气很好。我们一起完成测试。':'Hello, the weather is nice today. Let us finish the test.'});
+  assert.ok(spoken.audioBase64);assert.ok(spoken.durationMs>0);checks+=2;
+  const recognized=await api('/voice/recognize','POST',{...scope,audioBase64:spoken.audioBase64});assert.ok(recognized.text.trim());checks++;
+  facts.push('Packaged Windows speech helper synthesized and recognized a synthetic file-stream phrase; no microphone or speaker was opened.');
+ }else facts.push('Local speech exercise NOT_RUN: matching installed voice/recognizer unavailable; capability endpoint returned explicitly.');
+ if(screenCapabilities.available){
+  const image=readFileSync(fileURLToPath(new URL('../tests/companion-knowledge/fixtures/ocr/english.png',import.meta.url)));
+  const capture=await api('/screen/recognize','POST',{characterId:state.characterId,sessionId:'portable-local-media',imageBase64:image.toString('base64'),mime:'image/png',sourceName:'Synthetic portable image; no real screen',sourceKind:'window',confirmed:true});
+  assert.match(capture.text,/Meet.*10.*30.*42/);assert.match(capture.id,/^screen-/);checks+=2;
+  await api('/screen/observations/'+capture.id+'?'+new URLSearchParams({characterId:state.characterId,sessionId:'portable-local-media'}),'DELETE',{});checks++;
+  facts.push('Packaged WinRT OCR helper recognized synthetic English image pixels through its authenticated endpoint; observation explicitly cleared, no real screen capture.');
+ }else facts.push('Local OCR exercise NOT_RUN: Windows OCR unavailable; no fixture substituted for native recognition.');
+ assert.equal(replyRequests,0);checks++;const localMediaHistory=await api('/chat/history?characterId='+state.characterId+'&sessionId=portable-local-media');assert.equal(localMediaHistory.turns.length,0);checks++;
+ config.mainModel={baseUrl:'http://127.0.0.1:'+fixture.address().port+'/v1',model:'synthetic-fixture',credentialId:'local-no-auth',inputTokens:8192,outputTokens:512};
  await api('/runtime','PUT',{config,expectedRevision:config.revision,operationId:'floating-fixture-binding'});
  const chat=api('/chat','POST',{characterId:state.characterId,sessionId:'floating-fixture',text:'Synthetic request; reply after hide.',turnId:'floating-fixture-turn'});
  await Promise.race([incoming,delay(20000).then(()=>{throw Error('Fixture never received model request');})]);checks++;

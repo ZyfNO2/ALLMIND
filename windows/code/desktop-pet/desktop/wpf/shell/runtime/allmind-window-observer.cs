@@ -86,13 +86,17 @@ public sealed class AllmindWindowObserver : IDisposable {
   if(desktop==IntPtr.Zero){int code=Marshal.GetLastWin32Error();o.SessionKnown=code==5;o.Error="input-desktop:"+code;return;}
   try{int needed;var text=new StringBuilder(256);if(!GetUserObjectInformation(desktop,2,text,512,out needed)){o.Error="input-desktop-name:"+Marshal.GetLastWin32Error();return;}o.SessionKnown=true;o.SessionAvailable=String.Equals(text.ToString(),"Default",StringComparison.OrdinalIgnoreCase);}finally{CloseDesktop(desktop);}
  }
+ static void CopyGeometry(AllmindWindowObservation from,AllmindWindowObservation to) {
+  to.Foreground=from.Foreground;to.Monitor=from.Monitor;to.Fullscreen=from.Fullscreen;to.GeometryKnown=from.GeometryKnown;
+  to.WindowLeft=from.WindowLeft;to.WindowTop=from.WindowTop;to.WindowRight=from.WindowRight;to.WindowBottom=from.WindowBottom;to.WorkLeft=from.WorkLeft;to.WorkTop=from.WorkTop;to.WorkRight=from.WorkRight;to.WorkBottom=from.WorkBottom;
+ }
  public AllmindWindowObservation Sample(int petX,int petY) {
   Dirty=false;var o=new AllmindWindowObservation();SampleSession(o);
   o.PetMonitor=MonitorAt(petX,petY);
   int shell;int hr=SHQueryUserNotificationState(out shell);o.ShellAllowsNotifications=hr==0&&shell==5;o.Presentation=hr==0&&shell==4;
   if(hr!=0)o.Error="shell-state:"+hr;
   IntPtr foreground=GetForegroundWindow();uint pid;GetWindowThreadProcessId(foreground,out pid);
-  if(pid==ownPid&&lastExternal!=null){o.Foreground=lastExternal.Foreground;o.Monitor=lastExternal.Monitor;o.Fullscreen=lastExternal.Fullscreen;o.GeometryKnown=lastExternal.GeometryKnown;return o;}
+  if(pid==ownPid&&lastExternal!=null){CopyGeometry(lastExternal,o);return o;}
   o.Foreground=foreground.ToInt64();
   if(foreground==IntPtr.Zero){o.Error="foreground-unavailable";return o;}
   var className=new StringBuilder(256);GetClassName(foreground,className,className.Capacity);
@@ -100,13 +104,15 @@ public sealed class AllmindWindowObserver : IDisposable {
   string kind=className.ToString();
   // The shell tray is a transient recovery surface, not a new fullscreen
   // owner. Preserve the last external app while the user opens our tray menu.
-  if((kind=="Shell_TrayWnd"||kind=="Shell_SecondaryTrayWnd")&&lastExternal!=null){o.Foreground=lastExternal.Foreground;o.Monitor=lastExternal.Monitor;o.Fullscreen=lastExternal.Fullscreen;o.GeometryKnown=lastExternal.GeometryKnown;return o;}
+  if((kind=="Shell_TrayWnd"||kind=="Shell_SecondaryTrayWnd")&&lastExternal!=null){CopyGeometry(lastExternal,o);return o;}
   if(pid==ownPid||kind=="Progman"||kind=="WorkerW"||kind=="Shell_TrayWnd"||kind=="Shell_SecondaryTrayWnd"||IsIconic(foreground)||!IsWindowVisible(foreground)||cloaked){o.GeometryKnown=true;lastExternal=o;return o;}
   var monitor=MonitorFromWindow(foreground,2);o.Monitor=monitor.ToInt64();
   var info=new MonitorInfo{Size=Marshal.SizeOf(typeof(MonitorInfo))};Rect frame,client;
   int dwm=DwmGetWindowAttribute(foreground,9,out frame,Marshal.SizeOf(typeof(Rect)));
   if(dwm!=0&&!GetWindowRect(foreground,out frame)){o.Error="window-rect-unavailable";return o;}
   if(!GetMonitorInfo(monitor,ref info)||!GetClientRect(foreground,out client)){o.Error="geometry-unavailable";return o;}
+  o.WindowLeft=frame.L;o.WindowTop=frame.T;o.WindowRight=frame.R;o.WindowBottom=frame.B;
+  o.WorkLeft=info.Work.L;o.WorkTop=info.Work.T;o.WorkRight=info.Work.R;o.WorkBottom=info.Work.B;
   var tl=new Point{X=client.L,Y=client.T};var br=new Point{X=client.R,Y=client.B};
   if(!ClientToScreen(foreground,ref tl)||!ClientToScreen(foreground,ref br)){o.Error="client-screen-unavailable";return o;}
   bool caption=(GetWindowLong(foreground,-16).ToInt64()&0x00C00000)!=0;

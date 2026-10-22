@@ -3,6 +3,7 @@ import type { PreparedImageInput, ResourceCapabilities, RichModelResult } from '
 
 /** `apiKey` overrides the stored credential for this one call (draft tests); `allowTruncated` accepts a length-capped reply. */
 export interface ModelCallOptions { incognito?: boolean; json?: boolean; allowTruncated?: boolean; apiKey?: string; purpose?: 'reply' | 'wiki' | 'planner' | 'test'; scope?: BookScope; localTurnId?: string | null; nextTurnId?: string | null;
+  jsonSchema?:Record<string,unknown>;
   promptCompilation?:import('../contracts/prompt-preset.js').PromptCompilation;
   budgetMs?: number; requiredThinking?: 'high'; taskArchive?: {bytes:Uint8Array;sha256:string};
   onPrepared?: (receipt:{thinking?:{level:number;label:string};taskArchiveSha256?:string;requestId:string})=>void;
@@ -32,14 +33,21 @@ export class BookHttpModel implements BookModelPort {
     const url = new URL(binding.baseUrl);
     if (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))) throw new BookError('invalid_input', 'Provider 必须使用 HTTPS 或回环 HTTP。');
     const endpoint = binding.baseUrl.replace(/\/$/, '') + (url.pathname.endsWith('/chat/completions') ? '' : '/chat/completions');
+    if(options.json&&binding.structuredOutput==='json-schema'&&!options.jsonSchema)throw new BookError('invalid_input','当前操作没有提供JSON Schema，请为该用途使用JSON对象模式。');
     const response = await this.transport(endpoint, { method: 'POST', signal, redirect: 'error', headers: {
       'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
     }, body: JSON.stringify({ model: binding.model, messages, stream: false, max_tokens: binding.outputTokens,
       ...(options.purpose==='reply'?options.promptCompilation?.parameters:{}),
-      ...(options.json ? { response_format: { type: 'json_object' } } : {}),
+      ...(options.json&&binding.structuredOutput!=='prompt' ? { response_format: binding.structuredOutput==='json-schema'?{type:'json_schema',json_schema:{name:'allmind_wiki',strict:true,schema:strictOutputSchema(options.jsonSchema!)}}:{ type: 'json_object' } } : {}),
       ...(binding.reasoningEffort ? { reasoning_effort: binding.reasoningEffort } : {}) }) });
     if (!response.ok) {
       await response.body?.cancel();
+      if(response.status===401||response.status===403)throw new BookError('unavailable',`模型凭据失效或权限不足（HTTP ${response.status}）。请在诊断中心撤销旧凭据并重新授权；未自动换模型或重发。`);
+      if(response.status===429){
+        const after=response.headers.get('retry-after');
+        const seconds=after&&/^\d{1,6}$/.test(after)?Number(after):null;
+        throw new BookError('unavailable',`模型服务限流或额度不足（HTTP 429，模型 ${binding.model}）。${seconds!==null?`服务建议等待 ${seconds} 秒后再试。`:''}请稍后手动发起新尝试；不会自动重发。`);
+      }
       throw new BookError('unavailable', `模型请求失败（HTTP ${response.status}，模型 ${binding.model}）。请检查绑定与凭据。`);
     }
     const reader = response.body?.getReader(); if (!reader) throw new BookError('unavailable', '模型响应没有正文。');
@@ -51,12 +59,24 @@ export class BookHttpModel implements BookModelPort {
         chunks.push(part.value);
       }
     } finally { reader.releaseLock(); }
-    const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    let parsed;try{parsed=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch(cause){throw new BookError('unavailable','模型返回无效 JSON 格式；原响应未写入普通日志，没有自动重发。',{cause});}
     if (parsed.choices?.[0]?.finish_reason === 'length' && !options.allowTruncated) throw new BookError('unavailable', '模型输出达到限额而被截断。');
     const text = parsed.choices?.[0]?.message?.content;
     if (typeof text !== 'string' || !text.trim() || text.length > 200000) throw new BookError('unavailable', '模型未返回有效文本。');
     return text;
   }
+}
+/** OpenAI strict mode requires all object properties to be required; local validation stays authoritative.
+ * https://developers.openai.com/api/docs/guides/structured-outputs */
+export function strictOutputSchema(schema:Record<string,unknown>):Record<string,unknown>{
+  const visit=(value:unknown):unknown=>{
+    if(Array.isArray(value))return value.map(visit);
+    if(!value||typeof value!=='object')return value;
+    const row=Object.fromEntries(Object.entries(value).filter(([key])=>key!=='$schema').map(([key,item])=>[key,visit(item)]));
+    if(row.const!==undefined){row.enum=[row.const];row.type=typeof row.const;delete row.const;}
+    if(row.type==='object'&&row.properties){row.required=Object.keys(row.properties as object);row.additionalProperties=false;}
+    return row;
+  };return visit(schema) as Record<string,unknown>;
 }
 const fail = (message: string): never => { throw new BookError('invalid_input', `Planner 返回无效：${message}`); };
 function object(value: unknown): Record<string, unknown> {

@@ -9,6 +9,8 @@ export interface EntryTrigger {
 }
 export interface BookEntry {
   knowledgeCategory?:import('../memory/knowledge-category.js').KnowledgeCategory;
+  /** Explicitly reviewed derived persona; never set directly by model output. */
+  corePersona?:boolean;
   id: string; type: EntryType; title: string; body: string; enabled: boolean;
   origin: 'authored' | 'observed' | 'inferred'; revision: number;
   pairingId: string | null; sourceRefs: string[]; aliases: string[]; tags: string[];
@@ -93,7 +95,7 @@ export interface QueryPlan {
   timeRange: { from: string | null; to: string | null };
 }
 export interface RecallLimits { perRoute: number; candidates: number; selected: number; related: number; plannerMs: number }
-export interface RecallConfig { mode: RecallMode; continueLocalOnError: boolean; regexEnabled: boolean; limits: RecallLimits }
+export interface RecallConfig { mode: RecallMode; continueLocalOnError: boolean; regexEnabled: boolean; limits: RecallLimits;memoryDomain?:import('./book-dialogue.js').DialogueMemoryDomain }
 export const DEFAULT_RECALL_CONFIG: RecallConfig = {
   mode: 'smart', continueLocalOnError: false, regexEnabled: false,
   limits: { perRoute: 10, candidates: 40, selected: 8, related: 8, plannerMs: 2000 },
@@ -106,7 +108,7 @@ export interface ChatMessage { role: 'system' | 'user' | 'assistant'; content: s
  * selector — the browser account itself is declared by `RuntimeConfig.chatgptWeb`).
  */
 export type ModelBindingKind = 'http' | 'chatgpt-web';
-export interface ModelBinding { name?: string; kind?: ModelBindingKind; baseUrl: string; model: string; credentialId: string; inputTokens: number; outputTokens: number; reasoningEffort?: 'low' | 'medium' | 'high' }
+export interface ModelBinding { name?: string; kind?: ModelBindingKind; baseUrl: string; model: string; credentialId: string; inputTokens: number; outputTokens: number; reasoningEffort?: 'low' | 'medium' | 'high';structuredOutput?:'json-object'|'json-schema'|'prompt' }
 /**
  * ChatGPT web source instance (RPD_CHAT_WIKI §2.2/§6): the user's own logged-in browser
  * context. AIKI only launches the two allowlisted tools against it and never owns or kills
@@ -155,9 +157,12 @@ export const DEFAULT_CHATGPT_WEB_SOURCE: ChatgptWebSourceConfig = {
   replyBudgetMs: 300_000, wikiBudgetMs: 300_000,
   temporaryChatTests: true, conversationMode: 'regular', submitMechanism: 'auto', authorizedPurposes: [],
 };
-export interface RuntimeCharacter { id: string; name: string; intro: string; appearancePath: string | null; appearanceSkinId?: string | null; knowledgeView?: KnowledgeView; replyLength?:import('./reply-length.js').ReplyLengthSettings; promptPresetId?:string|null;userName?:string; /** B03 default reply style; absent keeps legacy natural. */ replyStyle?:import('./reply-length.js').ReplyStyle }
+export interface RuntimeCharacter { id: string; name: string; intro: string; appearancePath: string | null; appearanceSkinId?: string | null; knowledgeView?: KnowledgeView; replyLength?:import('./reply-length.js').ReplyLengthSettings; promptPresetId?:string|null;userName?:string;voice?:import('./book-voice.js').BookVoiceSettings;screen?:import('./book-screen.js').BookScreenSettings; /** B03 default reply style; absent keeps legacy natural. */ replyStyle?:import('./reply-length.js').ReplyStyle }
 export type ReplyLanguage = 'zh-CN' | 'ja-JP' | 'en' | 'zh-ja-ruby';
 export interface RuntimeConfig {
+  dialogueRouting?:import('./book-dialogue.js').DialogueRoutingSettings;
+  /** Archived role configurations retain their data and can be restored explicitly. */
+  archivedCharacters?: RuntimeCharacter[];
   /** One-time starter installation; retained after the user edits/removes the role. */
   gptNiangStarterVersion?: 1;
   promptPresets?:import('./prompt-preset.js').StoredPromptPreset[];
@@ -175,8 +180,13 @@ export interface RuntimeConfig {
   /** Omitted legacy settings use Chinese. Applies to final dialogue, not retrieval or source text. */
   replyLanguage?: ReplyLanguage;
 }
-export interface SavedTurn { id: string; characterId: string; pairingId: string; sessionId: string; timestamp: string; user: string; assistant: string; traceId: string; incognito?: true;replyLength?:import('./reply-length.js').ReplyLengthResult; /** B03: the frozen style decision that governed this turn. */ replyStyleDecision?:import('./reply-length.js').ReplyStyleDecision;
+export interface SavedTurn {screenObservation?:import('./book-screen.js').BookScreenReceipt; id: string; characterId: string; pairingId: string; sessionId: string; timestamp: string; user: string; assistant: string; traceId: string; incognito?: true;replyLength?:import('./reply-length.js').ReplyLengthResult; /** B03: the frozen style decision that governed this turn. */ replyStyleDecision?:import('./reply-length.js').ReplyStyleDecision;
+  dialogue?:import('./book-dialogue.js').DialogueReceipt;
+  contents?:import('./book-message.js').MessageContent[];
+  transcript?:import('./book-message.js').TextTranscriptReceipt;
   promptPreset?:{id:string;revision:number;documentHash:string};
+  replySurface?:'bubble';
+  bubbleReplyLength?:import('./reply-length.js').ReplyLengthResult;
   /** W01: the attachment selections this turn consumed, frozen with their content hashes at submit. */
   inputResources?:import('./book-resources.js').FrozenResourceSelection[];
   inputImageReceipts?:import('./book-resources.js').ImageInputReceipt[];
@@ -228,9 +238,11 @@ export interface RuntimeRepository {
   loadConfig(): RuntimeConfig;
   commitConfig(config: RuntimeConfig, expectedRevision: number, operationId: string): CommitReceipt;
   readSession(scope: BookScope): SavedTurn[];
+  readSessionPage?(scope:BookScope,before:number|null,limit:number):{turns:SavedTurn[];before:number|null};
   appendTurn(scope: BookScope, turn: SavedTurn): void;
   /** Additive (MB sessions v1): summaries of persisted sessions for one character/pairing, most recent first. */
-  listSessions(characterId: string, pairingId: string): SessionSummary[];
+  listSessions(characterId: string, pairingId: string, options?: { all?: boolean; query?: string;strict?:boolean }): SessionSummary[];
+  renameSession?(scope: BookScope, title: string): void;
   setSessionArchived?(scope: BookScope, archived: boolean): void;
   /**
    * Durable pre-submit intent and terminal marker for an explicit turnId.

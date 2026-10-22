@@ -21,6 +21,7 @@ export class AutomaticBookMemory {
   constructor(private repository: Repository, private model: BookModelPort, private changed: (characterId: string) => void,
     private failed: (scope:BookScope,error: unknown) => void = (_scope,error) => process.stderr.write(`Automatic memory failed: ${error instanceof Error ? error.stack : String(error)}\n`)) {}
   enqueue(scope: BookScope, turn: SavedTurn): void {
+    if(turn.dialogue?.mode==='rp'||turn.dialogue?.memoryDomain==='fiction')return;
     const config = this.repository.loadConfig(), settings = config.companion ?? DEFAULT_COMPANION_SETTINGS;
     if (!settings.autoMemory) return;
     const data = this.repository.loadCompanionData(scope), id = memoryJobId(scope, turn.id);

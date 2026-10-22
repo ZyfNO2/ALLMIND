@@ -1,6 +1,6 @@
 import {focusState} from './book-focus.js';
 import { randomUUID } from 'node:crypto';
-import { DEFAULT_COMPANION_SETTINGS, type CompanionEvent, type CompanionDelivery, type CompanionRepository, type CompanionData, type CompanionSettings } from '../contracts/book-companion.js';
+import { DEFAULT_COMPANION_SETTINGS, companionFrequency, type CompanionEvent, type CompanionDelivery, type CompanionRepository, type CompanionData, type CompanionSettings } from '../contracts/book-companion.js';
 import { BookError, type BookScope, type BookRepository, type RuntimeRepository } from '../contracts/memory-book.js';
 import { relationshipFor } from './companion-relationship.js';
 import { wikiExclusions } from '../memory/fact-wiki.js';
@@ -126,11 +126,11 @@ export class BookProactiveScheduler {
     const local = zonedParts(now,settings.timezone), quiet = quietHour(local.hour,settings.quietStart,settings.quietEnd);
     if (quiet) { this.reason = '安静时段';this.cancel(); return; }
     if(this.active){this.reason='已有生成中的唯一主动任务';return;}
-    const budget = companionBudget(data,settings,now);
+    const budget = companionBudget(data,settings,now), frequency = companionFrequency(settings);
     const latest = Math.max(data.inheritedGreetingAt ?? 0,...data.deliveries.map(d => Math.max(d.reservedAt,d.dispatchedAt??0,d.acknowledgedAt??0)));
-    if (now - latest < 3 * 3600000) { this.reason = '共享冷却：至少间隔三小时'; return; }
-    if (budget.callsToday >= 2 || budget.callsRolling24h >= 2) { this.reason = '模型调用预算已用完（含失败尝试）'; return; }
-    if (budget.displaysToday >= 2) { this.reason = '当日展示配额已用完'; return; }
+    if (now - latest < frequency.minimumIntervalMinutes * 60000) { this.reason = `共享冷却：至少间隔 ${frequency.minimumIntervalMinutes} 分钟`; return; }
+    if (budget.callsToday >= frequency.dailyLimit || budget.callsRolling24h >= frequency.dailyLimit) { this.reason = '模型调用预算已用完（含失败尝试）'; return; }
+    if (budget.displaysToday >= frequency.dailyLimit) { this.reason = '当日展示配额已用完'; return; }
     if (budget.unanswered >= 2) { this.reason = '未回应暂停：等待用户互动或显式重新启用'; return; }
     const book = this.repository.snapshot(scope);
     const exclusions=wikiExclusions(book.entries,book.wikiSources??[],scope),eventExcluded=new Set(exclusions.filter(row=>row.reason!=='duplicate_fact').map(row=>row.entryId));

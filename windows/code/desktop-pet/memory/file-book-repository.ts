@@ -1,8 +1,11 @@
+import {validateScreenReceipt} from '../contracts/book-screen.js';
+import {validateDialogueReceipt} from '../contracts/book-dialogue.js';
+import {validateMessageContents,validateTextTranscript} from '../contracts/book-message.js';
 import {replaceResourceFile} from './resource-atomic-replace.js';
 import {validateFrozenResourceSelection,resourceRequestHash} from '../contracts/book-resources.js';
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdirSync, openSync, writeFileSync, fsyncSync, closeSync, renameSync, readFileSync, existsSync, unlinkSync, appendFileSync, readdirSync, statSync, readSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { mkdirSync, openSync, writeFileSync, fsyncSync, closeSync, renameSync, readFileSync, existsSync, unlinkSync, appendFileSync, readdirSync, statSync, readSync, rmSync,lstatSync } from 'node:fs';
+import { join, resolve,basename } from 'node:path';
 import { BookError, DEFAULT_RECALL_CONFIG, DEFAULT_CHATGPT_WEB_SOURCE, type BookRepository, type BookSnapshot, type BookScope, type BookChange, type EntryRef, type CommitReceipt, type FrozenTurn, type RuntimeRepository, type RuntimeConfig, type SavedTurn, type SessionSummary } from '../contracts/memory-book.js';
 import { validateEntry, validateIdentity, validateRuntime, validateScope, entryVisible, validateWikiSource, validateFactSources, validateFrozenTurn } from './book-validation.js';
 import { validateCompanionLife, type CompanionLifeState } from '../core/companion-behavior.js';
@@ -13,6 +16,9 @@ import { compileRelationships,validateRelationships } from '../core/companion-re
 import {measureReplyLength} from '../core/reply-length.js';
 import {validateReplyStyleDecision} from '../contracts/reply-length.js';
 import {reportedEventIdentity} from './companion-event-progress.js';
+import {isCorePersona} from '../core/entry-domain.js';
+import {acquireBookWriterLock} from './book-writer-lock.js';
+import {migrateBookStorage,decodeStorageEnvelope,encodeStorageEnvelope,eraseMigrationBackup} from './book-storage-format.js';
 
 function rememberErasedReport(data:CompanionData,entry:BookSnapshot['entries'][number],sources:NonNullable<BookSnapshot['wikiSources']>,timezone:string):void{
   if(!entry.fact?.predicate.startsWith('事件进展 '))return;
@@ -87,9 +93,11 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
   private lockFd: number | null = null;
   constructor(directory: string, private readonly lifecycle: {resourcesForErase?:(scope:BookScope,turnIds:string[])=>string[];onErase?:(scope:BookScope,turnIds:string[])=>void} = {}) {
     this.directory = resolve(directory); mkdirSync(this.directory, { recursive: true });
-    try { this.lockFd = openSync(join(this.directory, 'writer.lock'), 'wx'); }
+    try { this.lockFd = acquireBookWriterLock(this.directory); }
     catch (cause) { throw new BookError('busy', `本地目录已有写者或未清理的锁：${this.directory}。请确认旧进程退出后处理 writer.lock。`, { cause }); }
     writeFileSync(this.lockFd, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })); fsyncSync(this.lockFd);
+    try{migrateBookStorage(this.directory);}catch(error){this.close();throw error;}
+    if(existsSync(join(this.directory,'private-restore.json')))try{this.finishPrivateRestore();}catch(error){this.close();throw error;}
     const journal = join(this.directory, 'erasure.json');
     if (existsSync(journal)) { const pending = JSON.parse(readFileSync(journal,'utf8')); this.eraseTurns(pending.scope,pending.turnIds,pending.expectedRevision,true); }
   }
@@ -102,7 +110,7 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
     this.assertOpen();
     if (!existsSync(file)) return { data: empty(), operations: {} };
     try {
-      const parsed = JSON.parse(readFileSync(file, 'utf8')) as Envelope<T>;
+      const parsed = decodeStorageEnvelope(JSON.parse(readFileSync(file, 'utf8'))) as Envelope<T>;
       if (!parsed || !parsed.operations || typeof parsed.operations !== 'object' || Array.isArray(parsed.operations)) throw Error('Missing receipt ledger');
       if ((parsed.data as BookSnapshot)?.schemaVersion === 'memory-book/v1') parsed.data = unpackBook(parsed.data as BookSnapshot) as T;
       validate(parsed.data); return parsed;
@@ -113,7 +121,7 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
     if ((data.data as BookSnapshot)?.schemaVersion === 'memory-book/v1') validateCompanionSnapshot(data.data as BookSnapshot);
     const temporary = `${file}.${randomUUID()}.tmp`;
     const fd = openSync(temporary, 'wx', 0o600);
-    try { const stored = (data.data as BookSnapshot)?.schemaVersion === 'memory-book/v1' ? { ...data, data: packBook(data.data as BookSnapshot) } : data; writeFileSync(fd, JSON.stringify(stored) + '\n'); fsyncSync(fd); } finally { closeSync(fd); }
+    try { const stored = (data.data as BookSnapshot)?.schemaVersion === 'memory-book/v1' ? { ...data, data: packBook(data.data as BookSnapshot) } : data; writeFileSync(fd, JSON.stringify(encodeStorageEnvelope(stored)) + '\n'); fsyncSync(fd); } finally { closeSync(fd); }
     // Preserve a failed temporary file for diagnosis; never report a failed replace as committed.
     replaceResourceFile(temporary, file);
   }
@@ -263,6 +271,7 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
       entries.set(proposed.id, structuredClone({ ...proposed, revision: (existing?.revision ?? 0) + 1 })); changedIds.add(proposed.id);
     }
     if (entries.size > BOOK_RECORD_LIMIT) throw new BookError('budget', 'Book 条目超过 8192。');
+    if((changes.upsert??[]).some(entry=>entry.corePersona===true)&&[...entries.values()].filter(entry=>entry.enabled&&(entry.pairingId===null||entry.pairingId===scope.pairingId)&&isCorePersona(entry)).reduce((bytes,entry)=>bytes+Buffer.byteLength(entry.body,'utf8'),0)>4096)throw new BookError('budget','启用后的核心人设超过 4 KiB；尚未保存。');
     // Erased/revoked originals must not survive as text in derived Wiki entries.
     for (const [id, entry] of entries) if (entry.synthesis && (entry.synthesis.basis.some(ref => !entries.get(ref.entryId)?.enabled) || entry.synthesis.sources.some(ref => !sources.get(ref.id)?.enabled))) { entries.delete(id); changedIds.add(id); }
     if (sources.size > BOOK_RECORD_LIMIT) throw new BookError('budget', 'Wiki 来源超过 8192。');
@@ -311,6 +320,21 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
     this.write(file, envelope); return receipt;
   }
   private sessionFile(scope: BookScope): string { validateScope(scope); return join(this.directory, `session-${digest(JSON.stringify(scope))}.jsonl`); }
+  readSessionPage(scope:BookScope,before:number|null,limit:number):{turns:SavedTurn[];before:number|null}{
+    this.assertOpen();if(!Number.isSafeInteger(limit)||limit<1||limit>100||before!==null&&(!Number.isSafeInteger(before)||before<0))throw new BookError('invalid_input','历史分页参数无效。');
+    const file=this.sessionFile(scope);if(!existsSync(file))return {turns:[],before:null};
+    const size=statSync(file).size,end=before??size;if(end>size)throw new BookError('conflict','聊天文件已变化，请重新读取。');if(!end)return {turns:[],before:null};
+    const fd=openSync(file,'r');try{
+      const last=Buffer.alloc(1);readSync(fd,last,0,1,end-1);if(last[0]!==10)throw new BookError('corrupt_data','聊天尾行或分页边界不完整；请保留原文件。');
+      let start=end,newlines=0;const chunks:Buffer[]=[];
+      while(start>0){const length=Math.min(256*1024,start),chunk=Buffer.alloc(length);start-=length;readSync(fd,chunk,0,length,start);chunks.push(chunk);for(const byte of chunk)if(byte===10)newlines++;if(newlines>limit)break;}
+      const buffer=Buffer.concat(chunks.reverse());
+      const boundaries:number[]=[];for(let i=0;i<buffer.length;i++)if(buffer[i]===10)boundaries.push(i);
+      const cut=boundaries.length>limit?boundaries[boundaries.length-limit-1]!+1:0,next=start+cut;
+      const turns=buffer.subarray(cut).toString('utf8').split('\n').filter(Boolean).map(line=>{let turn:SavedTurn;try{turn=JSON.parse(line);}catch(cause){throw new BookError('corrupt_data','聊天记录包含损坏行。',{cause});}this.validateTurn(scope,turn);return turn;});
+      return {turns,before:next>0?next:null};
+    }finally{closeSync(fd);}
+  }
   readSession(scope: BookScope): SavedTurn[] {
     this.assertOpen(); const file = this.sessionFile(scope); if (!existsSync(file)) return [];
     const raw = readFileSync(file, 'utf8');
@@ -325,6 +349,12 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
   private validateTurn(scope: BookScope, turn: SavedTurn): void {
     validateIdentity(turn.id); validateIdentity(turn.traceId);
     if (turn.characterId !== scope.characterId || turn.pairingId !== scope.pairingId || turn.sessionId !== scope.sessionId || typeof turn.user !== 'string' || typeof turn.assistant !== 'string' || turn.user.length > 16000 || turn.assistant.length > 200000 || !Number.isFinite(Date.parse(turn.timestamp))) throw new BookError('invalid_input', '聊天记录作用域/内容无效。');
+    if(turn.screenObservation!==undefined)validateScreenReceipt(turn.screenObservation);
+    if(turn.dialogue!==undefined)validateDialogueReceipt(turn.dialogue);
+    if(turn.contents!==undefined)validateMessageContents(turn.contents);
+    if(turn.transcript!==undefined){validateTextTranscript(turn.transcript,turn.user);const row=turn.transcript;if(digest(turn.user.slice(row.start,row.end))!==row.sha256)throw new BookError('invalid_input','转写正文与来源回执不一致。');}
+    if(turn.replySurface!==undefined&&turn.replySurface!=='bubble')throw new BookError('invalid_input','回复场景无效。');
+    if(turn.bubbleReplyLength!==undefined){const length=measureReplyLength(turn.assistant,{minChars:null,maxChars:120});if(turn.replySurface!=='bubble'||!length||length.actualChars!==turn.bubbleReplyLength.actualChars||length.status!==turn.bubbleReplyLength.status||turn.bubbleReplyLength.minChars!==null||turn.bubbleReplyLength.maxChars!==120)throw new BookError('invalid_input','气泡长度记录与正文不符。');}
     if(turn.artifactDeliveryId!==undefined)validateIdentity(turn.artifactDeliveryId,'artifactDeliveryId');
     if(turn.inputResources!==undefined){if(!Array.isArray(turn.inputResources)||turn.inputResources.length>8)throw new BookError('invalid_input','附件输入无效。');turn.inputResources.forEach(validateFrozenResourceSelection);if(new Set(turn.inputResources.map(row=>row.resourceId)).size!==turn.inputResources.length)throw new BookError('invalid_input','附件重复。');const actual=resourceRequestHash({scope,turnId:turn.id,query:turn.user,replyStyle:turn.replyStyleDecision?.requestedStyle??'inherit',selections:turn.inputResources});if(turn.resourceRequestHash!==actual)throw new BookError('invalid_input','附件身份哈希不一致。');}
     if (turn.inputImageReceipts !== undefined) {
@@ -450,6 +480,7 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
     if (!recovering) { const fd = openSync(journal,'wx',0o600); try { writeFileSync(fd,JSON.stringify({ scope,turnIds,expectedRevision })); fsyncSync(fd); } finally { closeSync(fd); } }
     // The durable intent also covers attached bytes and completion receipts, including startup replay.
     this.lifecycle.onErase?.(scope,turnIds);
+    eraseMigrationBackup(this.directory,basename(this.bookFile(scope)));
     this.write(this.bookFile(scope),envelope);
     const kept = turns.filter(turn=>!selected.has(turn.id)), file = this.sessionFile(scope), temporary=`${file}.${randomUUID()}.tmp`, fd=openSync(temporary,'wx',0o600);
     try { writeFileSync(fd,kept.map(turn=>JSON.stringify(turn)+'\n').join('')); fsyncSync(fd); } finally { closeSync(fd); } replaceResourceFile(temporary,file);
@@ -460,11 +491,80 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
   }
   exportPrivate(scope: BookScope): { filename: string; text: string } {
     const config = this.loadConfig(), role = config.characters.find(role=>role.id===scope.characterId);
-    const snapshot = this.snapshot(scope), sessions=this.listSessions(scope.characterId,scope.pairingId).map(session=>({ sessionId:session.sessionId,turns:this.readSession({...scope,sessionId:session.sessionId}) }));
+    if(!role)throw new BookError('not_found','角色不存在。');
+    const snapshot = this.snapshot(scope), sessions=this.listSessions(scope.characterId,scope.pairingId,{all:true,strict:true}).map(session=>({ sessionId:session.sessionId,title:session.title,archivedAt:session.archivedAt??null,turns:this.readSession({...scope,sessionId:session.sessionId}) }));
     const filename=`private-backup-${digest(JSON.stringify([scope.characterId,scope.pairingId]))}-${Date.now()}.json`;
     // Deliberately whitelist private data. Source bindings, credentials and bridge keys are excluded.
-    const text=JSON.stringify({ schemaVersion:'private-companion-backup/v1',scope:{characterId:scope.characterId,pairingId:scope.pairingId},role,snapshot,sessions },null,2);
+    const payload={scope:{characterId:scope.characterId,pairingId:scope.pairingId},role:{...role,appearancePath:null,appearanceSkinId:null},snapshot,sessions,preset:config.promptPresets?.find(preset=>preset.id===role.promptPresetId)??null,exclusions:['模型凭据与网页登录态','外观文件与本机路径','聊天附件和生成文件二进制','外部通道绑定与平台登录态','模型请求回执与诊断日志']};
+    const text=JSON.stringify({ schemaVersion:'private-companion-backup/v2',sha256:digest(JSON.stringify(payload)),payload },null,2);
+    if(Buffer.byteLength(text)>128*1024*1024)throw new BookError('budget','私人备份超过128 MiB，未生成不完整备份；请先从托盘退出，再完整复制独立用户数据目录。');
     const fd=openSync(join(this.directory,filename),'wx',0o600); try { writeFileSync(fd,text); fsyncSync(fd); } finally { closeSync(fd); } return { filename,text };
+  }
+  /** Validate in a disposable writer before reserving any destination. Restore never overwrites data. */
+  previewPrivate(text:string):{hash:string;characterId:string;name:string;sessions:number;turns:number;entries:number;conflicts:string[];exclusions:string[];integrity:'verified'|'legacy-unverified'}{
+    const parsed=this.privatePayload(text),{payload,hash}=parsed,scope={...payload.scope,sessionId:'restore'};
+    const config=this.loadConfig(),role=payload.role;
+    const conflicts:string[]=[];
+    if(config.archivedCharacters?.some(row=>row.id===role.id)||existsSync(this.bookFile(scope))||this.listSessions(role.id,scope.pairingId,{all:true}).length)conflicts.push('当前实例已有同一角色的数据；恢复只接受空目标，不覆盖既有数据。请在独立新数据目录恢复。');
+    if(config.characters.length>=128)conflicts.push('角色数量已达上限。');
+    const names=this.privateRestoreFiles(payload);
+    if(names.some(row=>existsSync(join(this.directory,row.name))))conflicts.push('存在同一角色的会话或元数据文件；不会覆盖。');
+    const stage=join(this.directory,'restore-check-'+randomUUID());mkdirSync(stage);
+    try{
+      for(const row of names)writeFileSync(join(stage,row.name),row.text,{flag:'wx',mode:0o600});
+      const validator=new FileBookRepository(stage);
+      try{validator.snapshot(scope);for(const session of payload.sessions)validator.readSession({...scope,sessionId:session.sessionId});}finally{validator.close();}
+      const testConfig={...config,characters:[...config.characters.filter(row=>row.id!==role.id),role],...(payload.preset?{promptPresets:[...(config.promptPresets??[]).filter(row=>row.id!==payload.preset.id),payload.preset]}:{})};validateRuntime(testConfig);
+      if(payload.preset&&config.promptPresets?.some(row=>row.id===payload.preset.id&&JSON.stringify(row)!==JSON.stringify(payload.preset)))conflicts.push('同名预设内容不同；请在独立新数据目录恢复。');
+    }finally{const target=resolve(stage);if(!target.startsWith(this.directory+'\\')&&!target.startsWith(this.directory+'/')||!/^restore-check-[a-f0-9-]+$/.test(target.slice(this.directory.length+1))||lstatSync(target).isSymbolicLink())throw new BookError('conflict','恢复校验目录身份变化，未清理。');rmSync(target,{recursive:true});}
+    return {hash,characterId:role.id,name:role.name,sessions:payload.sessions.length,turns:payload.sessions.reduce((n:number,row:any)=>n+row.turns.length,0),entries:payload.snapshot.entries.length,conflicts,exclusions:payload.exclusions,integrity:parsed.integrity};
+  }
+  restorePrivate(text:string,hash:string,expectedRevision:number,confirmed:boolean):void{
+    if(confirmed!==true)throw new BookError('invalid_input','请明确确认恢复私人数据。');
+    const preview=this.previewPrivate(text),config=this.loadConfig();
+    if(preview.hash!==hash||config.revision!==expectedRevision)throw new BookError('conflict','备份内容或配置已变化，请重新预览。');
+    if(preview.conflicts.length)throw new BookError('conflict',preview.conflicts.join('\n'));
+    const {payload}=this.privatePayload(text),next={...config,characters:[...config.characters.filter(row=>row.id!==payload.role.id),payload.role],...(payload.preset?{promptPresets:[...(config.promptPresets??[]).filter(row=>row.id!==payload.preset.id),payload.preset]}:{})};
+    const intent={files:this.privateRestoreFiles(payload),config:next,operationId:'restore-'+randomUUID()},journal={data:{...intent,sha256:digest(JSON.stringify(intent))},operations:{}};
+    this.write(join(this.directory,'private-restore.json'),journal);this.finishPrivateRestore();
+  }
+  private privatePayload(text:string):{payload:any;hash:string;integrity:'verified'|'legacy-unverified'}{
+    if(typeof text!=='string'||Buffer.byteLength(text)>128*1024*1024)throw new BookError('budget','私人备份超过128 MiB，请分角色备份。');
+    let parsed:any;try{parsed=JSON.parse(text);}catch(cause){throw new BookError('invalid_input','备份不是有效JSON。',{cause});}
+    const legacy=parsed?.schemaVersion==='private-companion-backup/v1';
+    if(legacy){
+      if(!parsed.role||!parsed.scope||!parsed.snapshot||!Array.isArray(parsed.sessions))throw new BookError('invalid_input','旧版私人备份结构不完整。');
+      const payload={scope:parsed.scope,role:{...parsed.role,appearancePath:null,appearanceSkinId:null,promptPresetId:null},snapshot:parsed.snapshot,sessions:parsed.sessions.map((row:any)=>({sessionId:row.sessionId,title:deriveSessionTitle(row.turns?.[0]?.user),archivedAt:null,turns:row.turns})),preset:null,exclusions:['旧v1没有内置完整性哈希，不能证明文件未被修改','旧v1未保存归档状态、自定义标题和预设正文，无法补造','模型凭据、网页登录态、外观及附件文件、外部通道配置均不恢复']};
+      parsed={schemaVersion:'private-companion-backup/v2',payload,sha256:digest(JSON.stringify(payload))};
+    }
+    if(parsed?.schemaVersion!=='private-companion-backup/v2'||!parsed.payload||parsed.sha256!==digest(JSON.stringify(parsed.payload)))throw new BookError('invalid_input','备份格式或SHA-256校验失败；请保留原件，不按角色包导入。');
+    const payload=parsed.payload;validateScope({...payload.scope,sessionId:'restore'});
+    if(!payload.role||payload.role.id!==payload.scope.characterId||payload.snapshot?.characterId!==payload.role.id||payload.snapshot?.schemaVersion!=='memory-book/v1'||!Array.isArray(payload.sessions)||!Array.isArray(payload.exclusions))throw new BookError('invalid_input','备份身份或清单无效。');
+    const ids=new Set<string>();for(const session of payload.sessions){validateIdentity(session.sessionId);if(ids.has(session.sessionId)||!Array.isArray(session.turns)||session.turns.some((turn:SavedTurn)=>turn.incognito))throw new BookError('invalid_input','备份含重复会话或无痕数据。');ids.add(session.sessionId);for(const turn of session.turns)this.validateTurn({...payload.scope,sessionId:session.sessionId},turn);if(typeof session.title!=='string'||session.title.length>200||session.archivedAt!==null&&!Number.isFinite(Date.parse(session.archivedAt)))throw new BookError('invalid_input','备份会话元数据无效。');}
+    if(!Array.isArray(payload.snapshot.entries)||payload.snapshot.entries.some((row:any)=>row.pairingId!==null&&row.pairingId!==payload.scope.pairingId)||(payload.snapshot.wikiSources??[]).some((row:any)=>row.pairingId!==null&&row.pairingId!==payload.scope.pairingId)||[...(payload.snapshot.companionData??[]),...(payload.snapshot.companionStates??[]),...(payload.snapshot.relationships??[]),...(payload.snapshot.wikiPages??[])].some((row:any)=>row.pairingId!==payload.scope.pairingId))throw new BookError('invalid_input','备份包含其他配对的资料。');
+    if(payload.role.appearancePath!==null||payload.role.appearanceSkinId)throw new BookError('invalid_input','备份不能恢复本机外观路径。');
+    return {payload,hash:parsed.sha256,integrity:legacy?'legacy-unverified':'verified'};
+  }
+  private privateRestoreFiles(payload:any):{name:string;text:string}[]{
+    const scope={...payload.scope,sessionId:'restore'},pair=digest(JSON.stringify([scope.characterId,scope.pairingId]));
+    const envelope=(data:unknown)=>JSON.stringify({data,operations:{}})+'\n';
+    const snapshot=structuredClone(payload.snapshot) as BookSnapshot;delete snapshot.archiveCounts;
+    // Imported outstanding jobs cannot submit automatically on startup. Their evidence remains available.
+    for(const data of snapshot.companionData??[]){data.memoryPaused=true;for(const job of data.jobs)if(['pending','running'].includes(job.status)){job.status='failed';job.error='从私人备份恢复，须明确重试；未自动发送。';}}
+    return [{name:`book-${digest(scope.characterId)}.json`,text:envelope(packBook(snapshot))},
+      {name:`session-archive-${pair}.json`,text:envelope(Object.fromEntries(payload.sessions.filter((row:any)=>row.archivedAt).map((row:any)=>[row.sessionId,row.archivedAt])))},
+      {name:`session-titles-${pair}.json`,text:envelope(Object.fromEntries(payload.sessions.map((row:any)=>[row.sessionId,row.title])))},
+      ...payload.sessions.map((row:any)=>({name:`session-${digest(JSON.stringify({...payload.scope,sessionId:row.sessionId}))}.jsonl`,text:row.turns.map((turn:SavedTurn)=>JSON.stringify(turn)+'\n').join('')}))];
+  }
+  private finishPrivateRestore():void{
+    const file=join(this.directory,'private-restore.json'),journal=JSON.parse(readFileSync(file,'utf8')).data;
+    if(!journal||!Array.isArray(journal.files)||!/^restore-[a-f0-9-]+$/.test(journal.operationId)||journal.sha256!==digest(JSON.stringify({files:journal.files,config:journal.config,operationId:journal.operationId})))throw new BookError('corrupt_data','恢复日志无效，已保留现场。');
+    validateRuntime(journal.config);
+    // Check every destination and the revision before writing the first file, including crash recovery.
+    const current=this.loadConfig();if(current.revision!==journal.config.revision&&current.revision!==journal.config.revision+1)throw new BookError('conflict','恢复日志与当前配置修订冲突，未继续写入。');
+    for(const row of journal.files){if(!/^(book-[a-f0-9]+\.json|session-(?:archive-|titles-)?[a-f0-9]+\.(?:json|jsonl))$/.test(row.name)||typeof row.text!=='string')throw new BookError('corrupt_data','恢复文件清单无效。');const target=join(this.directory,row.name);if(existsSync(target)&&(lstatSync(target).isSymbolicLink()||!lstatSync(target).isFile()||readFileSync(target,'utf8')!==row.text))throw new BookError('conflict','恢复目标已变化，未覆盖。');}
+    for(const row of journal.files){const target=join(this.directory,row.name);if(!existsSync(target)){const fd=openSync(target,'wx',0o600);try{writeFileSync(fd,row.text);fsyncSync(fd);}finally{closeSync(fd);}}}
+    this.commitConfig(journal.config,journal.config.revision,journal.operationId);unlinkSync(file);
   }
   /** MB sessions v1: summaries derived from persisted session files; only this character/pairing, most recent first. */
   private sessionArchiveFile(characterId: string, pairingId: string): string {
@@ -489,7 +589,7 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
     else if (!archived) delete ledger.data[scope.sessionId];
     this.write(this.sessionArchiveFile(scope.characterId, scope.pairingId), ledger);
   }
-  listSessions(characterId: string, pairingId: string): SessionSummary[] {
+  listSessions(characterId: string, pairingId: string, options: {all?:boolean;query?:string;strict?:boolean} = {}): SessionSummary[] {
     this.assertOpen();
     validateIdentity(characterId, 'characterId'); validateIdentity(pairingId, 'pairingId');
     const parse = (line: string | undefined): Partial<SavedTurn> | null => {
@@ -498,33 +598,44 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
     };
     const summaries: SessionSummary[] = [];
     const archives = this.sessionArchives(characterId, pairingId).data;
-    let examined = 0;
+    const titles=this.readEnvelope<Record<string,string>>(join(this.directory,`session-titles-${digest(JSON.stringify([characterId,pairingId]))}.json`),()=>({}),value=>{for(const [id,title] of Object.entries(value)){validateIdentity(id);if(typeof title!=='string'||!title.trim()||title.length>200)throw Error('Invalid session title');}}).data;
+    const query=options.query?.normalize('NFKC').trim().toLocaleLowerCase();
     for (const name of readdirSync(this.directory)) {
       if (!name.startsWith('session-') || !name.endsWith('.jsonl')) continue;
-      if (++examined > 4096) break;
       const file = join(this.directory, name);
-      let size: number; try { size = statSync(file).size; } catch { continue; }
+      let size: number; try { size = statSync(file).size; } catch(cause) { if(options.strict)throw new BookError('corrupt_data','会话文件无法检查，已停止完整备份。',{cause});continue; }
       if (!size) continue;
       // The scope is proven from the file's own first record, never guessed from the hash in its name.
       let lines: string[], turnCount: number;
       if (size <= SESSION_FULL_READ_LIMIT) { lines = readFileSync(file, 'utf8').split('\n').filter(Boolean); turnCount = lines.length; }
       else { lines = [this.readEdge(file, 0, size).split('\n')[0]!]; turnCount = -1; }
       const first = parse(lines[0]);
+      if(options.strict&&!first)throw new BookError('corrupt_data','发现无法识别归属的损坏会话，已停止完整备份；请保留原文件并恢复。');
       if (!first || first.characterId !== characterId || first.pairingId !== pairingId) continue;
       if (typeof first.sessionId !== 'string' || typeof first.timestamp !== 'string' || !Number.isFinite(Date.parse(first.timestamp))) continue;
-      try { validateIdentity(first.sessionId, 'sessionId'); } catch { continue; }
+      try { validateIdentity(first.sessionId, 'sessionId'); } catch(cause) { if(options.strict)throw new BookError('corrupt_data','会话身份无效，已停止完整备份。',{cause});continue; }
       let last: Partial<SavedTurn> = first;
       if (turnCount === -1) {
         const tail = this.readEdge(file, Math.max(0, size - SESSION_EDGE_READ), size).split('\n').filter(Boolean);
         last = parse(tail.at(-1)) ?? first;
       } else if (lines.length > 1) last = parse(lines[lines.length - 1]) ?? first;
       const updatedAt = typeof last.timestamp === 'string' && Number.isFinite(Date.parse(last.timestamp)) ? last.timestamp : first.timestamp;
-      summaries.push({ characterId, pairingId, sessionId: first.sessionId, title: deriveSessionTitle(first.user),
+      const title=Object.hasOwn(titles,first.sessionId)?titles[first.sessionId]!:deriveSessionTitle(first.user);
+      if(query&&!first.sessionId.toLocaleLowerCase().includes(query)&&!title.normalize('NFKC').toLocaleLowerCase().includes(query)&&!this.readSession({characterId,pairingId,sessionId:first.sessionId}).some(turn=>(turn.user+'\n'+turn.assistant).normalize('NFKC').toLocaleLowerCase().includes(query)))continue;
+      summaries.push({ characterId, pairingId, sessionId: first.sessionId, title,
         createdAt: first.timestamp, updatedAt, turnCount,
         lastTurnId: typeof last.id === 'string' ? last.id : null,
         ...(Object.hasOwn(archives, first.sessionId) ? { archivedAt: archives[first.sessionId] } : {}) });
     }
-    return summaries.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt) || a.sessionId.localeCompare(b.sessionId)).slice(0, SESSION_LIST_LIMIT);
+    const sorted=summaries.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt) || a.sessionId.localeCompare(b.sessionId));
+    return options.all?sorted:sorted.slice(0, SESSION_LIST_LIMIT);
+  }
+  renameSession(scope:BookScope,title:string):void{
+    validateScope(scope);if(typeof title!=='string'||!title.trim()||title.length>200)throw new BookError('invalid_input','会话标题需要1～200字。');
+    if(!this.readSession(scope).length)throw new BookError('not_found','会话不存在。');
+    const file=join(this.directory,`session-titles-${digest(JSON.stringify([scope.characterId,scope.pairingId]))}.json`);
+    const envelope=this.readEnvelope<Record<string,string>>(file,()=>({}),value=>{if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Invalid titles');});
+    envelope.data[scope.sessionId]=title.trim();this.write(file,envelope);
   }
   /** Bounded head/tail window read for oversized session files; never loads the middle. */
   private readEdge(file: string, start: number, end: number): string {

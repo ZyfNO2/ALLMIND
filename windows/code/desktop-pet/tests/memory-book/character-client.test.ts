@@ -269,3 +269,15 @@ test('session summaries still expose the persona-backed chat scope after entries
   assert.equal(summary[0]!.turnCount, 1);
   assert.equal(summary[0]!.lastTurnId, result.turn.id);
 });
+
+test('HTTP 429 reports rate limiting with bounded Retry-After and never leaks or retries provider body',async()=>{
+ for(const retry of ['60','unexpected-provider-secret']){
+  let calls=0,cancelled=0;
+  const model=new BookHttpModel(async()=>'',async()=>{calls++;return new Response(new ReadableStream({start(controller){controller.enqueue(new TextEncoder().encode('provider-secret-body'));},cancel(){cancelled++;}}),{status:429,headers:{'retry-after':retry}});});
+  await assert.rejects(model.complete(binding('http://127.0.0.1:9999/v1'),[{role:'user',content:'test'}],new AbortController().signal),error=>{
+   assert.ok(error instanceof Error);
+   assert.match(error.message,/限流或额度不足.*HTTP 429/);assert.match(error.message,/不会自动重发/);assert.doesNotMatch(error.message,/provider-secret|检查绑定与凭据/);assert.equal(error.message.includes('60 秒'),retry==='60');return true;
+  });
+  assert.equal(calls,1);assert.equal(cancelled,1);
+ }
+});

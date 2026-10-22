@@ -75,7 +75,7 @@
       <Ellipse.RenderTransform><ScaleTransform/></Ellipse.RenderTransform>
     </Ellipse>
     <Image x:Name="Girl" Canvas.Left="142" Canvas.Top="142" Width="208" Height="208" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" Cursor="Hand"
-           ToolTip="点角色看额度；点气泡看语录，再点收起；拖动调整位置；右键设置"/>
+           ToolTip="点角色看额度；点气泡看语录，再点收起；拖动调整位置；右键设置"><Image.RenderTransform><TranslateTransform x:Name="LifeMotion"/></Image.RenderTransform></Image>
     <Button x:Name="MenuButton" Canvas.Left="320" Canvas.Top="162" Width="24" Height="24"
             FontSize="15" Opacity="0" IsHitTestVisible="False" Background="#EDE7F6" ToolTip="挂件设置">
       <Viewbox Width="14" Height="14" Stretch="Uniform">

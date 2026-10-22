@@ -53,3 +53,11 @@ body{background:var(--mb-bg);color:var(--mb-ink)}
 
 /* W03 reader: keep article and graph usable on narrow windows. */
 .w03-reader-grid{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:20px}.w03-reader-grid nav{max-height:720px;overflow:auto}.w03-reader-grid article{min-width:0}.w03-reader-grid button{max-width:100%;white-space:normal;overflow-wrap:anywhere}.w03-reader-grid blockquote{border-left:3px solid #c6bbaa;margin:8px 0;padding:8px 12px}.w03-reader-grid svg g[role=button]{cursor:pointer}.w03-reader-grid svg g:focus{outline:2px solid #b95027}@media(max-width:700px){.w03-reader-grid{grid-template-columns:minmax(0,1fr)}.w03-reader-grid nav{max-height:200px}}
+
+.mb-voice-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0}.mb-voice-toolbar p{flex-basis:100%;overflow-wrap:anywhere}
+
+.mb-screen-preview{display:block;max-width:100%;max-height:300px;object-fit:contain;margin-block:12px}.mb-screen-context textarea{min-height:120px;width:100%;box-sizing:border-box}.mb-screen-context p{overflow-wrap:anywhere}
+
+.mb-screen-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 16px;flex-shrink:0}.mb-screen-context textarea{min-height:150px;max-height:40dvh}.mb-screen-toolbar span{overflow-wrap:anywhere}
+
+.v2-app.endfield-app dialog.mb-modal .mb-screen-context textarea{min-height:min(150px,20dvh);max-height:40dvh}

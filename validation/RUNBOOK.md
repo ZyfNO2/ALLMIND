@@ -2,6 +2,28 @@
 
 本文件只包含安装、构建、测试的复跑命令与结果解释。固定用例选择见 [CASES.json](CASES.json)，历史首错与处置见 [baseline.json](baseline.json)，逐文件 SHA-256 清单见 [source-manifest.json](source-manifest.json)，当前发布准备状态见 [release-status.json](release-status.json)。
 
+## 上一轮用户操作闭环记录（2026-10-22，beta.1）
+
+本节是 beta.1 历史记录。当前事实入口为 `release-status.json` 的 `currentSummary`；下方带旧日期的记录保留历史含义，不能作为本轮新增测试。当前源码在独立复制目录执行两处 `npm ci`，未复制旧 node_modules、Git、登录态或用户数据，完成统一构建。具体最新结果与包清单哈希在 `currentSummary` 中逐项记录。
+
+- 核心涵盖完整私人备份、v1/v2 恢复、270 会话、恢复中断日志、全文搜索、Unicode 历史分页、归档角色、普通资料、显式 Wiki 失败修正。
+- 浏览器选择与 CI 保持一致：固定组及新增用户闭环、语音、OCR、QQ、NapCat、主动频率和分类审核组；模型／设备为受控 fixture，真实 API 验收另记。
+- 真实 API 使用此前用户选择的 Minimax；失败原文与错误保留。显式修正后的四条合成材料完成审核、应用、图谱、真实召回与重启；不是任意规模质量证书。
+- 真实鼠标、中文 IME、系统选择器、物理音频和全屏／锁屏／睡眠仍由用户手工验收，不用无输入组件测试替代。QQ 新接收人／群聊不在本轮授权范围内，未发送测试消息。
+
+## beta.2 当前增量
+
+真实 API 本轮一次提交返回 HTTP 429（服务建议等待约23小时），没有重试/切换模型；真实服务门槛 BLOCKED。当前状态见 [release-status.json](release-status.json) 的 currentSummary；以下原有日期记录保持历史含义。新增验收矩阵、升级与手工边界见 [PRODUCT-COMPLETION.md](PRODUCT-COMPLETION.md)。核心组自动收录新增 .test.ts；浏览器新增 `tests/memory-book/product-controls.browser.test.mjs`，WPF 新增 `allmind-perch.test.ps1`，CI 已接线。
+
+发布门槛 CLI（仓库根目录）：
+
+```powershell
+node windows/code/desktop-pet/tools/release-gate.mjs snapshot --source . --output <新的源码清单.json>
+node windows/code/desktop-pet/tools/release-gate.mjs verify --source . --evidence <六项证据索引.json> --package <便携目录> --output <新的门槛结果.json>
+```
+
+证据索引使用 allmind-release-evidence/v1，各门槛记录必须绑定相同 sourceHash、状态、检查数量及子证据哈希；真实服务还需 realService=true、fixture=false 与实际提交数量。源码清单以 git 的 NUL 文件清单读取，排除生成的 release-status/source-manifest 两文件，包内保存同一 sourceHash。缺少证据不会成为 PASS。签名、SmartScreen 与物理/原生验收独立记录，不因六项本地通过自动宣称公开发布就绪。过程日志和诊断记录只放独立 worker，不入包。
+
 ## 前置条件
 
 - Windows；Node.js **>= 22.12.0**（本候选实测 v24.18.0）与 npm（实测 11.16.0）；Electron 44.4.1、Playwright 1.63.0。
@@ -38,17 +60,18 @@ npx.cmd playwright install chromium
 node --test dist/tests/memory-book/*.test.js
 ```
 
-预期：exit 0。最近一次完整记录（2026-10-19 本轮工作树）：**392 用例全部通过**，0 failed / 0 skipped，编译测试文件 58 个。计数随用例增删变化，最终冻结候选的复跑结果应替换本段记录；不得为凑旧数删改断言或跳过失败项。
+预期：exit 0。最近一次完整记录（2026-10-22 当前独立源码候选）：**489 用例全部通过**，0 failed / 0 skipped。计数随用例增删变化，最终冻结候选的复跑结果应替换本段记录；不得为凑旧数删改断言或跳过失败项。
 
 ## L2 固定浏览器组（模型为 fixture）
 
-以 `.github/workflows/verify.yml` 的 L2 run 行为唯一固定选择（当前 18 个文件）：
+以 `.github/workflows/verify.yml` 的 L2 和 User operation closure 两个浏览器命令为当前选择；本轮使用 serial file execution，与 CI 一致：
 
 ```powershell
-node --test tests/memory-book/w02-release.test.mjs tests/memory-book/character-client.browser.test.mjs tests/memory-book/w02-ui.browser.test.mjs tests/memory-book/w03-ui.browser.test.mjs tests/memory-book/zip-import.test.mjs tests/memory-book/local-pet-menu.browser.test.mjs tests/memory-book/incognito-renderer.browser.test.mjs tests/memory-book/companion-lifecycle.browser.test.mjs tests/memory-book/ux-binding.browser.test.mjs tests/memory-book/chatgpt-page-host.test.mjs tests/memory-book/connection-setup.browser.test.mjs tests/memory-book/chatgpt-model-menu.browser.test.mjs tests/memory-book/chatgpt-thinking.browser.test.mjs tests/memory-book/prompt-presets.browser.test.mjs tests/memory-book/wiki-compilation.browser.test.mjs tests/memory-book/wiki-maintenance.browser.test.mjs tests/memory-book/ui-v4-acceptance.browser.test.mjs tests/memory-book/role-onboarding.browser.test.mjs
+node --test --test-concurrency=1 tests/memory-book/w02-release.test.mjs tests/memory-book/character-client.browser.test.mjs tests/memory-book/w02-ui.browser.test.mjs tests/memory-book/w03-ui.browser.test.mjs tests/memory-book/zip-import.test.mjs tests/memory-book/local-pet-menu.browser.test.mjs tests/memory-book/incognito-renderer.browser.test.mjs tests/memory-book/companion-lifecycle.browser.test.mjs tests/memory-book/ux-binding.browser.test.mjs tests/memory-book/chatgpt-page-host.test.mjs tests/memory-book/connection-setup.browser.test.mjs tests/memory-book/chatgpt-model-menu.browser.test.mjs tests/memory-book/chatgpt-thinking.browser.test.mjs tests/memory-book/prompt-presets.browser.test.mjs tests/memory-book/wiki-compilation.browser.test.mjs tests/memory-book/wiki-maintenance.browser.test.mjs tests/memory-book/ui-v4-acceptance.browser.test.mjs tests/memory-book/role-onboarding.browser.test.mjs tests/memory-book/ui-v2.browser.test.mjs tests/memory-book/starter-characters.browser.test.mjs tests/memory-book/portable-preview.test.mjs tests/memory-book/chat-usability.browser.test.mjs tests/memory-book/endfield-ui.browser.test.mjs
+node --test --test-concurrency=1 tests/memory-book/user-closure.browser.test.mjs tests/memory-book/reply-style-ui.browser.test.mjs tests/memory-book/synthesis-review.browser.test.mjs tests/memory-book/local-voice.browser.test.mjs tests/memory-book/book-screen.browser.test.mjs tests/memory-book/proactive-frequency.browser.test.mjs tests/memory-book/qq-channel.browser.test.mjs tests/memory-book/napcat-settings.browser.test.mjs
 ```
 
-预期：exit 0。最近一次完整记录（2026-10-19 本轮工作树，隔离复跑）：**28 用例全部通过**（18 个文件，新增空白角色/API旅程）；历史冻结候选为27/27（同一轮中曾因并发 L1 与真实编纂造成 2 条超时失败，单独复跑 27/27 通过，保留该次记录）。截图/证据输出写入被忽略的 `.local/` 或仓库根 `validation/output/`（已被 .gitignore 排除，不入库）。
+预期：exit 0。2026-10-22 的当前浏览器结果以顶部 currentSummary 为准；2026-10-19 的历史隔离复跑为 **28/28**（当时18个文件），更早冻结候选为27/27（同一轮中曾因并发 L1 与真实编纂造成 2 条超时失败，单独复跑 27/27 通过，保留该次记录）。截图/证据输出写入被忽略的 `.local/` 或仓库根 `validation/output/`（已被 .gitignore 排除，不入库）。
 
 ## L3 原生首次启动链
 

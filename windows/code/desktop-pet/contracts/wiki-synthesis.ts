@@ -2,8 +2,11 @@ import type { BookScope, KnowledgeBoundary, KnowledgeView } from './memory-book.
 
 export type WikiDomain = 'canon' | 'author' | 'simulated' | 'real' | 'external';
 export interface WikiEvidence { entryId: string; quote: string }
+export type SynthesisPageType = 'entity' | 'topic' | 'event';
 export interface SynthesisPage {
+  pageType?: SynthesisPageType;
   id: string; title: string; domain: WikiDomain;
+  category?:import('../memory/knowledge-category.js').KnowledgeCategory;
   paragraphs: { text: string; evidence: WikiEvidence[] }[];
 }
 export interface SynthesisRelation { from: string; to: string; label: string; evidence: WikiEvidence[] }
@@ -16,12 +19,14 @@ export interface SynthesisBasis { entryId: string; revision: number; hash: strin
 /** Derived prose is not a new original source or a confirmed shared experience. */
 export interface SynthesisMetadata {
   version: 'allmind-wiki/v1'; pageId: string; domain: WikiDomain;
+  pageType?: SynthesisPageType;
   basis: SynthesisBasis[];
   sources: { id: string; hash: string; revision: number }[];
   relations: { targetId: string; label: string; basisEntryIds: string[] }[];
 }
 export interface SynthesisMaterial {
   id: string; title: string; type: string; body: string; domain: WikiDomain;
+  category?:import('../memory/knowledge-category.js').KnowledgeCategory;
   knowledge: KnowledgeBoundary | null; sourceIds: string[];
 }
 export interface SynthesisTask {
@@ -41,6 +46,10 @@ export interface SynthesisJob {
   preparedReceipt?: {thinking?:{level:number;label:string};taskArchiveSha256?:string;requestId:string};
   responseHash?: string; validationError?: string;
   batchProgress?: {total:number;completed:number;inputHashes:string[];responseHashes:string[];requestIds:string[]};
+  /** Durable checkpoints; only individually validated batches can participate in the final merge. */
+  checkpoints?: {inputHash:string;attempted:boolean;receipt?:NonNullable<SynthesisJob['preparedReceipt']>;result?:SynthesisResult;attempts:{response:string|null;error:string|null;messageHash?:string}[]}[];
   applyOperationId?: string; receipt?: import('./memory-book.js').CommitReceipt;
   applyIntent?: import('./memory-book.js').BookChange;
+  review?: SynthesisPageReview[];
 }
+export interface SynthesisPageReview {pageId:string;category:import('../memory/knowledge-category.js').KnowledgeCategory;corePersona:boolean}

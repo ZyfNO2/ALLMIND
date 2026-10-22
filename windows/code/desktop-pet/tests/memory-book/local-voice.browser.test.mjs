@@ -1,0 +1,46 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdirSync,mkdtempSync,writeFileSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {chromium} from '@playwright/test';
+import {FileBookRepository} from '../../dist/memory/file-book-repository.js';
+import {BookRuntime} from '../../dist/app/book-runtime.js';
+import {BookCredentials} from '../../dist/management/book-credentials.js';
+import {BookVoiceService} from '../../dist/management/book-voice.js';
+import {startBookServer} from '../../dist/management/book-server.js';
+import {pcm16Wav,inspectPcmWav} from '../../dist/media/wav.js';
+
+test('voice UI saves opt-in settings, captures audio only, confirms transcript, plays and cancels without writing history',{timeout:90000},async t=>{
+ const output=resolve('.local/goal-completion/voice-browser');mkdirSync(output,{recursive:true});
+ const directory=mkdtempSync(join(output,'data-')),repo=new FileBookRepository(directory),config=repo.loadConfig();
+ repo.commitConfig({...config,mainModel:{baseUrl:'http://127.0.0.1:1/v1',model:'synthetic-chat',credentialId:'none',inputTokens:16000,outputTokens:2048}},config.revision,'seed');
+ let recognize=0,speak=0,model=0,delay=false,release;
+ const wav=pcm16Wav(Float32Array.from({length:48000*5},(_,i)=>Math.sin(i*0.04)*0.2),48000),mic=join(output,'synthetic-mic.wav');writeFileSync(mic,wav);
+ const engine={async capabilities(){return {available:true,voices:[{name:'test',culture:'zh-CN'}],recognizers:[{id:'zh',culture:'zh-CN'}]}},async synthesize(){speak++;return {bytes:wav,durationMs:5000}},async recognize(bytes){recognize++;const parsed=inspectPcmWav(bytes);assert.equal(parsed.channels,1);assert.ok(parsed.durationMs>0);if(delay)await new Promise(resolve=>release=resolve);return {text:'麦克风识别文本',segments:[{text:'麦克风识别文本',confidence:0.8}]}}};
+ const runtime=new BookRuntime(repo,{async complete(){model++;return '这是新的回复。'}}),server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management'),voice:new BookVoiceService(repo,engine)});
+ const browser=await chromium.launch({headless:true,args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--use-file-for-fake-audio-capture='+mic,'--autoplay-policy=no-user-gesture-required']}),page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
+ t.after(async()=>{release?.();await browser.close();await server.close();repo.close()});page.setDefaultTimeout(12000);page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(()=>{window.voiceDevices=[];const original=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);navigator.mediaDevices.getUserMedia=async constraints=>{window.voiceDevices.push(constraints);if(window.denyMic)throw new DOMException('Denied','NotAllowedError');const stream=await original(constraints);window.voiceStream=stream;return stream}});
+ const waitPresence=async predicate=>{for(let i=0;i<150;i++){if(predicate(runtime.interactionPresence.read()))return;await new Promise(resolve=>setTimeout(resolve,20))}assert.fail('interaction presence did not synchronize')};
+ await page.goto(server.url);assert.equal(recognize,0);assert.equal(speak,0);assert.equal(await page.getByRole('button',{name:'麦克风输入',exact:true}).count(),0);
+ await page.getByRole('navigation',{name:'主导航'}).getByRole('link',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'语音设置',exact:true}).click();
+ const enable=page.getByRole('checkbox',{name:'启用当前角色的本地语音',exact:true});await enable.check();await page.getByRole('combobox',{name:'朗读声音',exact:true}).selectOption('test');await page.getByRole('checkbox',{name:'自动朗读新回复',exact:true}).check();
+ const saved=page.waitForResponse(r=>r.url().endsWith('/runtime')&&r.request().method()==='PUT');await page.getByRole('button',{name:'保存设置',exact:true}).click();assert.equal((await saved).status(),200);
+ assert.equal(repo.loadConfig().characters[0].voice.enabled,true);
+ await page.getByRole('navigation',{name:'主导航'}).getByRole('link',{name:'首页',exact:true}).click();
+ const input=page.getByRole('textbox',{name:'聊天消息',exact:true});await input.fill('已有草稿');await waitPresence(flags=>flags.typing);
+ await page.getByRole('button',{name:'麦克风输入',exact:true}).click();await page.getByRole('button',{name:'结束录音并识别',exact:true}).waitFor();
+ await page.waitForFunction(()=>window.voiceStream?.active);await waitPresence(flags=>flags.recording);await page.getByRole('button',{name:'结束录音并识别',exact:true}).click();await page.waitForFunction(()=>document.querySelector('textarea[aria-label="聊天消息"]').value.includes('麦克风识别文本'));
+ assert.equal(await input.inputValue(),'已有草稿\n麦克风识别文本');assert.equal(recognize,1);assert.equal(model,0);await waitPresence(flags=>!flags.recording);assert.equal(await page.evaluate(()=>window.voiceStream.active),false);assert.ok((await page.evaluate(()=>window.voiceDevices)).every(row=>row.video===false));
+ await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('这是新的回复。',{exact:true}).waitFor();await page.getByText('正在朗读',{exact:true}).waitFor();assert.equal(model,1);assert.equal(speak,1);await waitPresence(flags=>flags.speaking);await page.getByRole('button',{name:'停止语音',exact:true}).click();
+ await page.reload();await input.waitFor();assert.equal(speak,1,'history is not automatically read');
+ await page.getByRole('button',{name:/^朗读回复：/}).click();await page.getByText('正在朗读',{exact:true}).waitFor();assert.equal(speak,2);await page.getByRole('button',{name:'停止语音',exact:true}).click();
+ await page.getByRole('button',{name:'麦克风输入',exact:true}).click();await page.getByRole('button',{name:'结束录音并识别',exact:true}).waitFor();await page.getByRole('button',{name:'停止语音',exact:true}).click();assert.equal(await page.evaluate(()=>window.voiceStream.active),false);assert.equal(recognize,1);
+ delay=true;await input.fill('保留草稿');await page.getByRole('button',{name:'麦克风输入',exact:true}).click();await page.getByRole('button',{name:'结束录音并识别',exact:true}).click();await page.getByText('正在本地识别…',{exact:true}).waitFor();
+ for(let i=0;i<100&&!release;i++)await new Promise(resolve=>setTimeout(resolve,20));assert.ok(release);
+ await page.getByRole('navigation',{name:'主导航'}).getByRole('link',{name:'设置',exact:true}).click();release();await new Promise(resolve=>setTimeout(resolve,100));
+ await page.getByRole('navigation',{name:'主导航'}).getByRole('link',{name:'首页',exact:true}).click();assert.equal(await input.inputValue(),'保留草稿');assert.equal(model,1);assert.equal(recognize,2);
+ await page.evaluate(()=>window.denyMic=true);await page.getByRole('button',{name:'麦克风输入',exact:true}).click();await page.getByRole('alert').filter({hasText:'麦克风权限未开启'}).waitFor();assert.equal(recognize,2);assert.equal(model,1);
+ for(const width of [320,768,1440]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'no horizontal overflow at '+width)}
+ await page.screenshot({path:join(output,'voice-chat.png'),fullPage:true});assert.deepEqual(errors,[]);
+});
