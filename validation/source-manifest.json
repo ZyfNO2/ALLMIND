@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-22T09:11:44.486Z",
-  "generatedBy": "ALLMIND extension fixture test closure; runtime evidence inherited by exact payload identity",
+  "generatedAt": "2026-10-22T09:23:07.117Z",
+  "generatedBy": "ALLMIND OS-allocated fixture port closure",
   "scope": "Current publishable source bytes; sourceHash excludes generated status/manifest pair. Tested current-source package and earlier snapshot identities are separately recorded in release-status.",
-  "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
+  "sourceHash": "136452fe48fc4126c7361bc55fda599da465238ea6850c156ef36e9127fabac3",
   "fileCount": 1700,
-  "totalBytes": 22945685,
+  "totalBytes": 22945289,
   "sourceSnapshot": {
     "repository": "Aika-Next（只读源仓库；本机路径不记录）",
     "branch": "aika-next",
@@ -235,8 +235,8 @@
     },
     {
       "path": "validation/release-status.json",
-      "bytes": 126710,
-      "sha256": "b8311af2916e1465b36dd5d5e321138ae54b741d2fc9574d5aae8efe5a871caa"
+      "bytes": 125893,
+      "sha256": "38833c5d6ca3027869ea32171e0ed20977241e0dd13872177ae0d15ed8caba5e"
     },
     {
       "path": "windows/.gitattributes",
@@ -5375,8 +5375,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/chatgpt-extension.test.ts",
-      "bytes": 9842,
-      "sha256": "ea313ef6b548984d31c2743eb234a5f45278a4ae8c24e12fbc5f460102b1203e"
+      "bytes": 10098,
+      "sha256": "c449764c5eea8ee4fc6b47c9d8ce99f4efd52b2b0029f2dd1c41136c026e88fd"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/chatgpt-model-menu.browser.test.mjs",
@@ -8345,8 +8345,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tools/verify-portable.mjs",
-      "bytes": 13579,
-      "sha256": "2771508f7d11a81209051b19f7f6c4970509227080c4f078334c57690966a292"
+      "bytes": 13744,
+      "sha256": "c3cc25ddc30b704879d45c0676cee72afb4236df76e6b1f4223289eec58dd0e0"
     },
     {
       "path": "windows/code/desktop-pet/tools/verify-real-trace-default-safety.mjs",

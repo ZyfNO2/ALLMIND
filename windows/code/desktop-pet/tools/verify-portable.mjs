@@ -23,19 +23,22 @@ const fixture=createServer(async(req,res)=>{
  for await(const chunk of req){}replyRequests++;notifyIncoming();await new Promise(r=>releaseReply=r);
  res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({choices:[{message:{role:'assistant',content:'Synthetic reply survives a hidden pet.'}}],usage:{prompt_tokens:1,completion_tokens:1,total_tokens:2}}));
 });
-// Windows can allocate low ephemeral ports (for example 6668) blocked by fetch.
-// Keep this controlled fixture in the private/dynamic range; retry only collisions.
+// Let Windows avoid reserved ports; discard only fetch-forbidden allocations.
 async function listenFixture(){
  for(let attempt=0;attempt<10;attempt++){
   try{
    await new Promise((resolve,reject)=>{
     const failed=error=>{fixture.off('error',failed);reject(error);};fixture.once('error',failed);
-    fixture.listen(49152+Math.floor(Math.random()*16384),'127.0.0.1',()=>{fixture.off('error',failed);resolve();});
+    fixture.listen(0,'127.0.0.1',()=>{fixture.off('error',failed);resolve();});
    });
+   assert.equal((await fetch('http://127.0.0.1:'+fixture.address().port+'/fixture-readiness')).status,404);
    return;
-  }catch(error){if(error.code!=='EADDRINUSE')throw error;}
+  }catch(error){
+   if(!(error instanceof TypeError&&error.cause instanceof Error&&error.cause.message==='bad port'))throw error;
+   await new Promise((resolve,reject)=>fixture.close(error=>error?reject(error):resolve()));
+  }
  }
- throw Error('No unused private-range port for the controlled HTTP fixture.');
+ throw Error('No fetch-compatible OS-allocated port for the controlled HTTP fixture.');
 }
 const read=path=>JSON.parse(readFileSync(path,'utf8'));
 const descriptor=()=>read(data+'/host/controller.json');

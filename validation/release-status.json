@@ -10,7 +10,7 @@
     "version": "0.1.0-beta.2",
     "status": "BLOCKED",
     "implementation": "PASS: scoped engineering and user-operation regression; see validation/PRODUCT-COMPLETION.md",
-    "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
+    "sourceHash": "136452fe48fc4126c7361bc55fda599da465238ea6850c156ef36e9127fabac3",
     "sourceFiles": 1699,
     "sourceExclusions": [
       "validation/release-status.json",
@@ -24,7 +24,7 @@
       },
       "build": {
         "status": "PASS",
-        "scope": "Fresh local npm build after test-only fixture changes; no production source/dependency changes. New package payload verified identical to prior archive-label candidate."
+        "scope": "Fresh local build after two non-production fixture changes; all packaged runtime payload bytes verified identical to 4cf/9af candidate."
       },
       "core": {
         "status": "PASS",
@@ -32,7 +32,7 @@
         "fail": 0,
         "skipped": 0,
         "evidence": "core-01.log",
-        "provenance": "Fresh full local core after acknowledged-pairing and private-range extension fixture corrections."
+        "provenance": "Fresh local full core with OS-allocated fetch-checked fixture ports."
       },
       "browser": {
         "status": "PASS",
@@ -71,10 +71,11 @@
         "status": "PASS",
         "checks": 56,
         "files": 1733,
-        "manifestSha256": "8b907972bd807121fe7fbf43eb406c61f2e8cf5a01277d19aa1f71080cbc5b83",
-        "evidence": "inherited-portable-report-02.json",
-        "provenance": "NOT RERUN: prior 9af runtime evidence inherited after complete byte-identical payload verification.",
-        "firstRun": "Earlier portable-01.log bad port failure remains preserved at prior worker",
+        "manifestSha256": "95ec95a24f31e2fc9594acb908be9715e7321253ad2444edf474f1d1d763f10f",
+        "evidence": "portable-report.json",
+        "testedPackageManifestSha256": "8b907972bd807121fe7fbf43eb406c61f2e8cf5a01277d19aa1f71080cbc5b83",
+        "testedPackageSourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
+        "provenance": "Fresh current verifier56 used previous manifest-bound package with full byte-identical runtime payload. New source binding verified separately; no claim fresh run used new manifest.",
         "identityEvidence": "source-package-identity.json"
       },
       "installedLifecycle": {
@@ -83,7 +84,7 @@
         "actualHost": true,
         "model": "local HTTP fixture",
         "evidence": "inherited-installed-lifecycle-beta2-final.json",
-        "provenance": "NOT RERUN: inherited prior 9af 22/12 runtime evidence after all 1733 payload bytes verified identical; source change is test-only."
+        "provenance": "NOT RERUN: inherited prior9af actual runtime22/12 after full1733 payload byte identity; current changes only test/verification fixtures."
       },
       "priorPackageDataUpgrade": {
         "status": "PASS",
@@ -91,20 +92,20 @@
         "oldReaderRejected": true,
         "exactRollback": true,
         "evidence": "inherited-old-package-upgrade-final.json",
-        "provenance": "NOT RERUN: inherited prior 9af 22/12 runtime evidence after all 1733 payload bytes verified identical; source change is test-only."
+        "provenance": "NOT RERUN: inherited prior9af actual runtime22/12 after full1733 payload byte identity; current changes only test/verification fixtures."
       },
       "privacy": {
         "status": "PASS",
         "exactAuthorizedCredentialLeaks": 0,
         "productionSourceChanges": 0,
-        "verificationToolChanges": 0,
+        "verificationToolChanges": 1,
         "dependencyChanges": 0,
         "evidence": [
           "inherited-artifact-security.json",
           "source-package-identity.json"
         ],
         "testSourceChanges": 1,
-        "provenance": "Prior exact authorized credential scan inherited for byte-identical runtime payload. Changed test file reviewed; no credentials introduced. No fresh exact-key scan is claimed."
+        "provenance": "Prior exact credential exclusion inherited for fully identical runtime payload; changed test/tool diff reviewed. No fresh exact-key scan claimed."
       },
       "windowsMedia": {
         "status": "PASS",
@@ -161,13 +162,14 @@
         "testsPerProcess": 7,
         "fail": 0,
         "skipped": 0,
-        "evidence": "extension-fixed-01.log through extension-fixed-10.log",
-        "scope": "Authenticated stale-result acknowledgement replaces unverified 20ms readiness; private-range fixture ports retry only EADDRINUSE. Original assertions and timeouts preserved.",
-        "firstFailures": [
-          "ci-pr-9af3f97-failed.log",
-          "extension-06.log"
+        "evidence": "extension-01.log through extension-10.log",
+        "scope": "OS listen0 then non-business web-origin403 fetch probe. Only exact TypeError cause bad port reallocates unused fixture; EACCES and all other errors throw. Authenticated pairing acknowledgement and all original assertions/timeouts retained.",
+        "historicalFailures": [
+          "9af PR relay failure with missing result details",
+          "targeted extension-06 bad port",
+          "4cf PR reconnect listen EACCES49702"
         ],
-        "historicalCauseLimit": "The old remote assertion omitted result.message; exact remote internal cause cannot be established retrospectively. Timer readiness assumption is visibly invalid and independently reproduced."
+        "historicalCauseLimit": "The earliest remote assertion omitted result details; exact original relay failure cannot be established retrospectively."
       }
     },
     "releaseGates": [
@@ -179,32 +181,32 @@
       {
         "id": "blank-install",
         "status": "PASS",
-        "reason": "Fresh current-source portable package; current UI rebuilt locally, unchanged backend/WPF/dependencies proved against successful baseline CI Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
+        "reason": "Fresh 56 checks used current verifier and exactly identical prior-bound runtime; complete payload identity proves applicability to newly bound package"
       },
       {
         "id": "upgrade",
         "status": "PASS",
-        "reason": "Fresh actual installed lifecycle 22 and actual beta.1 upgrade/reader-barrier/byte-rollback 12 Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
+        "reason": "Inherited 9af actual lifecycle22 and beta.1 upgrade12; not rerun, full payload byte identity proven"
       },
       {
         "id": "real-service",
         "status": "BLOCKED",
-        "reason": "Prior selected real API inference Retry-After still active; zero new inference or alternative model Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
+        "reason": "Existing selected API HTTP429 Retry-After active; zero new inference, no fallback"
       },
       {
         "id": "restore",
         "status": "PASS",
-        "reason": "Fresh production UI regression includes backup preview, empty-target restore, role archive/restore; unchanged backend baseline core includes full 270-session restoration Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
+        "reason": "Fresh full local515 core at current source; identical payload preserves prior real restore tests"
       },
       {
         "id": "security",
         "status": "PASS",
-        "reason": "Unchanged backend/WPF/dependencies baseline full CI plus fresh package and credential exclusion; only UI cancel label and verification fixture changed Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
+        "reason": "Fresh full core plus current fixture transport checks; runtime credential exclusion inherited only for byte-identical payload; test/tool diff reviewed"
       },
       {
         "id": "file-integrity",
         "status": "PASS",
-        "reason": "Fresh full package/source inventory and ZIP member-byte verification Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
+        "reason": "New complete source/package inventory and ZIP individual member-byte hashes verified"
       }
     ],
     "eligibleForLocalBeta": false,
@@ -249,8 +251,8 @@
       "status": "BLOCKED",
       "scope": "older process-directory recursive cleanup was rejected by automatic approval; retained, no bypass"
     },
-    "supplement": "Original 9af PR relay test failure retained. Removed visible unacknowledged 20ms readiness assumption; historical exact internal cause cannot be proven because old assertion lacked result details. Independent targeted run6 bad-port failure retained. Test-only authenticated readiness/private-range host fixes pass 10x7 and full515 without changing assertions/timeouts. Runtime payload unchanged; 56/22/12 inherited explicitly.",
-    "sourceIdentityScope": "Current source inventory excludes generated status/manifest. One extension test file changed; all runtime payload bytes match 9af candidate. Fresh local 515-core and 10x7 extension tests; runtime 56/22/12 inherited with exact payload identity. New head CI is recorded by PR checks.",
+    "supplement": "Hand-selected private-range fixture port hit Windows EACCES in4cf PR; retained. Final test/tool fixtures ask OS listen0 then reject only exact fetch bad-port allocations before business calls; errors/HTTP assertions remain strict. Fresh515, ten7-test processes, fresh56 passed. Prior22/12 inherited after complete runtime payload equality.",
+    "sourceIdentityScope": "Current source inventory excludes generated status/manifest. Two verification files changed, production/dependency0. Fresh515-core/10x7-extension/fresh56 portable (prior manifest, identical payload); inherited22/12 not rerun. New-head CI recorded only in PR checks.",
     "documentationRefresh": {
       "date": "2026-10-22",
       "status": "PASS",
@@ -284,18 +286,19 @@
     "finalCandidate": {
       "date": "2026-10-22",
       "status": "BLOCKED",
-      "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
+      "sourceHash": "136452fe48fc4126c7361bc55fda599da465238ea6850c156ef36e9127fabac3",
       "package": {
-        "manifestSha256": "8b907972bd807121fe7fbf43eb406c61f2e8cf5a01277d19aa1f71080cbc5b83",
+        "manifestSha256": "95ec95a24f31e2fc9594acb908be9715e7321253ad2444edf474f1d1d763f10f",
         "files": 1733,
-        "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
-        "archiveSha256": "fa822bcb8190591862631f48c6be2239cca8628adc644cb03a48b4c46f633f9b",
+        "sourceHash": "136452fe48fc4126c7361bc55fda599da465238ea6850c156ef36e9127fabac3",
+        "archiveSha256": "40b951d2bfcc3cdb9bf4df982e12da56158f19e3aa8130d4ab238dfde02d38cc",
         "archiveBytes": 207168011,
         "archiveMembers": 1734
       },
       "sourceDelta": {
-        "baselineCommit": "9af3f9742957c30810a213548d292f74a43250c1",
+        "baselineCommit": "4cfef92ed67199ada20f2d8b0fdefb7899aa0781",
         "testFiles": 1,
+        "verificationToolFiles": 1,
         "productionDependencyChanges": 0
       },
       "freshCore": {
@@ -312,39 +315,40 @@
       "portable": {
         "status": "PASS",
         "checks": 56,
-        "provenance": "Inherited 9af evidence, not rerun"
+        "testedManifestSha256": "8b907972bd807121fe7fbf43eb406c61f2e8cf5a01277d19aa1f71080cbc5b83",
+        "provenance": "Fresh current verifier against prior manifest, all runtime payload bytes identical to current candidate"
       },
       "installedLifecycle": {
         "status": "PASS",
         "checks": 22,
-        "provenance": "Inherited 9af evidence, not rerun"
+        "provenance": "Inherited9af, not rerun"
       },
       "oldPackageUpgrade": {
         "status": "PASS",
         "checks": 12,
-        "provenance": "Inherited 9af evidence, not rerun"
+        "provenance": "Inherited9af, not rerun"
       },
       "runtimeIdentity": {
         "status": "PASS",
         "files": 1733,
-        "allPayloadBytesIdenticalTo9af": true,
+        "allPayloadBytesIdenticalTo4cfAnd9af": true,
         "manifestChangedOnlySourceBinding": true,
         "evidence": "source-package-identity.json"
       },
       "priorCi": {
-        "commit": "9af3f9742957c30810a213548d292f74a43250c1",
-        "pr": "FAIL",
+        "commit": "4cfef92ed67199ada20f2d8b0fdefb7899aa0781",
+        "pr": "FAIL: EACCES49702 at listen",
         "push": "PASS",
-        "scope": "Original PR failure preserved, not rerun or relabelled; new test corrections await new-head checks."
+        "scope": "Original failed/success outcomes retained; no rerun. New head CI must independently validate latest fixture selection."
       },
-      "scope": "Production/dependency source unchanged. Runtime evidence inheritance justified by full payload identity. Fresh local full core and ten independent extension runs; new ZIP members individually verified. Real-service/native/signing boundaries unchanged."
+      "scope": "OS allocation avoids manual reserved-port choice; non-business fetch probe filters only forbidden port before any generated request. Production/dependencies unchanged. Fresh core70+515 and portable56; inherited22/12 strictly byte identity. All real-service/native/signing limits unchanged."
     },
     "previousCandidate": {
-      "sourceHash": "687d63ad8031d6eeb52a3eb093a69dd19f7ac18f8fef345eb4d46bee3096f4af",
-      "packageManifestSha256": "a474cdf1db955988fcd892dc9029f72b8ce8f9666348903971a84f04d5c42a41",
-      "archiveSha256": "55758506ab766353b90058f57a571870fca8ba1625b06fedcf32e6a9b7cefa79",
-      "commit": "9af3f9742957c30810a213548d292f74a43250c1",
-      "scope": "Runtime payload from archive-label candidate. PR core failed once while same-head push passed; original failures remain preserved. Runtime 56/22/12 evidence is inherited only after exact payload comparison."
+      "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
+      "packageManifestSha256": "8b907972bd807121fe7fbf43eb406c61f2e8cf5a01277d19aa1f71080cbc5b83",
+      "archiveSha256": "fa822bcb8190591862631f48c6be2239cca8628adc644cb03a48b4c46f633f9b",
+      "commit": "4cfef92ed67199ada20f2d8b0fdefb7899aa0781",
+      "scope": "Previous private-range fixture allocation: PR failed EACCES49702, same-head push passed; outcomes preserved, never rerun or relabelled."
     }
   },
   "publicReleaseNote": "Local portable package and installer/update/rollback/uninstall were verified. No GitHub Release, signing, unattended auto-update or new publication is claimed by this user-closure task. Historical Git/publication records are retained below.",
@@ -835,7 +839,7 @@
     "report": "CONNECTION-SETUP-REPAIR-20261018.md (local worker handover)"
   },
   "userAcceptance": "SCOPED_DEFECT_RECHECK_PASS_FULL_JOURNEY_NOT_REPEATED",
-  "currentValidation": "Authoritative current source/package status: currentSummary/finalCandidate. Historical failed PR and targeted fixture runs retained. New head CI is reported separately by exact head in PR checks, not inferred from old push success.",
+  "currentValidation": "Authoritative current source/package status: currentSummary/finalCandidate. All historical CI failures preserved. Latest head CI outcomes are recorded separately in PR checks, never inferred from earlier push success.",
   "closedTabRecovery": {
     "date": "2026-10-18",
     "status": "PASS",

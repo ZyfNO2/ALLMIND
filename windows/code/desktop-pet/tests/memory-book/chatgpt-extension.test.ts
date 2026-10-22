@@ -5,16 +5,22 @@ import { ChatgptBackgroundBridge } from '../../providers/chatgpt-background-brid
 import { DEFAULT_CHATGPT_WEB_SOURCE } from '../../contracts/memory-book.js';
 import { mkdirSync, mkdtempSync } from 'node:fs';
 import { resolve, join } from 'node:path';
-import { randomInt } from 'node:crypto';
 
-// Windows ephemeral allocation can choose ports forbidden by the fetch client.
+// Let Windows avoid reserved ports, then reject fetch-forbidden allocations.
 async function fixtureHost(options: ConstructorParameters<typeof ChatgptExtensionHost>[0] = {}) {
   for (let attempt = 0; attempt < 10; attempt++) {
-    const host = new ChatgptExtensionHost({ ...options, port: randomInt(49152, 65536) });
-    try { await host.pairing(); return host; }
-    catch (error) { await host.close(); if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw error; }
+    const host = new ChatgptExtensionHost({ ...options, port: 0 });
+    try {
+      const pair = await host.pairing();
+      // This rejected web-origin request cannot pair or dispatch a command.
+      assert.equal((await fetch(pair.url + '/pull', { method: 'POST', headers: { Origin: 'https://chatgpt.com' }, body: '{}' })).status, 403);
+      return host;
+    } catch (error) {
+      await host.close();
+      if (!(error instanceof TypeError && error.cause instanceof Error && error.cause.message === 'bad port')) throw error;
+    }
   }
-  throw new Error('No unused private-range port for the extension test fixture.');
+  throw new Error('No fetch-compatible OS-allocated port for the extension test fixture.');
 }
 
 const origin = 'chrome-extension://' + 'a'.repeat(32);
