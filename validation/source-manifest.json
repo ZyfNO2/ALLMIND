@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-22T08:20:43.031Z",
-  "generatedBy": "ALLMIND role archive semantics and fixture failure closure",
+  "generatedAt": "2026-10-22T09:11:44.486Z",
+  "generatedBy": "ALLMIND extension fixture test closure; runtime evidence inherited by exact payload identity",
   "scope": "Current publishable source bytes; sourceHash excludes generated status/manifest pair. Tested current-source package and earlier snapshot identities are separately recorded in release-status.",
-  "sourceHash": "687d63ad8031d6eeb52a3eb093a69dd19f7ac18f8fef345eb4d46bee3096f4af",
+  "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
   "fileCount": 1700,
-  "totalBytes": 22942006,
+  "totalBytes": 22945685,
   "sourceSnapshot": {
     "repository": "Aika-Next（只读源仓库；本机路径不记录）",
     "branch": "aika-next",
@@ -235,8 +235,8 @@
     },
     {
       "path": "validation/release-status.json",
-      "bytes": 123594,
-      "sha256": "7a6e3dedd94e8c1c6dc0a9e87896d5767ccc789298edebc9c3e6c27ca0aaf7e3"
+      "bytes": 126710,
+      "sha256": "b8311af2916e1465b36dd5d5e321138ae54b741d2fc9574d5aae8efe5a871caa"
     },
     {
       "path": "windows/.gitattributes",
@@ -5375,8 +5375,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/chatgpt-extension.test.ts",
-      "bytes": 9279,
-      "sha256": "c94359f3c66dcc1d409d2605f9f54435ec098bd17b2d93bd10fb16cc37fab6f6"
+      "bytes": 9842,
+      "sha256": "ea313ef6b548984d31c2743eb234a5f45278a4ae8c24e12fbc5f460102b1203e"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/chatgpt-model-menu.browser.test.mjs",

@@ -10,7 +10,7 @@
     "version": "0.1.0-beta.2",
     "status": "BLOCKED",
     "implementation": "PASS: scoped engineering and user-operation regression; see validation/PRODUCT-COMPLETION.md",
-    "sourceHash": "687d63ad8031d6eeb52a3eb093a69dd19f7ac18f8fef345eb4d46bee3096f4af",
+    "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
     "sourceFiles": 1699,
     "sourceExclusions": [
       "validation/release-status.json",
@@ -24,14 +24,15 @@
       },
       "build": {
         "status": "PASS",
-        "scope": "Local management UI rebuilt for one cancel-label repair; unchanged backend/WPF artifacts verified against baseline 4f965dd; new package independently exercised"
+        "scope": "Fresh local npm build after test-only fixture changes; no production source/dependency changes. New package payload verified identical to prior archive-label candidate."
       },
       "core": {
         "status": "PASS",
         "tests": 515,
         "fail": 0,
         "skipped": 0,
-        "evidence": "core-01.log"
+        "evidence": "core-01.log",
+        "provenance": "Fresh full local core after acknowledged-pairing and private-range extension fixture corrections."
       },
       "browser": {
         "status": "PASS",
@@ -70,37 +71,40 @@
         "status": "PASS",
         "checks": 56,
         "files": 1733,
-        "manifestSha256": "a474cdf1db955988fcd892dc9029f72b8ce8f9666348903971a84f04d5c42a41",
-        "evidence": "portable-report-02.json",
-        "firstRun": "FAIL: Node fetch bad port 6668; original evidence retained",
-        "resolution": "fixture-failure-resolution.json"
+        "manifestSha256": "8b907972bd807121fe7fbf43eb406c61f2e8cf5a01277d19aa1f71080cbc5b83",
+        "evidence": "inherited-portable-report-02.json",
+        "provenance": "NOT RERUN: prior 9af runtime evidence inherited after complete byte-identical payload verification.",
+        "firstRun": "Earlier portable-01.log bad port failure remains preserved at prior worker",
+        "identityEvidence": "source-package-identity.json"
       },
       "installedLifecycle": {
         "status": "PASS",
         "checks": 22,
         "actualHost": true,
         "model": "local HTTP fixture",
-        "evidence": "installed-lifecycle-beta2-final.json",
-        "provenance": "Fresh final candidate after cancel label/fixture port repair"
+        "evidence": "inherited-installed-lifecycle-beta2-final.json",
+        "provenance": "NOT RERUN: inherited prior 9af 22/12 runtime evidence after all 1733 payload bytes verified identical; source change is test-only."
       },
       "priorPackageDataUpgrade": {
         "status": "PASS",
         "checks": 12,
         "oldReaderRejected": true,
         "exactRollback": true,
-        "evidence": "old-package-upgrade-final.json",
-        "provenance": "Fresh final candidate after cancel label/fixture port repair"
+        "evidence": "inherited-old-package-upgrade-final.json",
+        "provenance": "NOT RERUN: inherited prior 9af 22/12 runtime evidence after all 1733 payload bytes verified identical; source change is test-only."
       },
       "privacy": {
         "status": "PASS",
         "exactAuthorizedCredentialLeaks": 0,
-        "productionSourceChanges": 1,
-        "verificationToolChanges": 1,
+        "productionSourceChanges": 0,
+        "verificationToolChanges": 0,
         "dependencyChanges": 0,
         "evidence": [
-          "artifact-security.json",
+          "inherited-artifact-security.json",
           "source-package-identity.json"
-        ]
+        ],
+        "testSourceChanges": 1,
+        "provenance": "Prior exact authorized credential scan inherited for byte-identical runtime payload. Changed test file reviewed; no credentials introduced. No fresh exact-key scan is claimed."
       },
       "windowsMedia": {
         "status": "PASS",
@@ -150,6 +154,20 @@
         "skipped": 0,
         "evidence": "ui-regression-01.log",
         "scope": "Production UI draft/request, document/search/backup, archive/restore and Wiki correction regressions after cancel label repair"
+      },
+      "extensionRelay": {
+        "status": "PASS",
+        "independentProcesses": 10,
+        "testsPerProcess": 7,
+        "fail": 0,
+        "skipped": 0,
+        "evidence": "extension-fixed-01.log through extension-fixed-10.log",
+        "scope": "Authenticated stale-result acknowledgement replaces unverified 20ms readiness; private-range fixture ports retry only EADDRINUSE. Original assertions and timeouts preserved.",
+        "firstFailures": [
+          "ci-pr-9af3f97-failed.log",
+          "extension-06.log"
+        ],
+        "historicalCauseLimit": "The old remote assertion omitted result.message; exact remote internal cause cannot be established retrospectively. Timer readiness assumption is visibly invalid and independently reproduced."
       }
     },
     "releaseGates": [
@@ -161,32 +179,32 @@
       {
         "id": "blank-install",
         "status": "PASS",
-        "reason": "Fresh current-source portable package; current UI rebuilt locally, unchanged backend/WPF/dependencies proved against successful baseline CI"
+        "reason": "Fresh current-source portable package; current UI rebuilt locally, unchanged backend/WPF/dependencies proved against successful baseline CI Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
       },
       {
         "id": "upgrade",
         "status": "PASS",
-        "reason": "Fresh actual installed lifecycle 22 and actual beta.1 upgrade/reader-barrier/byte-rollback 12"
+        "reason": "Fresh actual installed lifecycle 22 and actual beta.1 upgrade/reader-barrier/byte-rollback 12 Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
       },
       {
         "id": "real-service",
         "status": "BLOCKED",
-        "reason": "Prior selected real API inference Retry-After still active; zero new inference or alternative model"
+        "reason": "Prior selected real API inference Retry-After still active; zero new inference or alternative model Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
       },
       {
         "id": "restore",
         "status": "PASS",
-        "reason": "Fresh production UI regression includes backup preview, empty-target restore, role archive/restore; unchanged backend baseline core includes full 270-session restoration"
+        "reason": "Fresh production UI regression includes backup preview, empty-target restore, role archive/restore; unchanged backend baseline core includes full 270-session restoration Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
       },
       {
         "id": "security",
         "status": "PASS",
-        "reason": "Unchanged backend/WPF/dependencies baseline full CI plus fresh package and credential exclusion; only UI cancel label and verification fixture changed"
+        "reason": "Unchanged backend/WPF/dependencies baseline full CI plus fresh package and credential exclusion; only UI cancel label and verification fixture changed Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
       },
       {
         "id": "file-integrity",
         "status": "PASS",
-        "reason": "Fresh full package/source inventory and ZIP member-byte verification"
+        "reason": "Fresh full package/source inventory and ZIP member-byte verification Runtime evidence inherited from byte-identical 9af payload; new test-only source has fresh 515-core and 10x7 extension regressions, not rerun portable/lifecycle/upgrade."
       }
     ],
     "eligibleForLocalBeta": false,
@@ -231,8 +249,8 @@
       "status": "BLOCKED",
       "scope": "older process-directory recursive cleanup was rejected by automatic approval; retained, no bypass"
     },
-    "supplement": "Original role deletion semantics audit found and fixed archive cancel label. Portable fixture first failed on randomly selected fetch-blocked port 6668; cause reproduced, fixture selection/cleanup repaired without weakening assertions, fresh56/22/12 and UI5 passed. Original failure retained. Real-service quota and assigned manual/signing boundaries unchanged.",
-    "sourceIdentityScope": "Current source bytes excluding generated status/manifest. Backend/WPF/dependencies match successful baseline 4f965dd; current UI built and tested locally, current package independently exercised. New commit CI is recorded by its PR checks.",
+    "supplement": "Original 9af PR relay test failure retained. Removed visible unacknowledged 20ms readiness assumption; historical exact internal cause cannot be proven because old assertion lacked result details. Independent targeted run6 bad-port failure retained. Test-only authenticated readiness/private-range host fixes pass 10x7 and full515 without changing assertions/timeouts. Runtime payload unchanged; 56/22/12 inherited explicitly.",
+    "sourceIdentityScope": "Current source inventory excludes generated status/manifest. One extension test file changed; all runtime payload bytes match 9af candidate. Fresh local 515-core and 10x7 extension tests; runtime 56/22/12 inherited with exact payload identity. New head CI is recorded by PR checks.",
     "documentationRefresh": {
       "date": "2026-10-22",
       "status": "PASS",
@@ -266,56 +284,67 @@
     "finalCandidate": {
       "date": "2026-10-22",
       "status": "BLOCKED",
-      "sourceHash": "687d63ad8031d6eeb52a3eb093a69dd19f7ac18f8fef345eb4d46bee3096f4af",
+      "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
       "package": {
-        "manifestSha256": "a474cdf1db955988fcd892dc9029f72b8ce8f9666348903971a84f04d5c42a41",
+        "manifestSha256": "8b907972bd807121fe7fbf43eb406c61f2e8cf5a01277d19aa1f71080cbc5b83",
         "files": 1733,
-        "sourceHash": "687d63ad8031d6eeb52a3eb093a69dd19f7ac18f8fef345eb4d46bee3096f4af",
-        "archiveSha256": "55758506ab766353b90058f57a571870fca8ba1625b06fedcf32e6a9b7cefa79",
+        "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
+        "archiveSha256": "fa822bcb8190591862631f48c6be2239cca8628adc644cb03a48b4c46f633f9b",
+        "archiveBytes": 207168011,
         "archiveMembers": 1734
+      },
+      "sourceDelta": {
+        "baselineCommit": "9af3f9742957c30810a213548d292f74a43250c1",
+        "testFiles": 1,
+        "productionDependencyChanges": 0
+      },
+      "freshCore": {
+        "status": "PASS",
+        "tests": 515,
+        "fail": 0,
+        "skipped": 0
+      },
+      "freshExtension": {
+        "status": "PASS",
+        "processes": 10,
+        "testsPerProcess": 7
       },
       "portable": {
         "status": "PASS",
         "checks": 56,
-        "firstRun": "FAIL: fixture bad port; preserved"
+        "provenance": "Inherited 9af evidence, not rerun"
       },
       "installedLifecycle": {
         "status": "PASS",
-        "checks": 22
+        "checks": 22,
+        "provenance": "Inherited 9af evidence, not rerun"
       },
       "oldPackageUpgrade": {
         "status": "PASS",
-        "checks": 12
+        "checks": 12,
+        "provenance": "Inherited 9af evidence, not rerun"
       },
-      "sourceDelta": {
-        "baselineCommit": "4f965dd386506934f098de388e493f031a24de25",
-        "files": 2,
-        "uiCancelLabelChanges": 1,
-        "verificationToolChanges": 1,
-        "backendWpfDependencyChanges": 0
-      },
-      "ui": {
-        "build": "PASS",
-        "tests": 5,
-        "fail": 0,
-        "skipped": 0
-      },
-      "baselineCi": {
+      "runtimeIdentity": {
         "status": "PASS",
-        "testedCommit": "4f965dd386506934f098de388e493f031a24de25",
-        "runs": [
-          "https://github.com/ZyfNO2/ALLMIND/actions/runs/39744879477",
-          "https://github.com/ZyfNO2/ALLMIND/actions/runs/39744871370"
-        ],
-        "scope": "Baseline backend/WPF/dependency files are byte-identical; does not claim this earlier head ran the new UI/tool changes. New head checks belong to PR."
+        "files": 1733,
+        "allPayloadBytesIdenticalTo9af": true,
+        "manifestChangedOnlySourceBinding": true,
+        "evidence": "source-package-identity.json"
       },
-      "goalAudit": "goal-audit.json",
-      "scope": "Current UI was rebuilt; other runtime payload bytes remain identical. Full source/package binding and fresh 56/22/12 checks. Real service remains independently blocked; no native input or external recipients."
+      "priorCi": {
+        "commit": "9af3f9742957c30810a213548d292f74a43250c1",
+        "pr": "FAIL",
+        "push": "PASS",
+        "scope": "Original PR failure preserved, not rerun or relabelled; new test corrections await new-head checks."
+      },
+      "scope": "Production/dependency source unchanged. Runtime evidence inheritance justified by full payload identity. Fresh local full core and ten independent extension runs; new ZIP members individually verified. Real-service/native/signing boundaries unchanged."
     },
     "previousCandidate": {
-      "sourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
-      "packageManifestSha256": "8c86ed99de5934d79d17c689f4bf950f9bd394cff3b4434abfbddd7a2c5c54ff",
-      "scope": "Documentation candidate before archive cancel label and fixture-port repair; all old records retained independently"
+      "sourceHash": "687d63ad8031d6eeb52a3eb093a69dd19f7ac18f8fef345eb4d46bee3096f4af",
+      "packageManifestSha256": "a474cdf1db955988fcd892dc9029f72b8ce8f9666348903971a84f04d5c42a41",
+      "archiveSha256": "55758506ab766353b90058f57a571870fca8ba1625b06fedcf32e6a9b7cefa79",
+      "commit": "9af3f9742957c30810a213548d292f74a43250c1",
+      "scope": "Runtime payload from archive-label candidate. PR core failed once while same-head push passed; original failures remain preserved. Runtime 56/22/12 evidence is inherited only after exact payload comparison."
     }
   },
   "publicReleaseNote": "Local portable package and installer/update/rollback/uninstall were verified. No GitHub Release, signing, unattended auto-update or new publication is claimed by this user-closure task. Historical Git/publication records are retained below.",
@@ -806,7 +835,7 @@
     "report": "CONNECTION-SETUP-REPAIR-20261018.md (local worker handover)"
   },
   "userAcceptance": "SCOPED_DEFECT_RECHECK_PASS_FULL_JOURNEY_NOT_REPEATED",
-  "currentValidation": "Authoritative latest source/package status: currentSummary/finalCandidate. Earlier CI and candidate identities retain exact provenance; current head CI is reported by its PR checks.",
+  "currentValidation": "Authoritative current source/package status: currentSummary/finalCandidate. Historical failed PR and targeted fixture runs retained. New head CI is reported separately by exact head in PR checks, not inferred from old push success.",
   "closedTabRecovery": {
     "date": "2026-10-18",
     "status": "PASS",
