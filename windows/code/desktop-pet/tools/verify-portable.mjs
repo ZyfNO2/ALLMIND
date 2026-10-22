@@ -23,6 +23,20 @@ const fixture=createServer(async(req,res)=>{
  for await(const chunk of req){}replyRequests++;notifyIncoming();await new Promise(r=>releaseReply=r);
  res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({choices:[{message:{role:'assistant',content:'Synthetic reply survives a hidden pet.'}}],usage:{prompt_tokens:1,completion_tokens:1,total_tokens:2}}));
 });
+// Windows can allocate low ephemeral ports (for example 6668) blocked by fetch.
+// Keep this controlled fixture in the private/dynamic range; retry only collisions.
+async function listenFixture(){
+ for(let attempt=0;attempt<10;attempt++){
+  try{
+   await new Promise((resolve,reject)=>{
+    const failed=error=>{fixture.off('error',failed);reject(error);};fixture.once('error',failed);
+    fixture.listen(49152+Math.floor(Math.random()*16384),'127.0.0.1',()=>{fixture.off('error',failed);resolve();});
+   });
+   return;
+  }catch(error){if(error.code!=='EADDRINUSE')throw error;}
+ }
+ throw Error('No unused private-range port for the controlled HTTP fixture.');
+}
 const read=path=>JSON.parse(readFileSync(path,'utf8'));
 const descriptor=()=>read(data+'/host/controller.json');
 async function command(method,params={}){const d=descriptor();return pipeRequest(d.endpoint,d.token,method,params);}
@@ -36,12 +50,12 @@ try{
  const helper=await startBrowserHost({executable:join(root,'node_modules/electron/dist/electron.exe'),script:join(root,'desktop/wpf/browser-host.mjs'),data:join(data,'browser-smoke')});
  try{await assert.rejects(helper.request('probe-invalid-1',{action:'invalid'}),/未知/);await delay(500);assert.equal(helper.closed,false);await assert.rejects(helper.request('probe-invalid-2',{action:'invalid'}),/未知/);checks+=3;}finally{await helper.close();assert.equal(helper.closed,true);checks++;}
  facts.push('Packaged GUI Electron accepted repeated authenticated named-pipe requests with stdin ignored, then shut down on channel close. No login/model request in this fixture suite.');
- await new Promise(r=>fixture.listen(0,'127.0.0.1',r));
+ await listenFixture();
  assert.equal(existsSync(data+'/host/controller.json'),false,'Use an unused isolated directory');
  let state=await start();assert.equal(state.characterId,'gpt-niang');assert.equal(state.appearanceSkinId,'starter-gpt-niang');assert.equal(resolve(descriptor().nodePath),join(root,'runtime/node.exe'));checks+=3;assert.equal(state.visibility.mode,'smart');assert.equal(state.visibility.manualHidden,false);checks+=2;
  const session=read(data+'/book/management-session.json');const backendPid=session.pid,origin=state.managementOrigin;
  const token=new URLSearchParams(new URL(session.url).hash.slice(1)).get('token');
- async function api(path,method='GET',body){const response=await fetch(origin+'/api/memory-book/v1'+path,{method,headers:{authorization:'Bearer '+token,'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(30000)});const value=await response.json();assert.equal(response.status,200,JSON.stringify(value));return value;}
+ async function api(path,method='GET',body){const response=await fetch(origin+'/api/memory-book/v1'+path,{method,headers:{authorization:'Bearer '+token,'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(30000)});const value=await response.json();assert.equal(response.status,200,method+' '+path+': '+JSON.stringify(value));return value;}
  const preview=await fetch(origin+'/preview-runtime/presentation-preview.js');assert.equal(preview.status,200);assert.ok((await preview.text()).length>100);checks+=2;
  const loaded=await api('/runtime');let config=loaded.config;assert.equal(config.mainModel,null);checks++;
  const voiceCapabilities=await api('/voice/capabilities'),screenCapabilities=await api('/screen/capabilities');assert.equal(typeof voiceCapabilities.available,'boolean');assert.equal(typeof screenCapabilities.available,'boolean');checks+=2;
@@ -65,7 +79,7 @@ try{
  config.mainModel={baseUrl:'http://127.0.0.1:'+fixture.address().port+'/v1',model:'synthetic-fixture',credentialId:'local-no-auth',inputTokens:8192,outputTokens:512};
  await api('/runtime','PUT',{config,expectedRevision:config.revision,operationId:'floating-fixture-binding'});
  const chat=api('/chat','POST',{characterId:state.characterId,sessionId:'floating-fixture',text:'Synthetic request; reply after hide.',turnId:'floating-fixture-turn'});
- await Promise.race([incoming,delay(20000).then(()=>{throw Error('Fixture never received model request');})]);checks++;
+ await Promise.race([incoming,chat,delay(20000).then(()=>{throw Error('Fixture never received model request');})]);checks++;
  const accepted=await command('visible',{visible:false});assert.equal(accepted.accepted,true);assert.equal(accepted.requestedVisible,false);checks+=2;
  state=await wait(s=>s.hidden&&s.visibility.manualHidden&&!s.visibility.visible,'manual hide');
  assert.equal(state.backend,'ready');assert.equal(state.managementOrigin,origin);process.kill(backendPid,0);checks+=3;

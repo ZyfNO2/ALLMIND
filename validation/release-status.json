@@ -10,7 +10,7 @@
     "version": "0.1.0-beta.2",
     "status": "BLOCKED",
     "implementation": "PASS: scoped engineering and user-operation regression; see validation/PRODUCT-COMPLETION.md",
-    "sourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
+    "sourceHash": "687d63ad8031d6eeb52a3eb093a69dd19f7ac18f8fef345eb4d46bee3096f4af",
     "sourceFiles": 1699,
     "sourceExclusions": [
       "validation/release-status.json",
@@ -24,7 +24,7 @@
       },
       "build": {
         "status": "PASS",
-        "scope": "backend/test rebuild for added tests; production source unchanged, existing UI/WPF artifacts retained; new package independently exercised"
+        "scope": "Local management UI rebuilt for one cancel-label repair; unchanged backend/WPF artifacts verified against baseline 4f965dd; new package independently exercised"
       },
       "core": {
         "status": "PASS",
@@ -70,9 +70,10 @@
         "status": "PASS",
         "checks": 56,
         "files": 1733,
-        "manifestSha256": "8c86ed99de5934d79d17c689f4bf950f9bd394cff3b4434abfbddd7a2c5c54ff",
-        "evidence": "portable-report.json",
-        "provenance": "Fresh current-source candidate"
+        "manifestSha256": "a474cdf1db955988fcd892dc9029f72b8ce8f9666348903971a84f04d5c42a41",
+        "evidence": "portable-report-02.json",
+        "firstRun": "FAIL: Node fetch bad port 6668; original evidence retained",
+        "resolution": "fixture-failure-resolution.json"
       },
       "installedLifecycle": {
         "status": "PASS",
@@ -80,7 +81,7 @@
         "actualHost": true,
         "model": "local HTTP fixture",
         "evidence": "installed-lifecycle-beta2-final.json",
-        "provenance": "Fresh current-source candidate; see finalCandidate"
+        "provenance": "Fresh final candidate after cancel label/fixture port repair"
       },
       "priorPackageDataUpgrade": {
         "status": "PASS",
@@ -88,16 +89,17 @@
         "oldReaderRejected": true,
         "exactRollback": true,
         "evidence": "old-package-upgrade-final.json",
-        "provenance": "Fresh current-source candidate; see finalCandidate"
+        "provenance": "Fresh final candidate after cancel label/fixture port repair"
       },
       "privacy": {
         "status": "PASS",
         "exactAuthorizedCredentialLeaks": 0,
-        "productionSourceChanges": 0,
+        "productionSourceChanges": 1,
+        "verificationToolChanges": 1,
         "dependencyChanges": 0,
         "evidence": [
           "artifact-security.json",
-          "runtime-source-identity.json"
+          "source-package-identity.json"
         ]
       },
       "windowsMedia": {
@@ -140,6 +142,14 @@
         "modelCalls": 0,
         "note": "Browser without microphone permission may hide devices/labels; enumeration success does not certify physical availability, device switching, capture or listening.",
         "evidence": "real-device-enumeration.json"
+      },
+      "roleArchiveUi": {
+        "status": "PASS",
+        "tests": 5,
+        "fail": 0,
+        "skipped": 0,
+        "evidence": "ui-regression-01.log",
+        "scope": "Production UI draft/request, document/search/backup, archive/restore and Wiki correction regressions after cancel label repair"
       }
     },
     "releaseGates": [
@@ -151,32 +161,32 @@
       {
         "id": "blank-install",
         "status": "PASS",
-        "reason": "Fresh current-inventory portable package exercised in unused isolated data; remote current-source npm ci/build passed"
+        "reason": "Fresh current-source portable package; current UI rebuilt locally, unchanged backend/WPF/dependencies proved against successful baseline CI"
       },
       {
         "id": "upgrade",
         "status": "PASS",
-        "reason": "Fresh real installed 22-check lifecycle plus actual beta.1 reader barrier and 12-check byte rollback; synthetic data and model only"
+        "reason": "Fresh actual installed lifecycle 22 and actual beta.1 upgrade/reader-barrier/byte-rollback 12"
       },
       {
         "id": "real-service",
         "status": "BLOCKED",
-        "reason": "Selected real inference remains blocked by existing Retry-After; no new inference in this phase; historical readiness is not inference acceptance"
+        "reason": "Prior selected real API inference Retry-After still active; zero new inference or alternative model"
       },
       {
         "id": "restore",
         "status": "PASS",
-        "reason": "Current-source remote core and UI include >256-session complete backups, empty-target restore, crash journal, tamper and role/session restoration; controlled data"
+        "reason": "Fresh production UI regression includes backup preview, empty-target restore, role archive/restore; unchanged backend baseline core includes full 270-session restoration"
       },
       {
         "id": "security",
         "status": "PASS",
-        "reason": "Current-source remote core, platform isolation and Windows component checks plus fresh source/package credential exclusion; no new real recipients or physical input"
+        "reason": "Unchanged backend/WPF/dependencies baseline full CI plus fresh package and credential exclusion; only UI cancel label and verification fixture changed"
       },
       {
         "id": "file-integrity",
         "status": "PASS",
-        "reason": "Fresh full source/package inventory and ZIP member-byte verification; no whole-package identity is inferred from older host-EXE mismatch"
+        "reason": "Fresh full package/source inventory and ZIP member-byte verification"
       }
     ],
     "eligibleForLocalBeta": false,
@@ -221,8 +231,8 @@
       "status": "BLOCKED",
       "scope": "older process-directory recursive cleanup was rejected by automatic approval; retained, no bypass"
     },
-    "supplement": "Current README/image tree now has a newly packaged, source-bound candidate with fresh portable/lifecycle/upgrade and ZIP checks. Current-source CI passed. Selected real-service Retry-After, assigned physical/native acceptance and signing boundaries remain unchanged.",
-    "sourceIdentityScope": "sourceHash identifies the current publishable source bytes (excluding generated status/manifest); current-source CI at ae53876 and fresh package tests are recorded in finalCandidate. Prior c50 identity is retained in previousTestedSnapshot.",
+    "supplement": "Original role deletion semantics audit found and fixed archive cancel label. Portable fixture first failed on randomly selected fetch-blocked port 6668; cause reproduced, fixture selection/cleanup repaired without weakening assertions, fresh56/22/12 and UI5 passed. Original failure retained. Real-service quota and assigned manual/signing boundaries unchanged.",
+    "sourceIdentityScope": "Current source bytes excluding generated status/manifest. Backend/WPF/dependencies match successful baseline 4f965dd; current UI built and tested locally, current package independently exercised. New commit CI is recorded by its PR checks.",
     "documentationRefresh": {
       "date": "2026-10-22",
       "status": "PASS",
@@ -244,7 +254,7 @@
       "localLinkChecks": 25,
       "imageHashChecks": 15,
       "packageRebuilt": true,
-      "currentTreePackageAcceptance": "PASS: fresh 56/22/12 checks; see finalCandidate. Overall release still BLOCKED.",
+      "currentTreePackageAcceptance": "Documentation snapshot candidate passed; latest UI/tool repair and candidate are recorded in finalCandidate.",
       "provenance": "Production browser UI in fresh isolated demo data; WPF production components rendered offscreen without native input; unretouched images checked against original captures. Not real-service or physical/native acceptance."
     },
     "previousTestedSnapshot": {
@@ -256,18 +266,18 @@
     "finalCandidate": {
       "date": "2026-10-22",
       "status": "BLOCKED",
-      "sourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
-      "testedCommit": "ae538761520e29adf03e213d069e3f42f7c5d5e3",
+      "sourceHash": "687d63ad8031d6eeb52a3eb093a69dd19f7ac18f8fef345eb4d46bee3096f4af",
       "package": {
-        "manifestSha256": "8c86ed99de5934d79d17c689f4bf950f9bd394cff3b4434abfbddd7a2c5c54ff",
+        "manifestSha256": "a474cdf1db955988fcd892dc9029f72b8ce8f9666348903971a84f04d5c42a41",
         "files": 1733,
-        "sourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
-        "archiveSha256": "f458750f7dc29b67569ea669fc8f0922867778a3ffb6157ebb3d2318ba1b6478",
+        "sourceHash": "687d63ad8031d6eeb52a3eb093a69dd19f7ac18f8fef345eb4d46bee3096f4af",
+        "archiveSha256": "55758506ab766353b90058f57a571870fca8ba1625b06fedcf32e6a9b7cefa79",
         "archiveMembers": 1734
       },
       "portable": {
         "status": "PASS",
-        "checks": 56
+        "checks": 56,
+        "firstRun": "FAIL: fixture bad port; preserved"
       },
       "installedLifecycle": {
         "status": "PASS",
@@ -278,21 +288,34 @@
         "checks": 12
       },
       "sourceDelta": {
-        "files": 17,
-        "productionTestDependencyChanges": 0,
-        "packagedPayloadByteIdenticalToC50": true
+        "baselineCommit": "4f965dd386506934f098de388e493f031a24de25",
+        "files": 2,
+        "uiCancelLabelChanges": 1,
+        "verificationToolChanges": 1,
+        "backendWpfDependencyChanges": 0
       },
-      "ci": {
+      "ui": {
+        "build": "PASS",
+        "tests": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "baselineCi": {
         "status": "PASS",
-        "testedCommit": "ae538761520e29adf03e213d069e3f42f7c5d5e3",
-        "pr": "https://github.com/ZyfNO2/ALLMIND/actions/runs/39741249749",
-        "push": "https://github.com/ZyfNO2/ALLMIND/actions/runs/39741245166",
-        "coreTests": 515,
-        "browserTests": 54,
-        "wpfNodeTests": 27
+        "testedCommit": "4f965dd386506934f098de388e493f031a24de25",
+        "runs": [
+          "https://github.com/ZyfNO2/ALLMIND/actions/runs/39744879477",
+          "https://github.com/ZyfNO2/ALLMIND/actions/runs/39744871370"
+        ],
+        "scope": "Baseline backend/WPF/dependency files are byte-identical; does not claim this earlier head ran the new UI/tool changes. New head checks belong to PR."
       },
       "goalAudit": "goal-audit.json",
-      "scope": "Fresh package bound to current source inventory, using unchanged built production artifacts; no local rebuild or full local test rerun is claimed. Current-source Windows CI built and tested the same production source. All logs and packages retained in the independent local worker."
+      "scope": "Current UI was rebuilt; other runtime payload bytes remain identical. Full source/package binding and fresh 56/22/12 checks. Real service remains independently blocked; no native input or external recipients."
+    },
+    "previousCandidate": {
+      "sourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
+      "packageManifestSha256": "8c86ed99de5934d79d17c689f4bf950f9bd394cff3b4434abfbddd7a2c5c54ff",
+      "scope": "Documentation candidate before archive cancel label and fixture-port repair; all old records retained independently"
     }
   },
   "publicReleaseNote": "Local portable package and installer/update/rollback/uninstall were verified. No GitHub Release, signing, unattended auto-update or new publication is claimed by this user-closure task. Historical Git/publication records are retained below.",
@@ -783,7 +806,7 @@
     "report": "CONNECTION-SETUP-REPAIR-20261018.md (local worker handover)"
   },
   "userAcceptance": "SCOPED_DEFECT_RECHECK_PASS_FULL_JOURNEY_NOT_REPEATED",
-  "currentValidation": "Authoritative current source/package status: currentSummary and finalCandidate; previousTestedSnapshot preserves c50 provenance. Documentation screenshots remain fixture and never count as real-service acceptance.",
+  "currentValidation": "Authoritative latest source/package status: currentSummary/finalCandidate. Earlier CI and candidate identities retain exact provenance; current head CI is reported by its PR checks.",
   "closedTabRecovery": {
     "date": "2026-10-18",
     "status": "PASS",

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-22T07:59:10.410Z",
-  "generatedBy": "ALLMIND current-source final candidate binding",
+  "generatedAt": "2026-10-22T08:20:43.031Z",
+  "generatedBy": "ALLMIND role archive semantics and fixture failure closure",
   "scope": "Current publishable source bytes; sourceHash excludes generated status/manifest pair. Tested current-source package and earlier snapshot identities are separately recorded in release-status.",
-  "sourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
+  "sourceHash": "687d63ad8031d6eeb52a3eb093a69dd19f7ac18f8fef345eb4d46bee3096f4af",
   "fileCount": 1700,
-  "totalBytes": 22940323,
+  "totalBytes": 22942006,
   "sourceSnapshot": {
     "repository": "Aika-Next（只读源仓库；本机路径不记录）",
     "branch": "aika-next",
@@ -235,8 +235,8 @@
     },
     {
       "path": "validation/release-status.json",
-      "bytes": 122583,
-      "sha256": "8e9d545a2badc0981f3dbf3b44643885170df94f84b4ef195b1e85eea5bd48e3"
+      "bytes": 123594,
+      "sha256": "7a6e3dedd94e8c1c6dc0a9e87896d5767ccc789298edebc9c3e6c27ca0aaf7e3"
     },
     {
       "path": "windows/.gitattributes",
@@ -2261,7 +2261,7 @@
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/CharacterClient.tsx",
       "bytes": 106504,
-      "sha256": "08e75586de805ef881fc3ab7d0449fb7567baabbf3425734f4bbfa32a660f8f7"
+      "sha256": "63b1d6ddc12b195cf69a9f90bc31350b3d04a660d24367c4049699ee4350acb7"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/MemoryBookApp.tsx",
@@ -8345,8 +8345,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tools/verify-portable.mjs",
-      "bytes": 12907,
-      "sha256": "f153bc92103bbc69683214a909f0b04fa3b36edc1c8a0e6c0aa842f996b583e8"
+      "bytes": 13579,
+      "sha256": "2771508f7d11a81209051b19f7f6c4970509227080c4f078334c57690966a292"
     },
     {
       "path": "windows/code/desktop-pet/tools/verify-real-trace-default-safety.mjs",
