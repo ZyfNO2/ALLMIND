@@ -10,8 +10,8 @@
     "version": "0.1.0-beta.2",
     "status": "BLOCKED",
     "implementation": "PASS: scoped engineering and user-operation regression; see validation/PRODUCT-COMPLETION.md",
-    "sourceHash": "78e8e01d2e22713035996b1214b2fb1ccb9fcbf68b995c0311846b4f9c0fe347",
-    "sourceFiles": 1695,
+    "sourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
+    "sourceFiles": 1699,
     "sourceExclusions": [
       "validation/release-status.json",
       "validation/source-manifest.json"
@@ -70,22 +70,25 @@
         "status": "PASS",
         "checks": 56,
         "files": 1733,
-        "manifestSha256": "b70774b4592f11d62398b678d702b5ed8bdb629d7d19b463baed8982ff9dbe33",
-        "evidence": "portable-report.json"
+        "manifestSha256": "8c86ed99de5934d79d17c689f4bf950f9bd394cff3b4434abfbddd7a2c5c54ff",
+        "evidence": "portable-report.json",
+        "provenance": "Fresh current-source candidate"
       },
       "installedLifecycle": {
         "status": "PASS",
         "checks": 22,
         "actualHost": true,
         "model": "local HTTP fixture",
-        "evidence": "installed-lifecycle-beta2-final.json"
+        "evidence": "installed-lifecycle-beta2-final.json",
+        "provenance": "Fresh current-source candidate; see finalCandidate"
       },
       "priorPackageDataUpgrade": {
         "status": "PASS",
         "checks": 12,
         "oldReaderRejected": true,
         "exactRollback": true,
-        "evidence": "old-package-upgrade-final.json"
+        "evidence": "old-package-upgrade-final.json",
+        "provenance": "Fresh current-source candidate; see finalCandidate"
       },
       "privacy": {
         "status": "PASS",
@@ -143,37 +146,37 @@
       {
         "id": "source-binding",
         "status": "PASS",
-        "reason": "Tested c50b7ae source snapshot, package and evidence identify the same inventory. This PASS does not bind the later documentationRefresh tree to a rebuilt package."
+        "reason": "Current source, package and evidence identify the same inventory."
       },
       {
         "id": "blank-install",
         "status": "PASS",
-        "reason": "New portable package in fresh data, same unchanged dependency and production source; prior cold install is identified, not rerun"
+        "reason": "Fresh current-inventory portable package exercised in unused isolated data; remote current-source npm ci/build passed"
       },
       {
         "id": "upgrade",
         "status": "PASS",
-        "reason": "Fresh actual prior beta.1 data upgrade, old-reader rejection, exact conditional rollback and fresh installed lifecycle against this package"
+        "reason": "Fresh real installed 22-check lifecycle plus actual beta.1 reader barrier and 12-check byte rollback; synthetic data and model only"
       },
       {
         "id": "real-service",
         "status": "BLOCKED",
-        "reason": "Prior selected real inference HTTP429 still in Retry-After window; this phase performs authenticated model-list read only, zero inference calls. Not a successful real-model acceptance"
+        "reason": "Selected real inference remains blocked by existing Retry-After; no new inference in this phase; historical readiness is not inference acceptance"
       },
       {
         "id": "restore",
         "status": "PASS",
-        "reason": "Full production core rerun includes complete backups, restore, crash recovery and forgery rejection; UI evidence retains original provenance at identical production source"
+        "reason": "Current-source remote core and UI include >256-session complete backups, empty-target restore, crash journal, tamper and role/session restoration; controlled data"
       },
       {
         "id": "security",
         "status": "PASS",
-        "reason": "Full production core, new real WS/HTTP channel isolation/cancellation, Win32 observer/notification/independent-window tests and credential exclusion"
+        "reason": "Current-source remote core, platform isolation and Windows component checks plus fresh source/package credential exclusion; no new real recipients or physical input"
       },
       {
         "id": "file-integrity",
         "status": "PASS",
-        "reason": "Tested c50b7ae complete package inventory and frozen source inventory; documentationRefresh records the later docs/image delta separately. Prior bit-for-bit package equality failed for rebuilt host EXE and was not used as evidence."
+        "reason": "Fresh full source/package inventory and ZIP member-byte verification; no whole-package identity is inferred from older host-EXE mismatch"
       }
     ],
     "eligibleForLocalBeta": false,
@@ -218,8 +221,8 @@
       "status": "BLOCKED",
       "scope": "older process-directory recursive cleanup was rejected by automatic approval; retained, no bypass"
     },
-    "supplement": "User requested completing independently feasible tests; all selected new local checks passed. Physical/native input, real QQ recipients, selected-service inference quota and signing limits remain unchanged.",
-    "sourceIdentityScope": "sourceHash/sourceFiles and validation/releaseGates describe the tested c50b7ae snapshot and its package. Current documentation-only tree identity is recorded separately in documentationRefresh; it has not been repackaged.",
+    "supplement": "Current README/image tree now has a newly packaged, source-bound candidate with fresh portable/lifecycle/upgrade and ZIP checks. Current-source CI passed. Selected real-service Retry-After, assigned physical/native acceptance and signing boundaries remain unchanged.",
+    "sourceIdentityScope": "sourceHash identifies the current publishable source bytes (excluding generated status/manifest); current-source CI at ae53876 and fresh package tests are recorded in finalCandidate. Prior c50 identity is retained in previousTestedSnapshot.",
     "documentationRefresh": {
       "date": "2026-10-22",
       "status": "PASS",
@@ -240,9 +243,56 @@
       "pageErrors": 0,
       "localLinkChecks": 25,
       "imageHashChecks": 15,
-      "packageRebuilt": false,
-      "currentTreePackageAcceptance": "NOT_RUN",
+      "packageRebuilt": true,
+      "currentTreePackageAcceptance": "PASS: fresh 56/22/12 checks; see finalCandidate. Overall release still BLOCKED.",
       "provenance": "Production browser UI in fresh isolated demo data; WPF production components rendered offscreen without native input; unretouched images checked against original captures. Not real-service or physical/native acceptance."
+    },
+    "previousTestedSnapshot": {
+      "sourceHash": "78e8e01d2e22713035996b1214b2fb1ccb9fcbf68b995c0311846b4f9c0fe347",
+      "commit": "c50b7ae1112c7a5c64aa7ff032a6ac7c675828ed",
+      "packageManifestSha256": "b70774b4592f11d62398b678d702b5ed8bdb629d7d19b463baed8982ff9dbe33",
+      "scope": "Preserved prior c50 tested package; unchanged payload is independently verified, not inferred from older failed equality record"
+    },
+    "finalCandidate": {
+      "date": "2026-10-22",
+      "status": "BLOCKED",
+      "sourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
+      "testedCommit": "ae538761520e29adf03e213d069e3f42f7c5d5e3",
+      "package": {
+        "manifestSha256": "8c86ed99de5934d79d17c689f4bf950f9bd394cff3b4434abfbddd7a2c5c54ff",
+        "files": 1733,
+        "sourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
+        "archiveSha256": "f458750f7dc29b67569ea669fc8f0922867778a3ffb6157ebb3d2318ba1b6478",
+        "archiveMembers": 1734
+      },
+      "portable": {
+        "status": "PASS",
+        "checks": 56
+      },
+      "installedLifecycle": {
+        "status": "PASS",
+        "checks": 22
+      },
+      "oldPackageUpgrade": {
+        "status": "PASS",
+        "checks": 12
+      },
+      "sourceDelta": {
+        "files": 17,
+        "productionTestDependencyChanges": 0,
+        "packagedPayloadByteIdenticalToC50": true
+      },
+      "ci": {
+        "status": "PASS",
+        "testedCommit": "ae538761520e29adf03e213d069e3f42f7c5d5e3",
+        "pr": "https://github.com/ZyfNO2/ALLMIND/actions/runs/39741249749",
+        "push": "https://github.com/ZyfNO2/ALLMIND/actions/runs/39741245166",
+        "coreTests": 515,
+        "browserTests": 54,
+        "wpfNodeTests": 27
+      },
+      "goalAudit": "goal-audit.json",
+      "scope": "Fresh package bound to current source inventory, using unchanged built production artifacts; no local rebuild or full local test rerun is claimed. Current-source Windows CI built and tested the same production source. All logs and packages retained in the independent local worker."
     }
   },
   "publicReleaseNote": "Local portable package and installer/update/rollback/uninstall were verified. No GitHub Release, signing, unattended auto-update or new publication is claimed by this user-closure task. Historical Git/publication records are retained below.",
@@ -733,7 +783,7 @@
     "report": "CONNECTION-SETUP-REPAIR-20261018.md (local worker handover)"
   },
   "userAcceptance": "SCOPED_DEFECT_RECHECK_PASS_FULL_JOURNEY_NOT_REPEATED",
-  "currentValidation": "Authoritative tested product/package status: currentSummary, scoped to its tested sourceHash. Current README/image-only tree: currentSummary.documentationRefresh. Older records are preserved history, not fresh beta.2 evidence.",
+  "currentValidation": "Authoritative current source/package status: currentSummary and finalCandidate; previousTestedSnapshot preserves c50 provenance. Documentation screenshots remain fixture and never count as real-service acceptance.",
   "closedTabRecovery": {
     "date": "2026-10-18",
     "status": "PASS",
