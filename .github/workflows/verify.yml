@@ -62,6 +62,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/allmind-perch.test.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/allmind-observer.test.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/allmind-notifications.test.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/desktop-mode.test.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/allmind-quick-chat.test.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/sound-sequence.test.ps1

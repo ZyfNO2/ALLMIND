@@ -10,8 +10,8 @@
     "version": "0.1.0-beta.2",
     "status": "BLOCKED",
     "implementation": "PASS: scoped engineering and user-operation regression; see validation/PRODUCT-COMPLETION.md",
-    "sourceHash": "3db0a0584779c3520caa20c9689cdd163561a32fe7e7e93817eca5f378149daa",
-    "sourceFiles": 1694,
+    "sourceHash": "78e8e01d2e22713035996b1214b2fb1ccb9fcbf68b995c0311846b4f9c0fe347",
+    "sourceFiles": 1695,
     "sourceExclusions": [
       "validation/release-status.json",
       "validation/source-manifest.json"
@@ -19,18 +19,19 @@
     "validation": {
       "dependencies": {
         "status": "PASS",
-        "mode": "two independent cold npm ci"
+        "mode": "two independent cold npm ci",
+        "provenance": "Prior completed beta.2 local regression at identical production source; no new dependency/production/UI code changes. See runtime-source-identity.json. New CI records current head separately."
       },
       "build": {
         "status": "PASS",
-        "scope": "cold build:allmind + backend rebuild after QQ route fix + SPA rebuild after low-height fix + current source build:allmind"
+        "scope": "backend/test rebuild for added tests; production source unchanged, existing UI/WPF artifacts retained; new package independently exercised"
       },
       "core": {
         "status": "PASS",
-        "tests": 513,
+        "tests": 515,
         "fail": 0,
         "skipped": 0,
-        "evidence": "cold-core-01.log"
+        "evidence": "core-01.log"
       },
       "browser": {
         "status": "PASS",
@@ -38,17 +39,20 @@
         "tests": 54,
         "fail": 0,
         "skipped": 0,
-        "evidence": "cold-browser-02.log"
+        "evidence": "cold-browser-02.log",
+        "provenance": "Prior completed beta.2 local regression at identical production source; no new dependency/production/UI code changes. See runtime-source-identity.json. New CI records current head separately."
       },
       "wpfNode": {
         "status": "PASS",
         "tests": 27,
-        "evidence": "cold-wpf-node-02.log"
+        "evidence": "cold-wpf-node-02.log",
+        "provenance": "Prior completed beta.2 local regression at identical production source; no new dependency/production/UI code changes. See runtime-source-identity.json. New CI records current head separately."
       },
       "adapters": {
         "status": "PASS",
         "tests": 8,
-        "evidence": "cold-adapters-01.log"
+        "evidence": "cold-adapters-01.log",
+        "provenance": "Prior completed beta.2 local regression at identical production source; no new dependency/production/UI code changes. See runtime-source-identity.json. New CI records current head separately."
       },
       "wpfComponents": {
         "status": "PASS",
@@ -59,14 +63,15 @@
         "silentSoundPlayerStress": "PASS",
         "headlessTimeoutChecks": 8,
         "scope": "no real mouse/keyboard/audio input",
-        "evidence": "cold-wpf-components-01.log"
+        "evidence": "cold-wpf-components-01.log",
+        "provenance": "Prior completed beta.2 local regression at identical production source; no new dependency/production/UI code changes. See runtime-source-identity.json. New CI records current head separately."
       },
       "portable": {
         "status": "PASS",
         "checks": 56,
         "files": 1733,
-        "manifestSha256": "0dcf4bf2401a7f9120f0d33e8567c361cf4cff1538ee8fa304888816f39fbb31",
-        "evidence": "portable-report-final.json"
+        "manifestSha256": "b70774b4592f11d62398b678d702b5ed8bdb629d7d19b463baed8982ff9dbe33",
+        "evidence": "portable-report.json"
       },
       "installedLifecycle": {
         "status": "PASS",
@@ -85,8 +90,53 @@
       "privacy": {
         "status": "PASS",
         "exactAuthorizedCredentialLeaks": 0,
-        "sourceColdMismatches": 0,
-        "evidence": "final-source-security-audit.json"
+        "productionSourceChanges": 0,
+        "dependencyChanges": 0,
+        "evidence": [
+          "artifact-security.json",
+          "runtime-source-identity.json"
+        ]
+      },
+      "windowsMedia": {
+        "status": "PASS",
+        "tests": 3,
+        "skipped": 0,
+        "evidence": "windows-media-01.log",
+        "scope": "real Windows Chinese synthesis/recognition and English/Chinese/blank WinRT OCR; file streams/synthetic pixels, no physical input"
+      },
+      "nativeSupplement": {
+        "status": "PASS",
+        "observerAssertions": 10,
+        "notificationAssertions": 5,
+        "desktopMode": "PASS",
+        "scope": "real Win32 hotkey conflict/rebind/release and monitor mapping; independent transparent windows; no native input/lock/sleep",
+        "evidence": [
+          "allmind-observer-01.log",
+          "allmind-notifications-01.log",
+          "desktop-mode-01.log"
+        ]
+      },
+      "qqHttpSupplement": {
+        "status": "PASS",
+        "tests": 2,
+        "model": "controlled local HTTP fixture through production BookHttpModel",
+        "evidence": "qq-http-02.log",
+        "scope": "same-group member/group-private/desktop isolation; non-whitelist denial, receipts, reconnect/restart dedup, pending HTTP cancellation, other-member concurrency"
+      },
+      "deviceEnumeration": {
+        "status": "PASS",
+        "scope": "Production settings enumerates actual Chromium/Windows devices without fake-media flags, grants, recording or playback; counts only, no device IDs or labels exported",
+        "physicalMicSpeaker": "NOT_RUN",
+        "checks": 4,
+        "deviceCounts": {
+          "audioinput": 0,
+          "audiooutput": 0
+        },
+        "enumerationCalls": 1,
+        "recordingCalls": 0,
+        "modelCalls": 0,
+        "note": "Browser without microphone permission may hide devices/labels; enumeration success does not certify physical availability, device switching, capture or listening.",
+        "evidence": "real-device-enumeration.json"
       }
     },
     "releaseGates": [
@@ -98,32 +148,32 @@
       {
         "id": "blank-install",
         "status": "PASS",
-        "reason": "fresh cold dependencies/build and actual final portable runtime in a new empty data directory"
+        "reason": "New portable package in fresh data, same unchanged dependency and production source; prior cold install is identified, not rerun"
       },
       {
         "id": "upgrade",
         "status": "PASS",
-        "reason": "actual prior beta.1 packaged data to beta.2, byte-exact conditional schema rollback and real installed host update/rollback/uninstall using a synthetic next-version package"
+        "reason": "Fresh actual prior beta.1 data upgrade, old-reader rejection, exact conditional rollback and fresh installed lifecycle against this package"
       },
       {
         "id": "real-service",
         "status": "BLOCKED",
-        "reason": "one current-source synthetic Smart/preset request failed HTTP 429; Retry-After about23h. No retries, fallback, real QQ messages or false PASS"
+        "reason": "Prior selected real inference HTTP429 still in Retry-After window; this phase performs authenticated model-list read only, zero inference calls. Not a successful real-model acceptance"
       },
       {
         "id": "restore",
         "status": "PASS",
-        "reason": "production private backup >256 sessions, metadata restore, tamper rejection, empty target, crash recovery and UI confirmation"
+        "reason": "Full production core rerun includes complete backups, restore, crash recovery and forgery rejection; UI evidence retains original provenance at identical production source"
       },
       {
         "id": "security",
         "status": "PASS",
-        "reason": "API/IPC denial, per-member QQ isolation, credential lifecycle, mandatory data trust policy, scoped tools and exact credential exclusion from publishable source/package"
+        "reason": "Full production core, new real WS/HTTP channel isolation/cancellation, Win32 observer/notification/independent-window tests and credential exclusion"
       },
       {
         "id": "file-integrity",
         "status": "PASS",
-        "reason": "exact final source/cold byte comparison and complete final package inventory"
+        "reason": "Current complete package inventory and frozen source inventory; prior bit-for-bit package equality failed for rebuilt host EXE and was not used as evidence"
       }
     ],
     "eligibleForLocalBeta": false,
@@ -137,13 +187,17 @@
       "automaticRetries": 0,
       "fallbacks": 0,
       "evidence": "live-current-report.json",
-      "history": "Earlier beta.1 real Wiki/recall success is preserved in priorUserClosure20261022 and is not promoted to fresh beta.2 acceptance."
+      "history": "Earlier beta.1 real Wiki/recall success is preserved in priorUserClosure20261022 and is not promoted to fresh beta.2 acceptance.",
+      "phaseModelSubmissions": 0,
+      "readOnlyModelsList": "PASS",
+      "readinessEvidence": "real-service-readiness.json",
+      "retryWindowEvidence": "real-service-window.json"
     },
     "limits": {
       "native": {
         "status": "NOT_RUN",
         "owner": "user",
-        "scope": "real pointer/touch, Chinese IME, source picker, fullscreen/lock/sleep and physical mic/speaker"
+        "scope": "real pointer/touch, Chinese IME, source picker, fullscreen/lock/sleep and physical mic/speaker; component and enumeration results do not replace these"
       },
       "signing": {
         "status": "DEFERRED",
@@ -157,12 +211,14 @@
     ],
     "git": {
       "branch": "codex/product-completion",
-      "delivery": "Draft PR on the reviewed current engineering work; no merge or public Release"
+      "pullRequest": "https://github.com/ZyfNO2/ALLMIND/pull/2",
+      "delivery": "Update existing Draft PR; no merge or public Release"
     },
     "workerCleanup": {
       "status": "BLOCKED",
       "scope": "older process-directory recursive cleanup was rejected by automatic approval; retained, no bypass"
-    }
+    },
+    "supplement": "User requested completing independently feasible tests; all selected new local checks passed. Physical/native input, real QQ recipients, selected-service inference quota and signing limits remain unchanged."
   },
   "publicReleaseNote": "Local portable package and installer/update/rollback/uninstall were verified. No GitHub Release, signing, unattended auto-update or new publication is claimed by this user-closure task. Historical Git/publication records are retained below.",
   "git": {
@@ -2203,5 +2259,164 @@
       "goalComplete": false
     },
     "goalStatus": "BLOCKED: implementation and final acceptance passed; required temporary-directory cleanup was rejected by automatic approval for three consecutive goal turns"
+  },
+  "priorProductCompletion20261022": {
+    "date": "2026-10-22",
+    "version": "0.1.0-beta.2",
+    "status": "BLOCKED",
+    "implementation": "PASS: scoped engineering and user-operation regression; see validation/PRODUCT-COMPLETION.md",
+    "sourceHash": "3db0a0584779c3520caa20c9689cdd163561a32fe7e7e93817eca5f378149daa",
+    "sourceFiles": 1694,
+    "sourceExclusions": [
+      "validation/release-status.json",
+      "validation/source-manifest.json"
+    ],
+    "validation": {
+      "dependencies": {
+        "status": "PASS",
+        "mode": "two independent cold npm ci"
+      },
+      "build": {
+        "status": "PASS",
+        "scope": "cold build:allmind + backend rebuild after QQ route fix + SPA rebuild after low-height fix + current source build:allmind"
+      },
+      "core": {
+        "status": "PASS",
+        "tests": 513,
+        "fail": 0,
+        "skipped": 0,
+        "evidence": "cold-core-01.log"
+      },
+      "browser": {
+        "status": "PASS",
+        "files": 32,
+        "tests": 54,
+        "fail": 0,
+        "skipped": 0,
+        "evidence": "cold-browser-02.log"
+      },
+      "wpfNode": {
+        "status": "PASS",
+        "tests": 27,
+        "evidence": "cold-wpf-node-02.log"
+      },
+      "adapters": {
+        "status": "PASS",
+        "tests": 8,
+        "evidence": "cold-adapters-01.log"
+      },
+      "wpfComponents": {
+        "status": "PASS",
+        "visibilityAssertions": 53,
+        "perchAssertions": 21,
+        "quickChatAssertions": 52,
+        "soundSequenceAssertions": 148,
+        "silentSoundPlayerStress": "PASS",
+        "headlessTimeoutChecks": 8,
+        "scope": "no real mouse/keyboard/audio input",
+        "evidence": "cold-wpf-components-01.log"
+      },
+      "portable": {
+        "status": "PASS",
+        "checks": 56,
+        "files": 1733,
+        "manifestSha256": "0dcf4bf2401a7f9120f0d33e8567c361cf4cff1538ee8fa304888816f39fbb31",
+        "evidence": "portable-report-final.json"
+      },
+      "installedLifecycle": {
+        "status": "PASS",
+        "checks": 22,
+        "actualHost": true,
+        "model": "local HTTP fixture",
+        "evidence": "installed-lifecycle-beta2-final.json"
+      },
+      "priorPackageDataUpgrade": {
+        "status": "PASS",
+        "checks": 12,
+        "oldReaderRejected": true,
+        "exactRollback": true,
+        "evidence": "old-package-upgrade-final.json"
+      },
+      "privacy": {
+        "status": "PASS",
+        "exactAuthorizedCredentialLeaks": 0,
+        "sourceColdMismatches": 0,
+        "evidence": "final-source-security-audit.json"
+      }
+    },
+    "releaseGates": [
+      {
+        "id": "source-binding",
+        "status": "PASS",
+        "reason": "Current source, package and evidence identify the same inventory."
+      },
+      {
+        "id": "blank-install",
+        "status": "PASS",
+        "reason": "fresh cold dependencies/build and actual final portable runtime in a new empty data directory"
+      },
+      {
+        "id": "upgrade",
+        "status": "PASS",
+        "reason": "actual prior beta.1 packaged data to beta.2, byte-exact conditional schema rollback and real installed host update/rollback/uninstall using a synthetic next-version package"
+      },
+      {
+        "id": "real-service",
+        "status": "BLOCKED",
+        "reason": "one current-source synthetic Smart/preset request failed HTTP 429; Retry-After about23h. No retries, fallback, real QQ messages or false PASS"
+      },
+      {
+        "id": "restore",
+        "status": "PASS",
+        "reason": "production private backup >256 sessions, metadata restore, tamper rejection, empty target, crash recovery and UI confirmation"
+      },
+      {
+        "id": "security",
+        "status": "PASS",
+        "reason": "API/IPC denial, per-member QQ isolation, credential lifecycle, mandatory data trust policy, scoped tools and exact credential exclusion from publishable source/package"
+      },
+      {
+        "id": "file-integrity",
+        "status": "PASS",
+        "reason": "exact final source/cold byte comparison and complete final package inventory"
+      }
+    ],
+    "eligibleForLocalBeta": false,
+    "publicDistributionReady": false,
+    "realService": {
+      "status": "BLOCKED",
+      "provider": "previously selected Minimax M3.1 Flash Free",
+      "modelSubmissions": 1,
+      "http": 429,
+      "retryAfterSeconds": 82947,
+      "automaticRetries": 0,
+      "fallbacks": 0,
+      "evidence": "live-current-report.json",
+      "history": "Earlier beta.1 real Wiki/recall success is preserved in priorUserClosure20261022 and is not promoted to fresh beta.2 acceptance."
+    },
+    "limits": {
+      "native": {
+        "status": "NOT_RUN",
+        "owner": "user",
+        "scope": "real pointer/touch, Chinese IME, source picker, fullscreen/lock/sleep and physical mic/speaker"
+      },
+      "signing": {
+        "status": "DEFERRED",
+        "scope": "publisher signing and SmartScreen reputation; previously deferred"
+      }
+    },
+    "remaining": [
+      "Current selected real service quota must recover before fresh real-service acceptance can PASS",
+      "User-owned physical/native acceptance remains NOT_RUN; signing remains DEFERRED",
+      "Official QQ bot, native mobile client, background cloud sync and continuous token-to-speech streaming are not implemented capabilities; current scope uses OneBot, manual selective file exchange and sentence audio chunks"
+    ],
+    "git": {
+      "branch": "codex/product-completion",
+      "delivery": "Draft PR on the reviewed current engineering work; no merge or public Release"
+    },
+    "workerCleanup": {
+      "status": "BLOCKED",
+      "scope": "older process-directory recursive cleanup was rejected by automatic approval; retained, no bypass"
+    }
   }
 }

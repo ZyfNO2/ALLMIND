@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-22T01:06:34.157Z",
-  "generatedBy": "ALLMIND beta.2 product completion",
+  "generatedAt": "2026-10-22T06:55:35.475Z",
+  "generatedBy": "ALLMIND independent test completion",
   "scope": "publishable current worktree bytes; Git checkout line-ending conversion may change bytes. sourceHash excludes the generated release-status/source-manifest pair to avoid self-reference.",
-  "sourceHash": "3db0a0584779c3520caa20c9689cdd163561a32fe7e7e93817eca5f378149daa",
-  "fileCount": 1695,
-  "totalBytes": 22478782,
+  "sourceHash": "78e8e01d2e22713035996b1214b2fb1ccb9fcbf68b995c0311846b4f9c0fe347",
+  "fileCount": 1696,
+  "totalBytes": 22501573,
   "sourceSnapshot": {
     "repository": "Aika-Next（只读源仓库；本机路径不记录）",
     "branch": "aika-next",
@@ -15,8 +15,8 @@
   "files": [
     {
       "path": ".github/workflows/verify.yml",
-      "bytes": 5366,
-      "sha256": "c7cc2959678f8b3487d244b5ca469291ec2138243d139412ebd9d10f48f3f313"
+      "bytes": 5904,
+      "sha256": "9a427196b5b891a77eeb2d0324aa5b07170b02f054987d6dd268f3f9f20da8af"
     },
     {
       "path": ".gitignore",
@@ -145,8 +145,8 @@
     },
     {
       "path": "validation/PRODUCT-COMPLETION.md",
-      "bytes": 5714,
-      "sha256": "507605ec63dd5a26d5838933b3fe75c6c361f20c091f7a3f971b93afcfd80427"
+      "bytes": 6672,
+      "sha256": "22966de9a2653af7d496bde79ce043df227a69d07d285159717656dbc3327879"
     },
     {
       "path": "validation/PROMPT-PRESETS.md",
@@ -155,8 +155,8 @@
     },
     {
       "path": "validation/RUNBOOK.md",
-      "bytes": 14505,
-      "sha256": "069ccf068b54a81f01d2c8d02a86601e8ac6b1738199244fc20e2e2dc6db3064"
+      "bytes": 15819,
+      "sha256": "b97d0a70328db0dcbfa0ad751d3e313c4b2f475f57326da6c5fa92e20b38e20f"
     },
     {
       "path": "validation/UX-GRAPH.md",
@@ -215,8 +215,8 @@
     },
     {
       "path": "validation/release-status.json",
-      "bytes": 109141,
-      "sha256": "3ed046ee7e598dca113635a43979c168e5988253be8d9690f39da05d8f6cb168"
+      "bytes": 118607,
+      "sha256": "68a7fe11e29991fabbef5bab456386d567cbdba1f78e6e210974313c41b44396"
     },
     {
       "path": "windows/.gitattributes",
@@ -5687,6 +5687,11 @@
       "path": "windows/code/desktop-pet/tests/memory-book/qq-channel.browser.test.mjs",
       "bytes": 9317,
       "sha256": "e5f1ecba4323da0e5a33cb1e508e4b09eb60fcfe1b509c408a8c1b1e3fe3ec1f"
+    },
+    {
+      "path": "windows/code/desktop-pet/tests/memory-book/qq-http-acceptance.test.ts",
+      "bytes": 10515,
+      "sha256": "1effe5542d12ee0d6b67db6d866377164523414152532852e2bd1caa46bbbab0"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/recall.test.ts",

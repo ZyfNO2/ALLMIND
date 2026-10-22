@@ -13,6 +13,17 @@
 
 ## beta.2 当前增量
 
+2026-10-22 可自主补测：新增 `qq-http-acceptance.test.ts`，从实际 OneBot WS 贯穿生产 HTTP 适配器，模型端为本机 fixture；核心全组 515/515。Win32 observer、通知边界和独立透明窗口桌面模式已加入 CI；没有模拟真实输入/锁屏/睡眠。Windows 中文语音及中英/空白图 OCR 的本机补测单独记录，不能据此声称 GitHub Runner 装有相同语言组件。
+
+```powershell
+node --test --test-concurrency=1 dist/tests/windows/local-book-speech.test.js dist/tests/windows/local-book-ocr.test.js dist/tests/windows/activity-atomic-replace.test.js
+powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/allmind-observer.test.ps1
+powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/allmind-notifications.test.ps1
+powershell.exe -STA -NoProfile -ExecutionPolicy Bypass -File desktop/wpf/shell/tests/desktop-mode.test.ps1
+```
+
+语音用例在没有中文语音组件的电脑会明确 SKIP，不能当成已完成硬件/语言验收。实际 Chromium 无录音授权时，本机设备面板可成功读取空列表；这是权限下的可见性结果，不证明麦克风/扬声器可用。只读服务诊断成功读取已选模型列表，同样不能清除先前的推理 429。
+
 真实 API 本轮一次提交返回 HTTP 429（服务建议等待约23小时），没有重试/切换模型；真实服务门槛 BLOCKED。当前状态见 [release-status.json](release-status.json) 的 currentSummary；以下原有日期记录保持历史含义。新增验收矩阵、升级与手工边界见 [PRODUCT-COMPLETION.md](PRODUCT-COMPLETION.md)。核心组自动收录新增 .test.ts；浏览器新增 `tests/memory-book/product-controls.browser.test.mjs`，WPF 新增 `allmind-perch.test.ps1`，CI 已接线。
 
 发布门槛 CLI（仓库根目录）：
