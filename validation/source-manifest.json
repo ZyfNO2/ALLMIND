@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-22T06:55:35.475Z",
-  "generatedBy": "ALLMIND independent test completion",
-  "scope": "publishable current worktree bytes; Git checkout line-ending conversion may change bytes. sourceHash excludes the generated release-status/source-manifest pair to avoid self-reference.",
-  "sourceHash": "78e8e01d2e22713035996b1214b2fb1ccb9fcbf68b995c0311846b4f9c0fe347",
-  "fileCount": 1696,
-  "totalBytes": 22501573,
+  "generatedAt": "2026-10-22T07:32:18.236Z",
+  "generatedBy": "ALLMIND README and screenshot refresh",
+  "scope": "Publishable current documentation worktree bytes; sourceHash excludes generated release-status/source-manifest pair to avoid self-reference. Tested product/package identity remains separately preserved in release-status currentSummary.",
+  "sourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
+  "fileCount": 1700,
+  "totalBytes": 22938106,
   "sourceSnapshot": {
     "repository": "Aika-Next（只读源仓库；本机路径不记录）",
     "branch": "aika-next",
     "head": "311eb0dbf468105f460b44be960ea8813809eefd",
-    "note": "历史来源保留；本清单对应本次 UI V2 与 GPT-Niang WPF 桥接整合候选树，排除清单自身和已忽略生成物。"
+    "note": "Historical origin only. This inventory records the current beta.2 README/image refresh; the tested c50b7ae product/package identity is preserved separately in release-status.json."
   },
   "files": [
     {
@@ -40,8 +40,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 32498,
-      "sha256": "e8d2474bf9e07d75fd51c311fd03eca92dc69d0444b0f280864bdff46c1c2a4b"
+      "bytes": 34885,
+      "sha256": "80eeeca02677f877586c90a238077e7b4ee76300eeeb305b7b14b7de42888d50"
     },
     {
       "path": "Start-ALLMIND.vbs",
@@ -55,18 +55,18 @@
     },
     {
       "path": "assets/readme/README.md",
-      "bytes": 2246,
-      "sha256": "37b712b3bdaad9772cd928d53632c420427f1c997aac563dec0f77f419826ae3"
+      "bytes": 3302,
+      "sha256": "47649586ff69125be7f8bba759992d10bf61ff8046479690a94023d1957acd5c"
     },
     {
       "path": "assets/readme/pet-input.png",
-      "bytes": 296627,
-      "sha256": "0301e0920cc0875fdaa91837321a0c07e61f176ac610d458967184404ba41a15"
+      "bytes": 299586,
+      "sha256": "ddefe5b78d004b30b7da46afd6919625d1ca52974ea9d8a56fd0744e67d9cd37"
     },
     {
       "path": "assets/readme/pet-reply.png",
-      "bytes": 295525,
-      "sha256": "a451648afd220f50c21d5b7fdaa25e27c98292231c4cc0cfb93b814dbd5b71e9"
+      "bytes": 300056,
+      "sha256": "b92387ebf5dd48ff390b6f7a76c0e08c40023b4aa109e5b8ec901b8a0417ae96"
     },
     {
       "path": "assets/readme/screenshot-api-setup.png",
@@ -90,48 +90,68 @@
     },
     {
       "path": "assets/readme/ui-chat.jpg",
-      "bytes": 62725,
-      "sha256": "27a420bf1c59cc9df74e7c0af666af27f85ee5c5d3ef82e376cbd14a74aa1476"
+      "bytes": 132415,
+      "sha256": "497fae89d8f3ec821184e99e2cda7f73288bc0483e8f070e0c0c6431c37dcf44"
+    },
+    {
+      "path": "assets/readme/ui-diagnostics.png",
+      "bytes": 112820,
+      "sha256": "c0e4c637b6325d6aa305aa430edf3b37c44ab1e33aa612d2e4a885a1d23e4d37"
     },
     {
       "path": "assets/readme/ui-memory.png",
-      "bytes": 55128,
-      "sha256": "0b03e32872694e2e519ec5c59c6de359060359be6566d37c39ec037c5415dd62"
+      "bytes": 82612,
+      "sha256": "517019e85dfa2618c7276cd3145026e64ee6aa4c15fb260b75ef9fb2e867404f"
     },
     {
       "path": "assets/readme/ui-role.png",
-      "bytes": 48424,
-      "sha256": "846e7e1e6f180781dd9ccabdbe448502d427d8751c3e55d2862549eb8ab85c64"
+      "bytes": 71983,
+      "sha256": "eb890fb033f7bb1cca6c722f438a948a28103e366856602b16b3952eb0561789"
     },
     {
       "path": "assets/readme/ui-settings.png",
-      "bytes": 72000,
-      "sha256": "0b1540c730f97ca5c6ac6304011882be37a9a48964b0331008291a7bed40e960"
+      "bytes": 85926,
+      "sha256": "046a081f8cdea7f07f5ff5bdf39832c00d96ded38f8d7fd48800d8250f10a417"
+    },
+    {
+      "path": "assets/readme/ui-sync.png",
+      "bytes": 104710,
+      "sha256": "98ef8d45c2190f98f29478c46af30130e6fdbd6d1820f47a060d66ba9978c408"
+    },
+    {
+      "path": "assets/readme/ui-tools.png",
+      "bytes": 71071,
+      "sha256": "ba047ad573b552a3112819124943cc35c3da787f8dd7d789d5ece3fefcf6368a"
+    },
+    {
+      "path": "assets/readme/ui-voice.png",
+      "bytes": 82601,
+      "sha256": "70f82858ddc705ea990bf5787a30df232fe1cc810b80c63fa21d237f07ae735d"
     },
     {
       "path": "assets/readme/wiki-characters.jpg",
-      "bytes": 180770,
-      "sha256": "04720a2cbcf5a8c9200dee3160acd7919a37653eb829047cbbf8124cf3bd49a3"
+      "bytes": 129306,
+      "sha256": "13a7668675b6394fbc495da0e533c959015fbd5297e55c1eb2c42ceda729d48a"
     },
     {
       "path": "assets/readme/wiki-events.jpg",
-      "bytes": 174524,
-      "sha256": "c08eeefb2121eb7da992ca7813f6b9a6ba83493475143ec3324aa5071917f7a3"
+      "bytes": 136683,
+      "sha256": "e448b2a035ac246b97e13fbe621a6f5a04a76f689db539c85135b37c98a3f159"
     },
     {
       "path": "assets/readme/wiki-graph.jpg",
-      "bytes": 106939,
-      "sha256": "a9f090d84b8f0cda30c0efe0fd662aaac5ffacf4ce6917c59fc410f398413e3f"
+      "bytes": 118727,
+      "sha256": "262f16a2b4f02effef6f4c3ad3f845f831eea72b9e31e91a2fbc60eef9f5bb9e"
     },
     {
       "path": "assets/readme/wiki-synthesis.jpg",
-      "bytes": 98403,
-      "sha256": "92fcea590114a110ef7db31412e12867489781460f5e05dbce63085e6941ec12"
+      "bytes": 115060,
+      "sha256": "ebf4b5b01daee9418866ac4723e2d46b113a67b55c568275a312f161e1d11a1d"
     },
     {
       "path": "assets/readme/wiki-world.jpg",
-      "bytes": 150736,
-      "sha256": "926b61c4adc60bbcc5ba27636592d2688fe193e17ed5ac0efabbd8309a5830db"
+      "bytes": 129576,
+      "sha256": "c044d31a645cd4507475008cc7b4952e15772cfd95430308b34a93cae86d41ec"
     },
     {
       "path": "validation/CASES.json",
@@ -215,8 +235,8 @@
     },
     {
       "path": "validation/release-status.json",
-      "bytes": 118607,
-      "sha256": "68a7fe11e29991fabbef5bab456386d567cbdba1f78e6e210974313c41b44396"
+      "bytes": 120366,
+      "sha256": "b695290ae951aa0c159659c8659ca710109cb2e571686b2416c6420742640ad7"
     },
     {
       "path": "windows/.gitattributes",

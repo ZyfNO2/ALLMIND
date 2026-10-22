@@ -143,7 +143,7 @@
       {
         "id": "source-binding",
         "status": "PASS",
-        "reason": "Current source, package and evidence identify the same inventory."
+        "reason": "Tested c50b7ae source snapshot, package and evidence identify the same inventory. This PASS does not bind the later documentationRefresh tree to a rebuilt package."
       },
       {
         "id": "blank-install",
@@ -173,7 +173,7 @@
       {
         "id": "file-integrity",
         "status": "PASS",
-        "reason": "Current complete package inventory and frozen source inventory; prior bit-for-bit package equality failed for rebuilt host EXE and was not used as evidence"
+        "reason": "Tested c50b7ae complete package inventory and frozen source inventory; documentationRefresh records the later docs/image delta separately. Prior bit-for-bit package equality failed for rebuilt host EXE and was not used as evidence."
       }
     ],
     "eligibleForLocalBeta": false,
@@ -218,7 +218,32 @@
       "status": "BLOCKED",
       "scope": "older process-directory recursive cleanup was rejected by automatic approval; retained, no bypass"
     },
-    "supplement": "User requested completing independently feasible tests; all selected new local checks passed. Physical/native input, real QQ recipients, selected-service inference quota and signing limits remain unchanged."
+    "supplement": "User requested completing independently feasible tests; all selected new local checks passed. Physical/native input, real QQ recipients, selected-service inference quota and signing limits remain unchanged.",
+    "sourceIdentityScope": "sourceHash/sourceFiles and validation/releaseGates describe the tested c50b7ae snapshot and its package. Current documentation-only tree identity is recorded separately in documentationRefresh; it has not been repackaged.",
+    "documentationRefresh": {
+      "date": "2026-10-22",
+      "status": "PASS",
+      "scope": "README, screenshot provenance, 15 README images and source/status metadata only; no production or dependency changes",
+      "baseTestedCommit": "c50b7ae1112c7a5c64aa7ff032a6ac7c675828ed",
+      "testedSourceHash": "78e8e01d2e22713035996b1214b2fb1ccb9fcbf68b995c0311846b4f9c0fe347",
+      "currentDocumentationSourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
+      "currentDocumentationSourceFiles": 1699,
+      "sourceExclusions": [
+        "validation/release-status.json",
+        "validation/source-manifest.json"
+      ],
+      "browserScreenshots": 13,
+      "wpfOffscreenRenders": 2,
+      "fixtureChatCalls": 1,
+      "fixtureWikiCalls": 1,
+      "realModelCalls": 0,
+      "pageErrors": 0,
+      "localLinkChecks": 25,
+      "imageHashChecks": 15,
+      "packageRebuilt": false,
+      "currentTreePackageAcceptance": "NOT_RUN",
+      "provenance": "Production browser UI in fresh isolated demo data; WPF production components rendered offscreen without native input; unretouched images checked against original captures. Not real-service or physical/native acceptance."
+    }
   },
   "publicReleaseNote": "Local portable package and installer/update/rollback/uninstall were verified. No GitHub Release, signing, unattended auto-update or new publication is claimed by this user-closure task. Historical Git/publication records are retained below.",
   "git": {
@@ -708,7 +733,7 @@
     "report": "CONNECTION-SETUP-REPAIR-20261018.md (local worker handover)"
   },
   "userAcceptance": "SCOPED_DEFECT_RECHECK_PASS_FULL_JOURNEY_NOT_REPEATED",
-  "currentValidation": "Authoritative current status: currentSummary. Older records are preserved history, not fresh beta.2 evidence.",
+  "currentValidation": "Authoritative tested product/package status: currentSummary, scoped to its tested sourceHash. Current README/image-only tree: currentSummary.documentationRefresh. Older records are preserved history, not fresh beta.2 evidence.",
   "closedTabRecovery": {
     "date": "2026-10-18",
     "status": "PASS",
