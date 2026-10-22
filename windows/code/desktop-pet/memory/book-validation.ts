@@ -117,6 +117,7 @@ export function validateFactSources(entries: BookEntry[], sources: WikiSource[])
 /** Shared by saved runtime config and the explicit draft model test; one source of binding truth. */
 export function validateModelBinding(model: ModelBinding): void {
   if (!model || typeof model !== 'object') throw new BookError('invalid_input', '模型绑定无效。');
+  if(model.imageInput!==undefined&&typeof model.imageInput!=='boolean')throw new BookError('invalid_input','API 图片输入设置无效。');
   if(model.structuredOutput!==undefined&&!['json-object','json-schema','prompt'].includes(model.structuredOutput))throw new BookError('invalid_input','结构化输出模式无效。');
   if (model.reasoningEffort !== undefined && !['low', 'medium', 'high'].includes(model.reasoningEffort)) throw new BookError('invalid_input', 'API reasoning effort 无效。');
   if (model.name !== undefined) text(model.name, 200, '来源名称');

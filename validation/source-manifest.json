@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-22T09:23:07.117Z",
-  "generatedBy": "ALLMIND OS-allocated fixture port closure",
+  "generatedAt": "2026-10-22T11:20:16.655Z",
+  "generatedBy": "ALLMIND screen-image supplement",
   "scope": "Current publishable source bytes; sourceHash excludes generated status/manifest pair. Tested current-source package and earlier snapshot identities are separately recorded in release-status.",
-  "sourceHash": "136452fe48fc4126c7361bc55fda599da465238ea6850c156ef36e9127fabac3",
+  "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a",
   "fileCount": 1700,
-  "totalBytes": 22945289,
+  "totalBytes": 22971138,
   "sourceSnapshot": {
     "repository": "Aika-Next（只读源仓库；本机路径不记录）",
     "branch": "aika-next",
@@ -40,8 +40,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 34885,
-      "sha256": "80eeeca02677f877586c90a238077e7b4ee76300eeeb305b7b14b7de42888d50"
+      "bytes": 35756,
+      "sha256": "36f956df06b3b69a7a77cdf737614ea17ba0d1c00613a351b4348e55d2093cca"
     },
     {
       "path": "Start-ALLMIND.vbs",
@@ -165,8 +165,8 @@
     },
     {
       "path": "validation/PRODUCT-COMPLETION.md",
-      "bytes": 6672,
-      "sha256": "22966de9a2653af7d496bde79ce043df227a69d07d285159717656dbc3327879"
+      "bytes": 7301,
+      "sha256": "5fb10555063f7c3dac01fc784a7335d241521d15d2e2e7170b88008c2ac54402"
     },
     {
       "path": "validation/PROMPT-PRESETS.md",
@@ -175,8 +175,8 @@
     },
     {
       "path": "validation/RUNBOOK.md",
-      "bytes": 15819,
-      "sha256": "b97d0a70328db0dcbfa0ad751d3e313c4b2f475f57326da6c5fa92e20b38e20f"
+      "bytes": 16069,
+      "sha256": "6aa9c863244190870c6a378e782f732b95fc33ae2a0bbbc62f26f49a3665a251"
     },
     {
       "path": "validation/UX-GRAPH.md",
@@ -235,8 +235,8 @@
     },
     {
       "path": "validation/release-status.json",
-      "bytes": 125893,
-      "sha256": "38833c5d6ca3027869ea32171e0ed20977241e0dd13872177ae0d15ed8caba5e"
+      "bytes": 137354,
+      "sha256": "7960f928257477c721851a6f7d50cd9545a612a5b58e6a40fced568ba70c1679"
     },
     {
       "path": "windows/.gitattributes",
@@ -720,8 +720,8 @@
     },
     {
       "path": "windows/code/desktop-pet/contracts/memory-book.ts",
-      "bytes": 18305,
-      "sha256": "10c0c80921a0ca10dd67b8857a4ed26338f5f396278a697b4631f3519d8a7460"
+      "bytes": 18327,
+      "sha256": "2c7fe8bd976e6a72d6bb79d611d8ac02d2f67fc12a21d9dc883359d0d5cb1c07"
     },
     {
       "path": "windows/code/desktop-pet/contracts/memory-dynamics.ts",
@@ -2260,8 +2260,8 @@
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/CharacterClient.tsx",
-      "bytes": 106504,
-      "sha256": "63b1d6ddc12b195cf69a9f90bc31350b3d04a660d24367c4049699ee4350acb7"
+      "bytes": 107403,
+      "sha256": "04a1b82508dfd5d86a3fd4aaed45bd2194c31ee4f94f650a8a546d6e618d1be1"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/MemoryBookApp.tsx",
@@ -2495,8 +2495,8 @@
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/ScreenContext.tsx",
-      "bytes": 4180,
-      "sha256": "f0f6c88d635c098e3d8c6b8a904fef0dc18e3ba6d9419fda9485eda5b637da93"
+      "bytes": 5558,
+      "sha256": "feb23468b9a1853e7dc01df83b347866c6a15e3331ec6dc6bd107d4fafd33df5"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/components/SelectiveSync.tsx",
@@ -2810,8 +2810,8 @@
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/hooks/useBookScreen.ts",
-      "bytes": 6550,
-      "sha256": "00056453db240d7693b40c52d912f1eaba25c304349cac4056b159de359581c6"
+      "bytes": 7233,
+      "sha256": "8593d479d1c58fa3b84a62173aa1e1f94c0494698cd8e7724faab48a6e9179d0"
     },
     {
       "path": "windows/code/desktop-pet/management/character-ui/src/hooks/useInteractionPresence.ts",
@@ -3500,8 +3500,8 @@
     },
     {
       "path": "windows/code/desktop-pet/memory/book-validation.ts",
-      "bytes": 26834,
-      "sha256": "ed9508f61368f30ecb2c6036259f53a2eae93f65796dc1dc1f406930cb8b21b0"
+      "bytes": 26978,
+      "sha256": "856f6e114264dafe7f3375a6056e25ccb843b60deb7d8ec03a6063af98bd6fbf"
     },
     {
       "path": "windows/code/desktop-pet/memory/book-writer-lock.ts",
@@ -4020,8 +4020,8 @@
     },
     {
       "path": "windows/code/desktop-pet/providers/book-model.ts",
-      "bytes": 11918,
-      "sha256": "07540b07dac1524f45d3f9bab7e6f183a74a41cae676f7d25333c4019010f3d7"
+      "bytes": 13117,
+      "sha256": "2ab978005be70d925ccb5c1b3a83bb746cfedb5f827d71e620e442ebeab24ab1"
     },
     {
       "path": "windows/code/desktop-pet/providers/character-distiller.ts",
@@ -5300,8 +5300,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/book-screen.browser.test.mjs",
-      "bytes": 8584,
-      "sha256": "5dcbbb202eb1408853bd39f4f14c283e70e35f7ebffef92f9a5cbeea14bc9957"
+      "bytes": 14820,
+      "sha256": "0db963224d53c3a8986d6dc2cf27787e494de237bfd6d8fa2e035abed3a37dfe"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/book-screen.test.ts",
@@ -5340,8 +5340,8 @@
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/character-client.test.ts",
-      "bytes": 22424,
-      "sha256": "17b1cf8b41dc5583225b21679495a0ddbde66aa4513a077ebebb679406bee056"
+      "bytes": 24501,
+      "sha256": "8b15805bfa8808e4d5731686359c392f96d9cda3b42c02bdc80f4dc9363167a9"
     },
     {
       "path": "windows/code/desktop-pet/tests/memory-book/character-intelligence.browser.test.mjs",

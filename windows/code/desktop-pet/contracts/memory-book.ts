@@ -108,7 +108,7 @@ export interface ChatMessage { role: 'system' | 'user' | 'assistant'; content: s
  * selector — the browser account itself is declared by `RuntimeConfig.chatgptWeb`).
  */
 export type ModelBindingKind = 'http' | 'chatgpt-web';
-export interface ModelBinding { name?: string; kind?: ModelBindingKind; baseUrl: string; model: string; credentialId: string; inputTokens: number; outputTokens: number; reasoningEffort?: 'low' | 'medium' | 'high';structuredOutput?:'json-object'|'json-schema'|'prompt' }
+export interface ModelBinding { name?: string; kind?: ModelBindingKind; baseUrl: string; model: string; credentialId: string; inputTokens: number; outputTokens: number; imageInput?: boolean; reasoningEffort?: 'low' | 'medium' | 'high';structuredOutput?:'json-object'|'json-schema'|'prompt' }
 /**
  * ChatGPT web source instance (RPD_CHAT_WIKI §2.2/§6): the user's own logged-in browser
  * context. AIKI only launches the two allowlisted tools against it and never owns or kills

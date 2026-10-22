@@ -26,8 +26,16 @@ export interface BookModelPort {
 /** OpenAI-compatible transport; explicit binding only, no redirects or provider fallback. */
 export class BookHttpModel implements BookModelPort {
   constructor(private readonly credential: (id: string) => Promise<string>, private readonly transport: typeof fetch = fetch) {}
-  async complete(binding: ModelBinding, messages: ChatMessage[], signal: AbortSignal, options: ModelCallOptions = {}): Promise<string> {
+  capabilities(binding:ModelBinding):ResourceCapabilities{return {outputFiles:'unavailable',inputImages:binding.imageInput===true?'available':'unavailable',...(binding.imageInput===true?{}:{reason:'请先确认服务和模型支持图片，并在 API 模型设置中启用图片输入。'})};}
+  async completeRich(binding:ModelBinding,messages:ChatMessage[],signal:AbortSignal,options:RichModelCallOptions={}):Promise<RichModelResult>{
+    const text=await this.complete(binding,messages,signal,options);
+    return {text,requestId:'',conversationId:null,messageId:null,artifacts:[],artifactDiscovery:'unsupported'};
+  }
+  async complete(binding: ModelBinding, messages: ChatMessage[], signal: AbortSignal, options: RichModelCallOptions = {}): Promise<string> {
     signal.throwIfAborted();
+    const images=options.images??[];
+    if(images.length&&(binding.imageInput!==true||messages.at(-1)?.role!=='user'))throw new BookError('unavailable','此 API 未启用图片输入或缺少本轮用户消息，未发送；不会自动移除图片。');
+    const outgoing=images.length?messages.map((message,index)=>index===messages.length-1?{...message,content:[{type:'text',text:message.content},...images.map(image=>({type:'image_url',image_url:{url:`data:${image.mime};base64,${Buffer.from(image.bytes).toString('base64')}`}}))]}:message):messages;
     const apiKey = options.apiKey ? options.apiKey : await this.credential(binding.credentialId);
     signal.throwIfAborted();
     const url = new URL(binding.baseUrl);
@@ -36,7 +44,7 @@ export class BookHttpModel implements BookModelPort {
     if(options.json&&binding.structuredOutput==='json-schema'&&!options.jsonSchema)throw new BookError('invalid_input','当前操作没有提供JSON Schema，请为该用途使用JSON对象模式。');
     const response = await this.transport(endpoint, { method: 'POST', signal, redirect: 'error', headers: {
       'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-    }, body: JSON.stringify({ model: binding.model, messages, stream: false, max_tokens: binding.outputTokens,
+    }, body: JSON.stringify({ model: binding.model, messages:outgoing, stream: false, max_tokens: binding.outputTokens,
       ...(options.purpose==='reply'?options.promptCompilation?.parameters:{}),
       ...(options.json&&binding.structuredOutput!=='prompt' ? { response_format: binding.structuredOutput==='json-schema'?{type:'json_schema',json_schema:{name:'allmind_wiki',strict:true,schema:strictOutputSchema(options.jsonSchema!)}}:{ type: 'json_object' } } : {}),
       ...(binding.reasoningEffort ? { reasoning_effort: binding.reasoningEffort } : {}) }) });

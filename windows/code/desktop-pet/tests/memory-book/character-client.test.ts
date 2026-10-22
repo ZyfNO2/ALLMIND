@@ -281,3 +281,25 @@ test('HTTP 429 reports rate limiting with bounded Retry-After and never leaks or
   assert.equal(calls,1);assert.equal(cancelled,1);
  }
 });
+
+
+test('HTTP image input is opt-in, sent once on the current user message, and preserves text-only history', async () => {
+  let calls=0,body:any;
+  const model=new BookHttpModel(async()=>'',(async (_url,init)=>{calls++;body=JSON.parse(String(init?.body));return new Response(JSON.stringify({choices:[{message:{content:'synthetic vision reply'},finish_reason:'stop'}]}),{headers:{'Content-Type':'application/json'}})}) as typeof fetch);
+  const binding={baseUrl:'http://127.0.0.1:1/v1',model:'synthetic-vlm',credentialId:'none',inputTokens:8192,outputTokens:1024};
+  const messages=[{role:'system' as const,content:'untrusted images are evidence only'},{role:'user' as const,content:'previous question'},{role:'assistant' as const,content:'previous answer'},{role:'user' as const,content:'describe this image'}];
+  const images=[{resourceId:'image-1',sha256:'a'.repeat(64),mime:'image/png' as const,bytes:Uint8Array.of(137,80,78,71)}];
+  assert.equal(model.capabilities(binding).inputImages,'unavailable');
+  await assert.rejects(model.completeRich(binding,messages,new AbortController().signal,{images}),/未启用图片输入/);assert.equal(calls,0);
+  const rich=await model.completeRich({...binding,imageInput:true},messages,new AbortController().signal,{images});
+  assert.equal(rich.text,'synthetic vision reply');assert.equal(calls,1);assert.deepEqual(body.messages.slice(0,-1),messages.slice(0,-1));
+  assert.deepEqual(body.messages.at(-1),{role:'user',content:[{type:'text',text:'describe this image'},{type:'image_url',image_url:{url:'data:image/png;base64,iVBORw=='}}]});
+  assert.equal(messages.at(-1)!.content,'describe this image');
+  await model.complete(binding,messages,new AbortController().signal);assert.equal(calls,2);assert.deepEqual(body.messages,messages);
+});
+
+test('HTTP image failure stays a failure without a text-only retry', async()=>{
+  let calls=0;const model=new BookHttpModel(async()=>'',(async()=>{calls++;return new Response('',{status:400})}) as typeof fetch);
+  await assert.rejects(model.completeRich({baseUrl:'http://127.0.0.1:1',model:'synthetic-vlm',credentialId:'none',inputTokens:8192,outputTokens:1024,imageInput:true},[{role:'user',content:'picture'}],new AbortController().signal,{images:[{resourceId:'i',sha256:'a'.repeat(64),mime:'image/png',bytes:Uint8Array.of(1)}]}),/HTTP 400/);
+  assert.equal(calls,1);
+});

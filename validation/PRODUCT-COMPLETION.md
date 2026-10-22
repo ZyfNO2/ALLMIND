@@ -12,7 +12,7 @@
 | 更正/忘记/撤销来源 | 保留可追溯修订，派生/索引/召回按有效依据重算；擦除原文同时使对应迁移副本不可恢复 | fact / privacy / synthesis / erase / recall 核心组 |
 | 选场景/配模型/查花费 | 输入区场景选择、设置独立预设/模型/域/预算；实际回执显示本地估算，金额未知；失败不换模型 | dialogue-routing、product-controls.browser |
 | RP/主动打扰 | RP 不自动写真实记忆；显式记住为故事；presence/default RP 抑制主动打扰；频率/暂停/冷却/免打扰配置 | companion-proactive、proactive-frequency、interaction-presence |
-| 授权感知/不知道就不知道 | 来源许可、单帧预览、本地 OCR、每轮发送确认；无权限/锁屏/未知不推测内容 | book-screen、screen 核心与浏览器；真实系统选择器由用户手测 |
+| 授权感知/不知道就不知道 | 来源许可、单帧预览、图片直发或本地 OCR、每轮发送确认；无权限/锁屏/未知不推测内容 | book-screen、screen 核心与浏览器；真实系统选择器由用户手测 |
 | 检查坏在哪/导出诊断 | 诊断本地与可选模型列表；不推理不发外部信；下载只含固定诊断字段 | dialogue-routing、product-controls.browser |
 | 文件/图像/转写 | 统一来源/权限/读取状态；转写回执绑定文字区间和会话，过期不能冒充新识别；不保存音频 | local-voice、resources、media、product-controls.browser |
 | 语音设备/打断/分段 | 此浏览器保存设备；精确输入约束/输出 sink；无损句段与下一段预取；停止取消待播 | speech-chunks、local-voice、product-controls.browser；设备为合成接口 |
@@ -38,4 +38,7 @@
 
 空白安装、升级、真实服务、恢复、安全、文件完整性分别记录并绑定源码；fixture 不可通过真实服务门槛，程序回退不可代替数据回滚。发布包不含个人角色知识、密钥、会话或登录态；开源静态角色图片按独立素材声明分发。
 
-真实鼠标/触摸、中文 IME、系统选择器、全屏/锁屏/睡眠、物理麦克风/扬声器的体验仍由用户手工验收（NOT_RUN），自动组件不能替代。签名与 SmartScreen 信誉按已确认范围 DEFERRED，未发布公开 Release。无签名、自动云同步、原生手机客户端、官方 QQ bot、模型 token 连续语音流均不在当前实现能力里。PR 不合并。
+真实鼠标/触摸、中文 IME、系统选择器、全屏/锁屏/睡眠仍由用户手工验收（NOT_RUN），自动组件不能替代。物理麦克风/扬声器、噪声、设备切换及听感验收按用户本轮要求后置（DEFERRED），未视为通过。签名与 SmartScreen 信誉按已确认范围 DEFERRED，未发布公开 Release。无签名、自动云同步、原生手机客户端、官方 QQ bot、模型 token 连续语音流均不在当前实现能力里。PR 不合并。
+
+
+2026-10-22 屏幕图片小补：预览后可分别确认本地 OCR 或保存原图为本轮图片附件，均需手动发送。GPT 网页仅支持传图的内嵌来源；API 显式开启 imageInput 后才允许发送 OpenAI-compatible 图片内容，未开启或请求失败时不移除图片重试。原图在本地会话资料中保留；移除选择不删除副本，无痕会话不提供此保存入口。真实服务识图与系统选择器仍为 NOT_RUN。最新自动验证见 currentSummary.screenImageSupplement。

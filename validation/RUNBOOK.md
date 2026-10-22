@@ -13,6 +13,8 @@
 
 ## beta.2 当前增量
 
+屏幕图片增量：`book-screen.browser.test.mjs` 包括截图确认、OCR 旁路、手动发送、单轮附件与禁用能力拒绝；`character-client.test.ts` 验证 API 图片编码和失败不重发。均为合成画面／受控模型，不证明真实 VLM 识图。真实系统来源选择器仍 NOT_RUN；物理麦克风／扬声器及设备效果按用户要求 DEFERRED。
+
 2026-10-22 可自主补测：新增 `qq-http-acceptance.test.ts`，从实际 OneBot WS 贯穿生产 HTTP 适配器，模型端为本机 fixture；核心全组 515/515。Win32 observer、通知边界和独立透明窗口桌面模式已加入 CI；没有模拟真实输入/锁屏/睡眠。Windows 中文语音及中英/空白图 OCR 的本机补测单独记录，不能据此声称 GitHub Runner 装有相同语言组件。
 
 ```powershell
