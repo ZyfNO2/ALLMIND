@@ -1,0 +1,6 @@
+name: astrbot_plugin_allmind
+display_name: ALLMIND Wiki / Preset
+desc: Scoped Wiki, ordered Preset contexts, and durable final-turn receipts.
+version: 0.2.0
+author: ALLMIND
+repo: ""

@@ -7,15 +7,18 @@ type ScreenJob={key:string;characterId:string;sessionId:string;controller:AbortC
 export function useBookScreen(characterId:string,sessionId:string,page:string,blocked:string[],onClear:()=>void){
  const key=JSON.stringify([characterId,sessionId,page,blocked]),current=useRef(key);current.current=key
  const callbacks=useRef(onClear);callbacks.current=onClear
- const jobRef=useRef<ScreenJob>(),[phase,setPhase]=useState<Phase>('idle'),[error,setError]=useState(''),[preview,setPreview]=useState(''),[observation,setObservation]=useState<BookScreenObservation>(),[selected,setSelected]=useState(false),[used,setUsed]=useState(false)
+ const jobRef=useRef<ScreenJob>(),[phase,setPhase]=useState<Phase>('idle'),[error,setError]=useState(''),[preview,setPreview]=useState(''),[observation,setObservation]=useState<BookScreenObservation>(),[selected,setSelected]=useState(false),[used,setUsed]=useState(false),[installed,setInstalled]=useState(true)
  const route=(path:string)=>path+'?'+new URLSearchParams({characterId,sessionId})
  const [imageAdded,setImageAdded]=useState(false)
  function release(pagehide=false){const job=jobRef.current;jobRef.current=undefined;if(!job)return;job.controller.abort();job.stream?.getTracks().forEach(track=>track.stop());if(job.url)URL.revokeObjectURL(job.url);clearTimeout(job.expiry);if(job.id&&pagehide)releaseScreenObservation(job.characterId,job.sessionId,job.id);else if(job.id)void api('/screen/observations/'+job.id+'?'+new URLSearchParams({characterId:job.characterId,sessionId:job.sessionId}),{method:'DELETE',body:{}}).catch(failure=>{if((failure as {status?:number}).status!==404)console.error('屏幕观察清除失败',failure instanceof Error?failure.name:'network_error')});job.blob=undefined;callbacks.current()}
  function clear(){release();setPhase('idle');setPreview('');setObservation(undefined);setSelected(false);setUsed(false);setImageAdded(false);setError('')}
  useEffect(()=>{setImageAdded(false);setPhase('idle');setPreview('');setObservation(undefined);setSelected(false);setUsed(false);setError('');const leave=()=>release(true);window.addEventListener('pagehide',leave);return()=>{window.removeEventListener('pagehide',leave);release()}},[key])
+ useEffect(()=>{const controller=new AbortController();void api<{installed?:boolean}>(route('/screen/capabilities'),{signal:controller.signal}).then(row=>{if(row.installed===false)setInstalled(false)}).catch(()=>{});return()=>controller.abort()},[characterId,sessionId])
  function fail(job:ScreenJob,failure:unknown){if(jobRef.current!==job||current.current!==key)return;release();setPhase('idle');setPreview('');setObservation(undefined);setSelected(false);setError(failure instanceof DOMException&&failure.name==='NotAllowedError'?'没有授权屏幕来源，未采集或上传画面。':failure instanceof Error?failure.message:String(failure))}
  async function choose(){
   if(phase==='selecting'||phase==='recognizing')return
+  const caps=await api<{installed?:boolean}>(route('/screen/capabilities'))
+  if(caps.installed===false){setInstalled(false);setError('屏幕模块未安装，没有截屏入口。');return}
   clear();const job:ScreenJob={key,characterId,sessionId,controller:new AbortController()};jobRef.current=job;setPhase('selecting')
   try{
    if(!navigator.mediaDevices?.getDisplayMedia)throw Error('当前浏览器不支持屏幕来源选择，请在本机 Chrome 或 Edge 中打开管理页。')
@@ -59,5 +62,5 @@ export function useBookScreen(characterId:string,sessionId:string,page:string,bl
   }catch(failure){fail(job,failure)}
  }
  const valid=jobRef.current?.key===key
- return {phase:valid?phase:'idle' as Phase,error,imageAdded,preview:valid?preview:'',observation:valid?observation:undefined,selected:valid&&selected,used:valid&&used,clear,choose,recognize,attachImage,setSelected,markUsed:()=>{setSelected(false);setUsed(true)},busy:phase==='selecting'||phase==='recognizing'||phase==='attaching',inputId:valid&&selected&&!used?observation?.id:undefined}
+ return {installed,phase:valid?phase:'idle' as Phase,error,imageAdded,preview:valid?preview:'',observation:valid?observation:undefined,selected:valid&&selected,used:valid&&used,clear,choose,recognize,attachImage,setSelected,markUsed:()=>{setSelected(false);setUsed(true)},busy:phase==='selecting'||phase==='recognizing'||phase==='attaching',inputId:valid&&selected&&!used?observation?.id:undefined}
 }

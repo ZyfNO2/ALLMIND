@@ -1,0 +1,23 @@
+{
+  "provider_sources": [{
+    "id": "allmind-text-source",
+    "type": "openai_chat_completion",
+    "api_base": "http://127.0.0.1:<ALLMIND_PORT>/api/memory-book/v1/gpt-text/v1",
+    "key": ["<DEDICATED_TEXT_ENDPOINT_KEY>"],
+    "timeout": 180,
+    "request_max_retries": 1
+  }],
+  "provider": [{
+    "id": "allmind-gpt-text",
+    "type": "openai_chat_completion",
+    "provider_source_id": "allmind-text-source",
+    "model": "allmind-gpt-text",
+    "modalities": ["text"],
+    "enable": true
+  }],
+  "agent_runner": {"config": {"model": {
+    "provider_id": "allmind-gpt-text",
+    "streaming_response": false,
+    "request_max_retries": 1
+  }}}
+}

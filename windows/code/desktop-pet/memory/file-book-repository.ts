@@ -351,6 +351,7 @@ export class FileBookRepository implements BookRepository, RuntimeRepository {
     if (turn.characterId !== scope.characterId || turn.pairingId !== scope.pairingId || turn.sessionId !== scope.sessionId || typeof turn.user !== 'string' || typeof turn.assistant !== 'string' || turn.user.length > 16000 || turn.assistant.length > 200000 || !Number.isFinite(Date.parse(turn.timestamp))) throw new BookError('invalid_input', '聊天记录作用域/内容无效。');
     if(turn.screenObservation!==undefined)validateScreenReceipt(turn.screenObservation);
     if(turn.dialogue!==undefined)validateDialogueReceipt(turn.dialogue);
+    if(turn.externalDialogue!==undefined){const scene=turn.externalDialogue;if(!scene||!['inherit','auto','smart','quick','rp'].includes(scene.requested)||!['smart','quick','rp'].includes(scene.mode)||scene.memoryDomain!==(scene.mode==='rp'?'fiction':scene.mode==='quick'?'core-only':'all'))throw new BookError('invalid_input','外部场景回执无效。');}
     if(turn.contents!==undefined)validateMessageContents(turn.contents);
     if(turn.transcript!==undefined){validateTextTranscript(turn.transcript,turn.user);const row=turn.transcript;if(digest(turn.user.slice(row.start,row.end))!==row.sha256)throw new BookError('invalid_input','转写正文与来源回执不一致。');}
     if(turn.replySurface!==undefined&&turn.replySurface!=='bubble')throw new BookError('invalid_input','回复场景无效。');

@@ -14,12 +14,13 @@ type Stage='idle'|'opening'|'recording'|'recognizing'|'generating'|'playing'
 export function useLocalVoice(characterId:string,sessionId:string,page:string,settings:BookVoiceSettings|undefined,onTranscript:(text:string,receipt?:Omit<TextTranscriptReceipt,'start'|'end'>)=>void){
  const value=settings??DEFAULT_BOOK_VOICE,key=JSON.stringify([characterId,sessionId,page,value]),current=useRef(key);current.current=key
  const callback=useRef(onTranscript);callback.current=onTranscript
- const [stage,setStage]=useState<Stage>('idle'),[error,setError]=useState('')
+ const [stage,setStage]=useState<Stage>('idle'),[error,setError]=useState(''),[installed,setInstalled]=useState(true)
  const active=useRef<VoiceJob>()
  function release(){const job=active.current;active.current=undefined;if(!job)return;clearTimeout(job.timer);job.controller.abort();job.capture?.stop();if(job.audio){job.audio.pause();job.audio.removeAttribute('src');job.audio.load()}if(job.url)URL.revokeObjectURL(job.url)}
  function stop(){release();setStage('idle')}
  useEffect(()=>{setStage('idle');setError('');return release},[key])
  useEffect(()=>{window.addEventListener('allmind-voice-device-change',stop);return()=>window.removeEventListener('allmind-voice-device-change',stop)},[])
+ useEffect(()=>{const controller=new AbortController();void api<{installed?:boolean}>('/voice/capabilities',{signal:controller.signal}).then(row=>{if(row.installed===false)setInstalled(false)}).catch(()=>{});return()=>controller.abort()},[characterId,sessionId])
  const route=(path:string)=>path+'?'+new URLSearchParams({characterId,sessionId})
  function fail(job:VoiceJob,failure:unknown){if(active.current!==job||current.current!==key)return;release();setStage('idle');setError(failure instanceof CaptureError&&failure.failure.code==='permission_denied'?'麦克风权限未开启，请在浏览器或 Windows 隐私设置中允许后重试。':failure instanceof Error?failure.message:String(failure))}
  async function finish(){
@@ -36,7 +37,7 @@ export function useLocalVoice(characterId:string,sessionId:string,page:string,se
  // Keep the timer bound to the current recording, not a stale render's stage.
  const finishRef=useRef(finish);finishRef.current=finish
  async function record(){
-  if(!value.enabled||active.current)return
+  if(!installed||!value.enabled||active.current)return
   const job={controller:new AbortController()} as VoiceJob;active.current=job;setError('');setStage('opening')
   try{const preference=readVoiceDevices(),driver=new BrowserCaptureDriver({deviceId:preference.input,cameraEnabled:false,sampleRate:16000,cameraWidth:320,jpegQuality:0.7,maxBufferedSamples:48000*17,workletModuleUrl:new URL('../../../../media/recorder-worklet.mjs',import.meta.url)})
    const capture=await driver.open(AbortSignal.any([job.controller.signal,AbortSignal.timeout(20000)]))
@@ -66,5 +67,5 @@ export function useLocalVoice(characterId:string,sessionId:string,page:string,se
    if(active.current===job){release();setStage('idle')}
   }catch(failure){fail(job,failure)}
  }
- return {stage,error,enabled:value.enabled,active:stage!=='idle',record,finish,stop,speak,newReply:(text:string)=>{if(value.enabled&&value.autoRead)void speak(text)}}
+ return {stage,error,installed,enabled:value.enabled,active:stage!=='idle',record,finish,stop,speak,newReply:(text:string)=>{if(installed&&value.enabled&&value.autoRead)void speak(text)}}
 }

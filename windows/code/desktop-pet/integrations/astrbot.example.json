@@ -1,0 +1,7 @@
+{
+  "execution": "local",
+  "baseUrl": "http://127.0.0.1:6185",
+  "credentialId": "astrbot-openapi",
+  "configId": null,
+  "instanceId": "astrbot-local"
+}

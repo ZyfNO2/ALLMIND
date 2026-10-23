@@ -1,0 +1,5 @@
+{
+  "enabled": false,
+  "credentialId": "gpt-text-token",
+  "note": "启用后只暴露文本补全。tools、tool_choice、流式和非文本内容会被拒绝，不会改走 BookRuntime.chat。"
+}

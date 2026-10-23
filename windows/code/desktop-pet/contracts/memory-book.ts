@@ -182,6 +182,8 @@ export interface RuntimeConfig {
 }
 export interface SavedTurn {screenObservation?:import('./book-screen.js').BookScreenReceipt; id: string; characterId: string; pairingId: string; sessionId: string; timestamp: string; user: string; assistant: string; traceId: string; incognito?: true;replyLength?:import('./reply-length.js').ReplyLengthResult; /** B03: the frozen style decision that governed this turn. */ replyStyleDecision?:import('./reply-length.js').ReplyStyleDecision;
   dialogue?:import('./book-dialogue.js').DialogueReceipt;
+  /** External execution preserves scene/domain without claiming upstream model usage or budgets. */
+  externalDialogue?:{requested:import('./book-dialogue.js').DialogueMode|'inherit';mode:'smart'|'quick'|'rp';memoryDomain:import('./book-dialogue.js').DialogueMemoryDomain};
   contents?:import('./book-message.js').MessageContent[];
   transcript?:import('./book-message.js').TextTranscriptReceipt;
   promptPreset?:{id:string;revision:number;documentHash:string};
@@ -267,7 +269,7 @@ export interface SemanticSearchPort {
   search(scope: BookScope, query: string, limits: RecallLimits, signal: AbortSignal): Promise<Candidate[]>;
 }
 export class BookError extends Error {
-  constructor(public code: 'invalid_input' | 'conflict' | 'corrupt_data' | 'not_found' | 'budget' | 'unavailable' | 'busy', message: string, options?: ErrorOptions) {
+  constructor(public code: 'invalid_input' | 'conflict' | 'corrupt_data' | 'not_found' | 'budget' | 'unavailable' | 'busy' | 'forbidden', message: string, options?: ErrorOptions) {
     super(message, options); this.name = 'BookError';
   }
 }

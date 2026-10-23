@@ -1,0 +1,12 @@
+{
+  "allmind_base_url": {
+    "description": "本机 ALLMIND 能力地址",
+    "type": "string",
+    "default": "http://127.0.0.1:3927"
+  },
+  "capability_token": {
+    "description": "能力令牌，不使用管理令牌",
+    "type": "string",
+    "default": ""
+  }
+}

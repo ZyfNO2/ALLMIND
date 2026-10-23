@@ -1,9 +1,13 @@
 import {BookError,type BookScope,type RuntimeConfig} from '../contracts/memory-book.js';
 import {DIALOGUE_MODES,type DialogueMode,type DialogueDecision} from '../contracts/book-dialogue.js';
-export function dialogueRoute(base:RuntimeConfig,scope:BookScope,query:string,requested:DialogueMode|'inherit'='inherit'):{config:RuntimeConfig;decision:DialogueDecision}{
+export function dialogueChoice(base:RuntimeConfig,query:string,requested:DialogueMode|'inherit'='inherit'):{choice:DialogueMode;mode:'smart'|'quick'|'rp'}{
  if(!['inherit',...DIALOGUE_MODES].includes(requested))throw new BookError('invalid_input','场景模式须为 Auto / Smart / Quick / RP 或沿用设置。');
  const configured=base.dialogueRouting,choice=requested==='inherit'?configured?.defaultMode??(base.recall.mode==='story-rp'?'rp':'smart'):requested;
  const mode=choice==='auto'?(/^\/rp(?:\s|$)/i.test(query)?'rp':/^(?:你好|早上好|晚上好|晚安|嗨|hi|hello|谢谢|thanks)[!！。,.，?？\s]*$/i.test(query.trim())?'quick':'smart'):choice;
+ return {choice,mode};
+}
+export function dialogueRoute(base:RuntimeConfig,scope:BookScope,query:string,requested:DialogueMode|'inherit'='inherit'):{config:RuntimeConfig;decision:DialogueDecision}{
+ const {choice,mode}=dialogueChoice(base,query,requested),configured=base.dialogueRouting;
  const profile=configured?.profiles[mode],config=structuredClone(base),role=config.characters.find(row=>row.id===scope.characterId);
  if(!role)throw new BookError('not_found','场景路由角色不存在。');
  const legacy=!configured&&requested==='inherit';
