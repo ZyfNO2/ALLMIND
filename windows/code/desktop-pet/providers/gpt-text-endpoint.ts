@@ -5,7 +5,7 @@ export interface GptTextPort {
   complete(messages: GptTextMessage[], signal: AbortSignal): Promise<{text: string; requestId: string}>;
 }
 
-export interface GptTextEndpoint { token: string; port: GptTextPort }
+export interface GptTextEndpoint { token: string | (() => Promise<string>); port: GptTextPort }
 
 /** OpenAI-compatible text subset. tools, streaming and non-text parts are rejected before the bridge runs. */
 export async function handleGptText(route: string, method: string, body: Record<string, unknown>, endpoint: GptTextEndpoint, signal: AbortSignal): Promise<{status: number; body: unknown} | undefined> {
@@ -25,8 +25,11 @@ export async function handleGptText(route: string, method: string, body: Record<
     const message = row as Record<string, unknown>;
     if(message.tool_calls!==undefined||message.function_call!==undefined||message.tool_call_id!==undefined)return {status:400,body:{error:{code:'tools_unsupported',message:'工具消息不能改写成普通文本。'}}};
     if (message.role !== 'system' && message.role !== 'user' && message.role !== 'assistant') return {status: 400, body: {error: {code: 'invalid_input', message: '只接受 system、user、assistant 文本消息。'}}};
-    if (typeof message.content !== 'string') return {status: 400, body: {error: {code: 'invalid_input', message: '不支持的消息内容类型已拒绝，没有丢弃后继续。'}}};
-    messages.push({role: message.role, content: message.content});
+    let content=message.content;
+    // AstrBot/OpenAI text parts remain text. Never discard an unsupported part.
+    if(Array.isArray(content)&&content.length>0&&content.every(part=>part&&typeof part==='object'&&!Array.isArray(part)&&part.type==='text'&&typeof part.text==='string'&&Object.keys(part).every(key=>key==='type'||key==='text')))content=content.map(part=>part.text).join('\n');
+    if (typeof content !== 'string') return {status: 400, body: {error: {code: 'invalid_input', message: '不支持的消息内容类型已拒绝，没有丢弃后继续。'}}};
+    messages.push({role: message.role, content});
   }
   try {
     const result = await endpoint.port.complete(messages, signal);

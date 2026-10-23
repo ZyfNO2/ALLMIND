@@ -28,3 +28,8 @@ export function installedModules():Record<string,string>{
   }
   return result;
 }
+
+/** Active entries and installed-but-disabled descriptors are different product states. */
+export function moduleStates(active:Record<string,string>):Record<string,{installed:boolean;enabled:boolean}>{
+  return Object.fromEntries(['voice','screen','tools'].map(id=>[id,{installed:existsSync(join(moduleRoot(),id,'module.json')),enabled:Boolean(active[id])}]));
+}

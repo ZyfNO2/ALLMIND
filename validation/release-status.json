@@ -1,5 +1,132 @@
 {
-  "astrbotIntegration": {"date":"2026-10-23","status":"BLOCKED","implementation":"PASS","baseline":"AstrBot v4.29.1","targetedTests":11,"priorFullRegressionTests":527,"fullRegressionProvenance":"Before final scene-routing addition; final targeted 11 rerun PASS","packages":["desktop-lite","desktop-astrbot","server-core"],"fixtureIntegration":"PASS: two-turn Preset, current message once, one final record","ui":"PASS","coldBuild":"PASS: isolated npm ci + full WPF build; before final scene-routing addition","liveQQ":"BLOCKED","liveGptWeb":"BLOCKED","crossHostACP":"BLOCKED","guide":"windows/code/desktop-pet/integrations/README.md","publicRelease":"NOT_RELEASED"},
+  "astrbotIntegration": {
+    "date": "2026-10-23",
+    "status": "BLOCKED",
+    "implementation": "PASS",
+    "baseline": "AstrBot v4.29.1",
+    "reviewBaseline": "3233e50529ef7f9a75766a41de48006931b858ba",
+    "reviewFindingsFixed": 10,
+    "packages": [
+      "desktop-lite",
+      "desktop-astrbot",
+      "server-core"
+    ],
+    "targetedTests": 16,
+    "fullRegressionTests": 533,
+    "fullRegressionProvenance": "Fresh final-source 533/533 PASS in memory-book-final-module.log. Earlier ready-timeout failure retained in memory-book-final.log; no timeout/assertion relaxation.",
+    "build": {
+      "status": "PASS",
+      "backend": true,
+      "managementUI": true
+    },
+    "fixtureIntegration": {
+      "status": "PASS",
+      "scope": "Prior 3233e50 two-turn AstrBot/Preset HTTP fixture evidence retained; not represented as a new final-package run."
+    },
+    "ui": {
+      "status": "PASS",
+      "scope": "Fresh installed-but-disabled Voice versus absent Screen/Tools display; no record button and zero pageerror.",
+      "evidence": "module-ui-result.json"
+    },
+    "moduleLifecycle": {
+      "status": "PASS",
+      "scope": "Fresh Voice installed/enabled/disabled/uninstalled state regression and final server-core with external Screen capability probe. Earlier screen/tools full lifecycle remains historical."
+    },
+    "packageLifecycle": {
+      "status": "PASS",
+      "checks": 10,
+      "model": "controlled local HTTP fixture",
+      "modelCalls": 1,
+      "scope": "Final Lite install, update refusal, trusted AstrBot update, persisted replay after upgrade and rollback, prune preview and uninstall preserving data.",
+      "evidence": "package-lifecycle-result.json"
+    },
+    "serverCoreDeployment": {
+      "status": "PASS",
+      "mode": "standalone directory deployment",
+      "baseChecks": 13,
+      "withScreenChecks": 14,
+      "scope": "No WPF/Electron or desktop installer entry points; Start-Server.cmd precondition, real backend/API/UI and optional Screen probe.",
+      "evidence": [
+        "server-smoke-result.json",
+        "server-screen-module-result.json"
+      ]
+    },
+    "installerRegression": {
+      "status": "PASS",
+      "tests": 16,
+      "evidence": "installer-final.log"
+    },
+    "mcpBridge": {
+      "status": "PASS",
+      "scope": "Prior 3233e50 local stdio prepare_task/task_status acceptance retained; not a fresh cross-host result."
+    },
+    "pluginVersion": "0.2.0",
+    "coldBuild": {
+      "status": "NOT_RUN",
+      "scope": "No dependency changes in this review; prior isolated npm ci/WPF build remains historical."
+    },
+    "liveGptWeb": {
+      "status": "PASS",
+      "fixture": false,
+      "answer": "ASTRBOT_REVIEW_OK",
+      "durationMs": 8216,
+      "chatRequests": 1,
+      "titleRequests": 0,
+      "webSubmissions": 1,
+      "toolRequests": 0,
+      "automaticRetries": 0,
+      "newRecords": 1,
+      "generation": "completed",
+      "delivery": "unknown",
+      "packageManifestSha256": "554c6d8edfb6322a7b6cdf3f5308a43d4ae6a391848c4e5bb131ef078a6ab01e",
+      "scope": "Final directory package Node/backend + Electron runtime/page host in an isolated acceptance harness; not WPF shell",
+      "evidence": "live-final-result.json",
+      "provenance": "Final directory-package runtime via a private acceptance host; no installed WPF shell claim. Earlier source pass separately counted one title request. Original failures retained."
+    },
+    "liveQQ": "BLOCKED",
+    "crossHostACP": "BLOCKED",
+    "remaining": [
+      {
+        "id": "liveQQ",
+        "status": "BLOCKED",
+        "reason": "No configured/authorized QQ platform and running logged-in NapCat in this isolated AstrBot instance. Historical direct QQ evidence is a different route."
+      },
+      {
+        "id": "crossHostACP",
+        "status": "BLOCKED",
+        "reason": "No authorized second host or tunnel target supplied. A loopback MCP test cannot establish cross-host ACP acceptance."
+      }
+    ],
+    "privacy": {
+      "status": "PASS",
+      "scope": "Exact isolated acceptance keys/password scanned in source and final packages, UTF-8/UTF-16LE; explicit runtime-state filename checks. Values never reported.",
+      "sourceFiles": 1723,
+      "packageFiles": 3584,
+      "evidence": "privacy-report.json"
+    },
+    "reviewedSourceHash": "a0a94cfea710264453bd6d696ad2e2f0df30f82b5d9f8fe0e07bcb62aa633f4c",
+    "reviewedSourceScope": "Actual workspace snapshot, including inherited documentation changes; excludes release-status/source-manifest and untracked runtime data. See local reviewed-source-inventory.json; not a Git-tree hash.",
+    "finalPackages": {
+      "lite": {
+        "manifestSha256": "cdebec589c9a2e8b5df762d39c3fdc2ecde3b185013c1ad4a5777c563eb8bb12",
+        "files": 1358,
+        "bytes": 506768910
+      },
+      "astrbot": {
+        "manifestSha256": "554c6d8edfb6322a7b6cdf3f5308a43d4ae6a391848c4e5bb131ef078a6ab01e",
+        "files": 1366,
+        "bytes": 506823985
+      },
+      "server": {
+        "manifestSha256": "d8f44411ba5110b058ce661c6e54ff1f2031a3c9da44f53dc8a785ba780e913e",
+        "files": 860,
+        "bytes": 103479657
+      }
+    },
+    "guide": "windows/code/desktop-pet/integrations/README.md",
+    "evidence": "Local worker review-closure evidence, retained outside the publishable repository.",
+    "publicRelease": "NOT_RELEASED"
+  },
   "schemaVersion": 1,
   "updatedAt": "2026-10-22",
   "product": "ALLMIND",

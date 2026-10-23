@@ -127,7 +127,8 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
     if (path.startsWith(externalPrefix + '/astrbot/') || path.startsWith(externalPrefix + '/gpt-text/')) {
       const route = path.slice(externalPrefix.length);
       const dedicated = request.headers.authorization?.replace(/^Bearer /, '') ?? '';
-      const expected = route.startsWith('/gpt-text/') ? options.gptText?.token : options.astrbotToken;
+      const tokenSource = route.startsWith('/gpt-text/') ? options.gptText?.token : options.astrbotToken;
+      const expected = typeof tokenSource==='function' ? await tokenSource() : tokenSource;
       if (!expected) { json(response, 404, { error: { message: '该能力端点未启用。' } }); return; }
       const dedicatedBytes = Buffer.from(dedicated), expectedBytes = Buffer.from(expected);
       if (dedicatedBytes.length !== expectedBytes.length || !timingSafeEqual(dedicatedBytes, expectedBytes)) { json(response, 401, { error: { message: '能力令牌无效。' } }); return; }
@@ -196,7 +197,7 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
       throw new BookError('not_found','QQ 操作不存在。');
     }
     if (route === '/runtime') {
-      if (request.method === 'GET') { json(response, 200, { config: options.runtime.repository.loadConfig(), capabilities: { storage: 'local-file', semantic: false, regex: false }, product: { id: profile.id, modules: profile.modules }, runtime: runtimeIdentity }); return; }
+      if (request.method === 'GET') { json(response, 200, { config: options.runtime.repository.loadConfig(), capabilities: { storage: 'local-file', semantic: false, regex: false }, product: { id: profile.id, modules: profile.modules, moduleStates:profile.moduleStates }, runtime: runtimeIdentity }); return; }
       if (request.method === 'PUT') {
         if(changingThinking)throw new BookError('busy','思考强度设置尚未结束，不能同时修改配置。');
         const previousCompanion = options.runtime.repository.loadConfig().companion;

@@ -238,7 +238,7 @@ export class BookRuntime {
     const revoked = 'loadCompanionData' in this.repository ? (this.repository as unknown as CompanionRepository).loadCompanionData(scope).erasedTurns : [];
     // The context compiler owns history trimming against the effective model/preset budget.
     // A fixed turn limit here discards usable history before it can be measured or reported.
-    return this.repository.readSession(scope).filter(turn => !revoked.includes(memoryJobId(scope, turn.id))&&(domain==='all'?turn.dialogue?.memoryDomain!=='fiction':turn.dialogue?.memoryDomain===domain)).flatMap(turn => [{ role: 'user' as const, content: turn.user }, { role: 'assistant' as const, content: turn.assistant }]);
+    return this.repository.readSession(scope).filter(turn => !revoked.includes(memoryJobId(scope, turn.id))&&(domain==='all'?(turn.externalDialogue??turn.dialogue)?.memoryDomain!=='fiction':(turn.externalDialogue??turn.dialogue)?.memoryDomain===domain)).flatMap(turn => [{ role: 'user' as const, content: turn.user }, { role: 'assistant' as const, content: turn.assistant }]);
   }
   /** Read-only policy preview: no retrieval, trace, model call or history write. */
   replyStylePreview(scope: BookScope, query: string, requestedStyle: TurnReplyStyle = 'inherit'): ReplyStyleDecision {
@@ -371,7 +371,7 @@ export class BookRuntime {
     const scopeHash = createHash('sha256').update(JSON.stringify(scope)).digest('hex').slice(0, 24);
     const entry = emptyEntry(`memory.${scopeHash}.${createHash('sha256').update(turnId).digest('hex').slice(0, 24)}`, 'memory', '共同聊天记录', `用户：${turn.user}\n\n角色：${turn.assistant}`);
     entry.pairingId = scope.pairingId; entry.origin = 'observed'; entry.timeStart = turn.timestamp;
-    if(turn.dialogue?.mode==='rp'||turn.dialogue?.memoryDomain==='fiction'){entry.type='story';entry.organization={domain:'rp',evidenceStatus:'user_reported'};entry.tags.push('simulation','not-user-history');}
+    if((turn.externalDialogue??turn.dialogue)?.mode==='rp'||(turn.externalDialogue??turn.dialogue)?.memoryDomain==='fiction'){entry.type='story';entry.organization={domain:'rp',evidenceStatus:'user_reported'};entry.tags.push('simulation','not-user-history');}
     entry.entities = ['用户', '当前角色']; entry.sourceRefs = [`turn.${scopeHash}.${turnId}`];
     const receipt = this.repository.commit(scope, { upsert: [entry] }, expectedRevision, operationId);
     this.invalidate(scope.characterId); return receipt;
@@ -448,7 +448,17 @@ export class BookRuntime {
    */
   externalExecutor?: {cancel(scope:BookScope):void; chat(scope:BookScope,text:string,signal:AbortSignal,options?: { transcript?:TextTranscriptReceipt;dialogueMode?:import('../contracts/book-dialogue.js').DialogueMode|'inherit';turnId?: string; incognito?:boolean; replyStyle?:import('../contracts/reply-length.js').TurnReplyStyle; replySurface?:'bubble'; inputResources?:ResourceSelection[];screenObservationId?:string;screenConfirmed?:boolean }):Promise<{turn:SavedTurn;context:null;replayed:boolean}>};
   async chat(scope: BookScope, query: string, signal: AbortSignal, options?: { transcript?:TextTranscriptReceipt;dialogueMode?:import('../contracts/book-dialogue.js').DialogueMode|'inherit';turnId?: string; incognito?:boolean; replyStyle?:import('../contracts/reply-length.js').TurnReplyStyle; replySurface?:'bubble'; inputResources?:ResourceSelection[];screenObservationId?:string;screenConfirmed?:boolean }) {
-    if (this.externalExecutor) { validateIdentity(scope.characterId); validateIdentity(scope.pairingId); validateIdentity(scope.sessionId); if(typeof query!=='string'||!query.trim()||query.length>16000)throw new BookError('invalid_input','消息无效。'); if(options?.turnId)validateIdentity(options.turnId); return this.externalExecutor.chat(scope,query,signal,options); }
+    if (this.externalExecutor) {
+      validateIdentity(scope.characterId); validateIdentity(scope.pairingId); validateIdentity(scope.sessionId);
+      if(typeof query!=='string'||!query.trim()||query.length>16000)throw new BookError('invalid_input','消息无效。');
+      if(options?.turnId)validateIdentity(options.turnId);
+      const key=JSON.stringify(scope);
+      if(this.inFlight.has(key))throw new BookError('busy','当前会话已有进行中的回答。');
+      if(this.synthesis.processing||this.wikiMaintenance?.processing||this.organization?.processing)throw new BookError('busy','正在编纂资料，请先取消或等待本次整理结束后聊天。');
+      const controller=new AbortController();this.inFlight.set(key,controller);
+      try{return await this.externalExecutor.chat(scope,query,AbortSignal.any([signal,controller.signal]),options);}
+      finally{this.inFlight.delete(key);}
+    }
     if (this.repository.readSession(scope).some(row=>row.traceId.startsWith('astrbot.'))) throw new BookError('conflict','当前会话属于 AstrBot，请新建本地会话。');
     if(this.synthesis.processing)throw new BookError('busy','正在综合编纂，请先取消或等待本次整理结束后聊天。');
     if (typeof query !== 'string' || !query.trim()) throw new BookError('invalid_input','用户消息不能为空。');

@@ -48,7 +48,7 @@ export async function astrbotManagement(runtime:BookRuntime,credentials:BookCred
     const settings=loadAstrbotSettings(directory);
     if(settings?.execution!=='astrbot')throw new BookError('conflict','AstrBot 连接未配置。');
     const {AstrbotConnector}=await import('../app/astrbot-connector.js');
-    const connector=new AstrbotConnector(directory,settings,await credentials.get(settings.credentialId));
+    const connector=new AstrbotConnector(directory,settings,()=>credentials.get(settings.credentialId));
     return connector.send({requestId:String(data.requestId??''),umo:target.conversationKey,text:String(data.text??''),signal:AbortSignal.timeout(30000)});
   }
   throw new BookError('not_found','未知的 AstrBot 管理操作。');

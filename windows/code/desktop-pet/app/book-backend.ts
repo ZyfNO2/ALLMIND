@@ -97,7 +97,7 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
 
   if (astrbotSettings?.execution === 'astrbot') {
     const loaded = await import('./astrbot-connector.js');
-    astrbotConnector = new loaded.AstrbotConnector(directory, astrbotSettings, await credentials.get(astrbotSettings.credentialId));
+    astrbotConnector = new loaded.AstrbotConnector(directory, astrbotSettings, () => credentials.get(astrbotSettings.credentialId));
     (await import('./astrbot-chat.js')).attachAstrbotChat(runtime, astrbotConnector);
   }
   // The desktop pet shares ONE addressable session with the full chat window: a stable id keeps the
@@ -290,7 +290,8 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
         if (typeof gptConfig.credentialId !== 'string') throw new BookError('invalid_input', 'gpt-text.json 缺少 credentialId。');
         const binding = repository.loadConfig().mainModel;
         if (!binding || binding.kind !== 'chatgpt-web') throw new BookError('unavailable', 'GPT 文本端点只调用网页桥；当前主模型不是网页来源，没有改走其他模型。');
-        gptText = {token: await credentials.get(gptConfig.credentialId), port: {async complete(messages, signal) {
+        const textCredentialId=gptConfig.credentialId;
+        gptText = {token: () => credentials.get(textCredentialId), port: {async complete(messages, signal) {
           const isolated = new ChatgptWebModel({bridge:chatgptBridge,config:()=>({...chatgptConfig(),conversationMode:'temporary',temporaryChatTests:true}),runtime:()=>({...repository.loadConfig(),chatgptProjects:[]})});
           const text = await isolated.complete(binding, messages, signal);
           return {text, requestId: randomUUID()};

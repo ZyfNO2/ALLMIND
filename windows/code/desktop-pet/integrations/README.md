@@ -25,7 +25,7 @@ $env:AIKI_BOOK_PORT='3927'
 node dist/app/server-core.js
 ```
 
-目录包使用其 `runtime/node.exe`。源码可运行 `npm.cmd run start:server`。首次运行使用新的数据目录。服务只监听 `127.0.0.1`；跨主机接入通过受控隧道到本机端口，不直接公开管理服务。管理入口保存在数据目录 `management-session.json`，其中包含临时管理凭据，不分享或入库。
+目录包使用其 `runtime/node.exe` 或 `Start-Server.cmd`，是独立目录部署，不提供桌面 VBS 安装/回退/卸载入口。升级时退出服务，在新目录校验并启动新包；保留旧程序目录以便回退，用户数据始终放在程序目录之外。删除程序目录不等于数据回滚，数据兼容性仍须遵守 reader barrier。源码可运行 `npm.cmd run start:server`。首次运行使用新的数据目录。服务只监听 `127.0.0.1`；跨主机接入通过受控隧道到本机端口，不直接公开管理服务。管理入口保存在数据目录 `management-session.json`，其中包含临时管理凭据，不分享或入库。
 
 ## 配置 AstrBot
 
@@ -68,9 +68,9 @@ node dist/app/server-core.js
 http://127.0.0.1:<ALLMIND端口>/api/memory-book/v1/gpt-text/v1
 ```
 
-在 AstrBot 添加 OpenAI-compatible 模型 `allmind-gpt-text`。使用独立文本端点 Key，并设置 **streaming=false、request_max_retries=1、关闭该模型的工具调用**。该 Key 不能访问 Wiki 或管理接口。模型列表会声明 text=true，其余能力为 false。
+在 AstrBot 添加 OpenAI-compatible 模型 `allmind-gpt-text`。使用独立文本端点 Key，并设置 **streaming=false、request_max_retries=1、模型的 modalities=["text"]**（WebUI「模型支持的模态及能力」仅勾选「文本」，不勾选「工具使用」）。v4.29.1 未填写或空 modalities 会默认支持全部能力，即使没有安装 MCP 也会携带 future_task 等内置工具；端点会拒绝该请求。配置示例见 `astrbot-gpt-text.example.json`。该 Key 不能访问 Wiki 或管理接口。模型列表会声明 text=true，其余能力为 false。
 
-工具、图片、非文本消息、结构化输出、逐 token 流均明确拒绝。网页请求执行失败使用不可重试的业务错误，保留 submit_unknown；连接断开仍不能推断远端没执行，所以 Provider 必须配置只尝试一次。网页登录态始终留在桌面。端点采用完整上下文配隔离网页会话，不复用私人桌面的远端项目。
+文本消息接受字符串或只含 `type: "text"` 分段的数组，按顺序保留全部文本。工具、图片、混合/非文本消息、结构化输出、逐 token 流均明确拒绝，不丢弃不支持的分段后重试。网页请求执行失败使用不可重试的业务错误，保留 submit_unknown；连接断开仍不能推断远端没执行，所以 Provider 必须配置只尝试一次。网页登录态始终留在桌面。端点采用完整上下文配隔离网页会话，不复用私人桌面的远端项目。
 
 Preset 通过插件编译完整 contexts，保留原 Role/Depth/顺序和末尾指令；原工具调用 ID 与工具回复不改写。包含工具历史且需要截断时明确报预算错误，先在 AstrBot 压缩或新开会话。当前预设适配只接受文本/工具历史，含图片音频会拒绝，以免丢弃材料。普通多模态 Bot 功能可直接用 AstrBot 原生 Provider；桌面连接器当前仅提交文本。
 
@@ -95,7 +95,9 @@ $env:ALLMIND_MODULE_ROOT='E:/ALLMIND-modules'
 
 可用 `enable/disable/uninstall --id voice --module-root ...`，均在重启后生效。未指定时，WPF 默认使用用户数据根的 `modules`，与 `book`、`host` 并列。服务端根据 `AIKI_BOOK_DATA` 的父目录定位；也可明确配置 `ALLMIND_MODULE_ROOT`。
 
-加载时检查应用版本、入口、文件清单与哈希；未知或修改后的文件会阻止卸载。升级保留 previous 目录以便人工回退，不自动清理。程序模块删除不删除 Wiki、角色、会话与设置。模块运行于当前用户权限下，文件完整性校验不等于操作系统沙箱。
+加载时检查应用版本、入口、文件清单与哈希；未知或修改后的文件会阻止卸载。设置页区分未安装、已安装并启用、已安装但禁用；设备和连接是否可用仍由对应功能页检测，校验失败会阻止启动并报告错误。升级保留 previous 目录以便人工回退，不自动清理。程序模块删除不删除 Wiki、角色、会话与设置。模块运行于当前用户权限下，文件完整性校验不等于操作系统沙箱。
+
+2026-10-23：当前源码已通过 AstrBot v4.29.1 → 文本端点 → 独立 ChatGPT 页面的一轮真实聊天，另计独立标题请求；最终记录一次，未使用工具、自动重试或其他模型。真实 QQ 和跨主机 ACP 仍需各自的账号/目标主机验收；该记录不等于安装包真实服务或全产品发布通过。
 
 ## ACP / MCP 任务接入
 

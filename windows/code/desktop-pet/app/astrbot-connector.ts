@@ -66,7 +66,7 @@ export function parseAstrbotChatBody(body: string, contentType: string): SsePars
 
 export class AstrbotConnector {
   private readonly file: string;
-  constructor(private readonly directory: string, private readonly settings: AstrbotSettings, private readonly apiKey: string, private readonly fetchImpl: typeof fetch = fetch) {
+  constructor(private readonly directory: string, private readonly settings: AstrbotSettings, private readonly apiKey: string | (() => Promise<string>), private readonly fetchImpl: typeof fetch = fetch) {
     if (settings.execution !== 'astrbot') throw new BookError('conflict', '连接器只在 astrbot 执行模式下发送。');
     mkdirSync(join(directory, 'astrbot'), {recursive: true});
     this.file = join(directory, 'astrbot', 'requests.json');
@@ -94,12 +94,13 @@ export class AstrbotConnector {
     try {
       const response = await this.fetchImpl(this.settings.baseUrl + '/api/v1/chat', {
         method: 'POST',
-        headers: {Authorization: 'Bearer ' + this.apiKey, 'Content-Type': 'application/json', Accept: 'text/event-stream'},
+        headers: {Authorization: 'Bearer ' + (typeof this.apiKey === 'function' ? await this.apiKey() : this.apiKey), 'Content-Type': 'application/json', Accept: 'text/event-stream'},
         body: JSON.stringify(payload),
         signal: AbortSignal.any([input.signal, AbortSignal.timeout(300000)]),
         redirect: 'error',
       });
       const body = await response.text();
+      input.signal.throwIfAborted();
       const parsed = parseAstrbotChatBody(body, response.headers.get('content-type') ?? '');
       const outcome: AstrbotChatOutcome = !response.ok || parsed.failed
         ? {requestId: input.requestId, state: 'failed', text: null, error: parsed.error ?? ('AstrBot HTTP ' + response.status), httpStatus: response.status}
@@ -142,7 +143,7 @@ export class AstrbotConnector {
     this.write([...this.read(),{requestId,inputHash,state:'pending',text:null,error:null,httpStatus:null}]);
     let outcome:AstrbotChatOutcome;
     try{
-      const response=await this.fetchImpl(this.settings.baseUrl+'/api/v1/im/message',{method:'POST',headers:{Authorization:'Bearer '+this.apiKey,'Content-Type':'application/json'},body:JSON.stringify({umo:input.umo,message:input.text}),redirect:'error',signal:AbortSignal.any([input.signal,AbortSignal.timeout(30000)])});
+      const response=await this.fetchImpl(this.settings.baseUrl+'/api/v1/im/message',{method:'POST',headers:{Authorization:'Bearer '+(typeof this.apiKey==='function'?await this.apiKey():this.apiKey),'Content-Type':'application/json'},body:JSON.stringify({umo:input.umo,message:input.text}),redirect:'error',signal:AbortSignal.any([input.signal,AbortSignal.timeout(30000)])});
       const body=await response.json() as {status?:string;message?:string};
       outcome={requestId,inputHash,state:response.ok&&body.status==='ok'?'completed':response.ok?'unknown':'failed',text:null,error:response.ok&&body.status==='ok'?null:'平台接受状态未确认，请核对；未自动重发。',httpStatus:response.status};
     }catch{outcome={requestId,inputHash,state:'unknown',text:null,error:'平台回执丢失或超时，是否已发送未知，未自动重发。',httpStatus:null};}

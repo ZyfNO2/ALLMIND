@@ -16,6 +16,15 @@ import {previewPublication} from '../../memory/channel-publication.js';
 import {saveCapabilityBinding,handleAllmindCapability} from '../../management/allmind-capabilities.js';
 import {emptyEntry} from '../../contracts/memory-book.js';
 import {BookTools} from '../../management/book-tools.js';
+import {handleGptText} from '../../providers/gpt-text-endpoint.js';
+
+test('text endpoint accepts ordered text parts and rejects any mixed or unsupported part before the bridge',async()=>{
+  let calls=0;const endpoint={token:'fixture',port:{async complete(messages:{role:string;content:string}[]){calls++;assert.equal(messages[0]?.content,'first\nsecond');return {text:'ok',requestId:'fixture'};}}},signal=new AbortController().signal;
+  const run=(content:unknown)=>handleGptText('/gpt-text/v1/chat/completions','POST',{messages:[{role:'user',content}]},endpoint,signal);
+  assert.equal((await run([{type:'text',text:'first'},{type:'text',text:'second'}]))?.status,200);assert.equal(calls,1);
+  for(const content of [[],[{type:'text',text:'first'},{type:'image_url',image_url:{url:'https://example.invalid/image'}}],[{type:'audio',text:'first'}],[{type:'text',text:'first',unknown:'metadata'}],[{type:'text',text:3}]])assert.equal((await run(content))?.status,400);
+  assert.equal(calls,1);
+});
 
 test('scene selects an explicit AstrBot config and cannot replay the same request under another scene',async()=>{
   const directory=mkdtempSync(join(tmpdir(),'allmind-scene-'));let calls=0;
@@ -24,6 +33,67 @@ test('scene selects an explicit AstrBot config and cannot replay the same reques
     const input={requestId:'scene-1',characterId:'role',sessionId:'session',text:'hello',mode:'rp' as const,signal:new AbortController().signal};
     assert.equal((await connector.chat(input)).text,'story');await assert.rejects(connector.chat({...input,mode:'quick'}),/编号/);assert.equal(calls,1);
   }finally{rmSync(directory,{recursive:true,force:true});}
+});
+
+test('credential rotation and revocation apply without restarting the AstrBot connector',async()=>{
+  const directory=mkdtempSync(join(tmpdir(),'allmind-credential-'));
+  const credentials=new BookCredentials(join(directory,'credentials'));credentials.save('bot','first');
+  const seen:string[]=[];
+  const connector=new AstrbotConnector(directory,{execution:'astrbot',baseUrl:'http://127.0.0.1:1',credentialId:'bot',configId:null,instanceId:'credential'},()=>credentials.get('bot'),async(_url,init)=>{
+    seen.push(new Headers(init?.headers).get('Authorization')!);
+    return new Response('data: {"type":"complete","data":"ok"}\n\n',{headers:{'content-type':'text/event-stream'}});
+  });
+  const input={requestId:'one',text:'hello',characterId:'role',sessionId:'session',signal:new AbortController().signal};
+  try{
+    assert.equal((await connector.chat(input)).state,'completed');credentials.save('bot','second');
+    assert.equal((await connector.chat({...input,requestId:'two'})).state,'completed');credentials.revoke('bot');
+    assert.notEqual((await connector.chat({...input,requestId:'three'})).state,'completed');
+    assert.deepEqual(seen,['Bearer first','Bearer second']);
+  }finally{rmSync(directory,{recursive:true,force:true});}
+});
+
+test('revoking a GPT text key rejects new requests before calling the bridge',async t=>{
+  const directory=mkdtempSync(join(tmpdir(),'allmind-text-revoke-')),repo=new FileBookRepository(directory),credentials=new BookCredentials(join(directory,'credentials'));
+  const runtime=new BookRuntime(repo,{async complete(){throw Error('local model must not run');}},{screenEnabled:false});
+  credentials.save('text','first');let calls=0;
+  const server=await startBookServer({runtime,credentials,uiRoot:resolve('management'),profile:PROFILES['desktop-astrbot'],gptText:{token:()=>credentials.get('text'),port:{async complete(){calls++;return {text:'ok',requestId:'fixture'};}}}});
+  t.after(async()=>{await server.close();repo.close();rmSync(directory,{recursive:true,force:true});});
+  const post=(key:string,extra:Record<string,unknown>={})=>fetch(new URL(server.url).origin+'/api/memory-book/v1/gpt-text/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({model:'allmind-gpt-text',messages:[{role:'user',content:'hello'}],...extra})});
+  for(const extra of [{tools:[{}]},{tool_choice:'auto'},{tools:[],tool_choice:'none'}])assert.equal((await post('first',extra)).status,400);
+  assert.equal(calls,0);assert.equal((await post('first')).status,200);
+  credentials.save('text','second');assert.equal((await post('first')).status,401);assert.equal((await post('second')).status,200);
+  credentials.revoke('text');assert.equal((await post('second')).status,503);assert.equal(calls,2);
+});
+
+test('invalidating a character cancels an external turn and cannot save a late response',async()=>{
+  const directory=mkdtempSync(join(tmpdir(),'allmind-invalidate-')),repo=new FileBookRepository(directory);
+  const runtime=new BookRuntime(repo,{async complete(){throw Error('local model must not run');}},{screenEnabled:false});
+  const scope=runtime.scope(repo.loadConfig().currentCharacterId,'external');
+  let started!:()=>void,finish!:()=>void;const ready=new Promise<void>(resolve=>started=resolve),released=new Promise<void>(resolve=>finish=resolve);
+  const connector=new AstrbotConnector(directory,{execution:'astrbot',baseUrl:'http://127.0.0.1:1',credentialId:'bot',configId:null,instanceId:'invalidate'},'fixture',async()=>{
+    started();await released;return new Response('data: {"type":"complete","data":"late"}\n\n',{headers:{'content-type':'text/event-stream'}});
+  });attachAstrbotChat(runtime,connector);
+  try{
+    const pending=runtime.chat(scope,'hello',new AbortController().signal,{turnId:'pending'});
+    const rejected=assert.rejects(pending);await ready;assert.equal(runtime.isConversing(scope.characterId),true);
+    runtime.invalidate(scope.characterId);finish();await rejected;
+    assert.equal(repo.readSession(scope).length,0);assert.equal(runtime.isConversing(scope.characterId),false);
+    assert.equal(runtime.turnStatus(scope,'pending').state,'unknown');
+    await assert.rejects(runtime.chat(scope,'hello',new AbortController().signal,{turnId:'pending'}));
+    assert.equal(repo.readSession(scope).length,0);
+  }finally{finish();repo.close();rmSync(directory,{recursive:true,force:true});}
+});
+
+test('RP external mirror stays fiction when explicitly remembered and rejects scene-changing replay',async()=>{
+  const directory=mkdtempSync(join(tmpdir(),'allmind-rp-mirror-')),repo=new FileBookRepository(directory);
+  const runtime=new BookRuntime(repo,{async complete(){throw Error('local model must not run');}},{screenEnabled:false}),scope=runtime.scope(repo.loadConfig().currentCharacterId,'rp');
+  const connector=new AstrbotConnector(directory,{execution:'astrbot',baseUrl:'http://127.0.0.1:1',credentialId:'bot',configId:null,instanceId:'rp'},'fixture',async()=>new Response('data: {"type":"complete","data":"fiction"}\n\n',{headers:{'content-type':'text/event-stream'}}));attachAstrbotChat(runtime,connector);
+  try{
+    await runtime.chat(scope,'a story',new AbortController().signal,{turnId:'rp-turn',dialogueMode:'rp'});
+    await assert.rejects(runtime.chat(scope,'a story',new AbortController().signal,{turnId:'rp-turn',dialogueMode:'smart'}),/场景/);
+    runtime.rememberTurn(scope,'rp-turn',repo.snapshot(scope).revision,'remember-rp');
+    const entry=repo.snapshot(scope).entries.find(row=>row.type==='story');assert.ok(entry);assert.equal(entry.organization?.domain,'rp');
+  }finally{repo.close();rmSync(directory,{recursive:true,force:true});}
 });
 
 test('IM lost acknowledgement stays unknown, changed replay is rejected and no second send occurs',async()=>{
@@ -121,9 +191,13 @@ test('voice module installs, disables, reenables and uninstalls without changing
     const packed=JSON.parse(run(['pack','--id','voice','--output',source]));
     run(['install','--id','voice','--module-root',modules,'--source',source,'--expected-manifest',packed.manifestSha256]);
     const probe=()=>spawnSync(process.execPath,['--input-type=module','-e',"const {installedModules}=await import('./dist/app/module-runtime.js'); console.log(JSON.stringify(installedModules()))"],{env:{...process.env,ALLMIND_MODULE_ROOT:modules},encoding:'utf8'});
+    const state=()=>{const result=spawnSync(process.execPath,['--input-type=module','-e',"const {resolveProductProfile}=await import('./dist/app/product-profile.js'); console.log(JSON.stringify(resolveProductProfile().moduleStates.voice))"],{env:{...process.env,ALLMIND_MODULE_ROOT:modules,ALLMIND_PROFILE:'desktop-lite'},encoding:'utf8'});assert.equal(result.status,0,result.stderr);return JSON.parse(result.stdout);};
     let checked=probe();assert.equal(checked.status,0,checked.stderr);assert.ok(JSON.parse(checked.stdout).voice);
+    assert.deepEqual(state(),{installed:true,enabled:true});
     run(['disable','--id','voice','--module-root',modules]);assert.equal(JSON.parse(probe().stdout).voice,undefined);
+    assert.deepEqual(state(),{installed:true,enabled:false});
     run(['enable','--id','voice','--module-root',modules]);assert.ok(JSON.parse(probe().stdout).voice);
     run(['uninstall','--id','voice','--module-root',modules]);assert.equal(JSON.parse(probe().stdout).voice,undefined);assert.equal(readFileSync(join(data,'sentinel.txt'),'utf8'),'KEEP');
+    assert.deepEqual(state(),{installed:false,enabled:false});
   }finally{rmSync(directory,{recursive:true,force:true});}
 });

@@ -6,9 +6,10 @@ export default function AstrbotSettings(){
   const [baseUrl,setBaseUrl]=useState('http://127.0.0.1:6185'),[instanceId,setInstanceId]=useState('astrbot-local'),[configId,setConfigId]=useState(''),[key,setKey]=useState(''),[token,setToken]=useState('')
   const [binding,setBinding]=useState(''),[selection,setSelection]=useState(''),[publication,setPublication]=useState<unknown>(null),[bindings,setBindings]=useState<unknown[]>([]),[records,setRecords]=useState<unknown[]>([])
   const [modeConfigIds,setModeConfigIds]=useState('{}')
+  const [moduleStates,setModuleStates]=useState<Record<string,{installed:boolean;enabled:boolean}>>({})
   const [notice,setNotice]=useState(''),[busy,setBusy]=useState(false)
   async function refresh(){
-    const runtime=await api<{product:{id:string;modules:Record<string,boolean>}}>('/runtime');setProfile(runtime.product.id);setInstalled(runtime.product.modules.astrbot??false)
+    const runtime=await api<{product:{id:string;modules:Record<string,boolean>;moduleStates?:Record<string,{installed:boolean;enabled:boolean}>}}>('/runtime');setProfile(runtime.product.id);setInstalled(runtime.product.modules.astrbot??false);setModuleStates(runtime.product.moduleStates??{})
     if(!runtime.product.modules.astrbot)return
     const state=await api<{settings:{execution:string;baseUrl:string;instanceId:string;configId:string|null;modeConfigIds?:Record<string,string>}|null;activeExecution:string;bindings:unknown[];records:unknown[]}>('/integrations/astrbot')
     setActive(state.activeExecution);setBindings(state.bindings);setRecords(state.records)
@@ -18,6 +19,7 @@ export default function AstrbotSettings(){
   async function run(work:()=>Promise<void>){setBusy(true);setNotice('');try{await work()}catch(error){setNotice(error instanceof Error?error.message:String(error))}finally{setBusy(false)}}
   return <section className="mb-card" aria-label="模块与 AstrBot"><h3>模块与 AstrBot</h3><p>当前组合：{profile||'读取中'}。{installed?`当前会话引擎：${active==='astrbot'?'AstrBot':'本地'}`:'此组合未安装 AstrBot 连接器。'}</p>
     <p>语音、屏幕和本机工具扩展可独立安装，重启生效；用户资料与程序模块分开保存。</p>
+    <ul aria-label="扩展安装状态">{Object.entries({voice:'语音',screen:'屏幕',tools:'本机工具'}).map(([id,label])=><li key={id}>{label}：{moduleStates[id]?.enabled?'已安装并启用':moduleStates[id]?.installed?'已安装，已禁用':'未安装'}</li>)}</ul><p>设备和连接是否可用，请在对应功能页检测。模块文件校验失败会阻止启动并报告错误。</p>
     {installed&&<><label>聊天引擎<select value={execution} onChange={event=>setExecution(event.target.value)}><option value="local">本地</option><option value="astrbot">AstrBot</option></select></label>
     <label>AstrBot 本机地址<input value={baseUrl} onChange={event=>setBaseUrl(event.target.value)}/></label><label>实例编号<input value={instanceId} onChange={event=>setInstanceId(event.target.value)}/></label><label>配置 ID（可选）<input value={configId} onChange={event=>setConfigId(event.target.value)}/></label>
     <label>场景与 AstrBot 配置 ID 映射（JSON，可选）<input value={modeConfigIds} onChange={event=>setModeConfigIds(event.target.value)}/></label><label>OpenAPI Key<input type="password" autoComplete="off" value={key} placeholder="留空保留已有凭据" onChange={event=>setKey(event.target.value)}/></label>
