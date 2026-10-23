@@ -1,4 +1,5 @@
 {
+  "astrbotIntegration": {"date":"2026-10-23","status":"BLOCKED","implementation":"PASS","baseline":"AstrBot v4.29.1","targetedTests":11,"priorFullRegressionTests":527,"fullRegressionProvenance":"Before final scene-routing addition; final targeted 11 rerun PASS","packages":["desktop-lite","desktop-astrbot","server-core"],"fixtureIntegration":"PASS: two-turn Preset, current message once, one final record","ui":"PASS","coldBuild":"PASS: isolated npm ci + full WPF build; before final scene-routing addition","liveQQ":"BLOCKED","liveGptWeb":"BLOCKED","crossHostACP":"BLOCKED","guide":"windows/code/desktop-pet/integrations/README.md","publicRelease":"NOT_RELEASED"},
   "schemaVersion": 1,
   "updatedAt": "2026-10-22",
   "product": "ALLMIND",

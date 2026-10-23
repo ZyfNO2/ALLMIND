@@ -1,5 +1,8 @@
+import {installedModules} from '../app/module-runtime.js';
 import type {QqChannelManager} from '../app/qq-channel-manager.js';
-import {BookVoiceService} from './book-voice.js';
+import type {BookVoiceService} from './book-voice.js';
+import {resolveProductProfile, type ProductProfile} from '../app/product-profile.js';
+import type {GptTextEndpoint} from '../providers/gpt-text-endpoint.js';
 import {resourceRoute} from './book-resource-routes.js';
 import {GptNiangLocal} from './gpt-niang-local.js';
 import {focusState} from '../core/book-focus.js';
@@ -36,7 +39,7 @@ import { projectIdFromUrl, type ChatgptProjectBinding } from '../contracts/chatg
 import { zipWikiTask } from '../memory/wiki-task-zip.js';
 import {bookDiagnostics} from './book-diagnostics.js';
 import {dialogueRoute} from '../core/book-dialogue.js';
-import {BookTools} from './book-tools.js';
+import type {BookTools} from './book-tools.js';
 import {BookSync} from '../memory/book-sync.js';
 import {join} from 'node:path';
 
@@ -66,14 +69,19 @@ export interface ChatgptWebManagement {
   openLoginPage(options?: { standalone?: boolean }): Promise<void>;
 }
 
-export async function startBookServer(options: { runtime: BookRuntime; qq?:QqChannelManager; uiRoot: string; credentials: BookCredentials; port?: number; voice?:BookVoiceService; onInteractionPresence?:(scope:import('../contracts/memory-book.js').BookScope)=>void; onChatState?: (value:{state:'pending'|'completed'|'failed';scope:import('../contracts/memory-book.js').BookScope;text?:string;incognito?:boolean})=>void; onConfig?: (config: RuntimeConfig) => void | Promise<void>; onErase?: (scope:import('../contracts/memory-book.js').BookScope,turnIds:string[])=>void; companionInteractions?:CompanionInteractionControls; companionLife?: {read(characterId:string):CompanionLifeState;change(characterId:string,action:"set_enabled"|"set_quiet"|"clear_history",expectedRevision:number,enabled?:boolean):CompanionLifeState}; activity?:import('../core/book-activity.js').BookActivity; appearance?: { skins: SkinManagement; host?: DesktopHostBridge; portraits?: PortraitStore; outfits?: OutfitService }; chatgptWeb?: ChatgptWebManagement; chatgptEmbedded?: { login(): Promise<unknown>; probe(): Promise<unknown> }; chatgptPairing?: (reset?: boolean) => Promise<{ url: string; code: string; connected: boolean }> }) {
+export async function startBookServer(options: { runtime: BookRuntime; qq?:QqChannelManager; uiRoot: string; credentials: BookCredentials; port?: number; voice?:BookVoiceService; profile?:ProductProfile; tools?:BookTools; astrbotToken?:string; gptText?:GptTextEndpoint; onInteractionPresence?:(scope:import('../contracts/memory-book.js').BookScope)=>void; onChatState?: (value:{state:'pending'|'completed'|'failed';scope:import('../contracts/memory-book.js').BookScope;text?:string;incognito?:boolean})=>void; onConfig?: (config: RuntimeConfig) => void | Promise<void>; onErase?: (scope:import('../contracts/memory-book.js').BookScope,turnIds:string[])=>void; companionInteractions?:CompanionInteractionControls; companionLife?: {read(characterId:string):CompanionLifeState;change(characterId:string,action:"set_enabled"|"set_quiet"|"clear_history",expectedRevision:number,enabled?:boolean):CompanionLifeState}; activity?:import('../core/book-activity.js').BookActivity; appearance?: { skins: SkinManagement; host?: DesktopHostBridge; portraits?: PortraitStore; outfits?: OutfitService }; chatgptWeb?: ChatgptWebManagement; chatgptEmbedded?: { login(): Promise<unknown>; probe(): Promise<unknown> }; chatgptPairing?: (reset?: boolean) => Promise<{ url: string; code: string; connected: boolean }> }) {
   const token = randomBytes(32).toString('hex'), instanceId = randomUUID();
   const sessionCookie = 'allmind-management-' + instanceId;
   const appearanceHost = options.appearance ? desktopHostManagement(options.appearance.host, { instanceId, skins: options.appearance.skins }) : undefined;
   const gptNiang=new GptNiangLocal();
-  const voice=options.voice??new BookVoiceService(options.runtime.repository);
+  const profile=options.profile??resolveProductProfile();
+  if(options.voice&&!profile.modules.voice)throw new BookError('conflict','当前产品组合不包含语音模块。');
+  let voice:BookVoiceService|undefined=options.voice;
+  if(!voice&&profile.modules.voice){const voiceEntry=installedModules().voice;const {BookVoiceService:VoiceService}=voiceEntry?await import(voiceEntry) as typeof import('./book-voice.js'):await import('./book-voice.js');voice=new VoiceService(options.runtime.repository);}
   const bookDirectory=(options.runtime.repository as {directory?:string}).directory;
-  const bookTools=bookDirectory?new BookTools(join(bookDirectory,'tools')):undefined;
+  if(options.tools&&!profile.modules.tools)throw new BookError('conflict','当前产品组合不包含本机工具模块。');
+  let bookTools:BookTools|undefined=options.tools;
+  if(!bookTools&&profile.modules.tools&&bookDirectory){const toolsEntry=installedModules().tools;const {BookTools:Tools}=toolsEntry?await import(toolsEntry) as typeof import('./book-tools.js'):await import('./book-tools.js');bookTools=new Tools(join(bookDirectory,'tools'));}
   const bookSync=bookDirectory?new BookSync(options.runtime.repository as import('../memory/file-book-repository.js').FileBookRepository,id=>options.runtime.clearSensitiveCaches(id)):undefined;
   const previewAssets = options.appearance ? await presentationAssetRoutes(resolve(options.uiRoot, '../../..'), resolve(options.uiRoot, '../desktop')) : new Map<string, string>();
   const runtimeIdentity = { pid: process.pid, instanceId, sourceRevision: 'memory-book/v1' };
@@ -115,6 +123,25 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
       if (request.headers['sec-fetch-site'] !== 'same-origin' || (request.headers.origin && request.headers.origin !== address.origin) || bytes.length !== expected.length || !timingSafeEqual(bytes, expected)) { json(response, 403, { error: { message: '请在地址栏直接打开本机管理页面后重试。' } }); return; }
       json(response, 200, { token }); return;
     }
+    const externalPrefix = '/api/memory-book/v1';
+    if (path.startsWith(externalPrefix + '/astrbot/') || path.startsWith(externalPrefix + '/gpt-text/')) {
+      const route = path.slice(externalPrefix.length);
+      const dedicated = request.headers.authorization?.replace(/^Bearer /, '') ?? '';
+      const expected = route.startsWith('/gpt-text/') ? options.gptText?.token : options.astrbotToken;
+      if (!expected) { json(response, 404, { error: { message: '该能力端点未启用。' } }); return; }
+      const dedicatedBytes = Buffer.from(dedicated), expectedBytes = Buffer.from(expected);
+      if (dedicatedBytes.length !== expectedBytes.length || !timingSafeEqual(dedicatedBytes, expectedBytes)) { json(response, 401, { error: { message: '能力令牌无效。' } }); return; }
+      const externalData = request.method === 'GET' ? {} : await body(request);
+      if (route.startsWith('/gpt-text/')) {
+        const {handleGptText} = await import('../providers/gpt-text-endpoint.js');
+        const result = await handleGptText(route, request.method ?? 'GET', externalData, options.gptText!, signal);
+        if (!result) { json(response, 404, { error: { message: '未知文本端点。' } }); return; }
+        json(response, result.status, result.body); return;
+      }
+      if (!profile.modules.astrbot) { json(response, 404, { error: { message: 'AstrBot 能力模块未安装。' } }); return; }
+      const {handleAllmindCapability} = await import('./allmind-capabilities.js');
+      json(response, 200, await handleAllmindCapability(options.runtime, route, request.method ?? 'GET', externalData, signal, bookTools)); return;
+    }
     const supplied = request.headers.authorization?.replace(/^Bearer /, '') ?? '';
     const suppliedBytes = Buffer.from(supplied), tokenBytes = Buffer.from(token);
     if (suppliedBytes.length !== tokenBytes.length || !timingSafeEqual(suppliedBytes, tokenBytes)) { json(response, 401, { error: { message: '请从桌宠管理入口重新打开。' } }); return; }
@@ -126,6 +153,11 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
     const prefix = '/api/memory-book/v1';
     if (!path.startsWith(prefix + '/')) { json(response, 410, { error: { code: 'legacy_disabled', message: '旧功能暂未启用，请使用聊天、Memory Book 和设置。' } }); return; }
     const route = path.slice(prefix.length);
+    if(route.startsWith('/integrations/astrbot')){
+      if(!profile.modules.astrbot)throw new BookError('unavailable','AstrBot 模块未安装。');
+      const {astrbotManagement}=await import('./astrbot-management.js');
+      json(response,200,await astrbotManagement(options.runtime,options.credentials,route,request.method??'GET',request.method==='GET'?{}:await body(request)));return;
+    }
     if(route.startsWith('/resources/')||route.startsWith('/artifact-deliveries/')){const resourceScope=options.runtime.scope(url.searchParams.get('characterId')??options.runtime.repository.loadConfig().currentCharacterId,url.searchParams.get('sessionId')??'web-chat',url.searchParams.get('pairingId')??'local-user');if(await resourceRoute(request,response,route,url,resourceScope,options.runtime,signal,()=>body(request)))return;}
     const data = request.method === 'GET' ? {} : await body(request,route.startsWith('/private-backup/')?160*1024*1024:route.startsWith('/sync/')?40*1024*1024:2*1024*1024);
     if(route==='/diagnostics'&&request.method==='POST'){
@@ -164,7 +196,7 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
       throw new BookError('not_found','QQ 操作不存在。');
     }
     if (route === '/runtime') {
-      if (request.method === 'GET') { json(response, 200, { config: options.runtime.repository.loadConfig(), capabilities: { storage: 'local-file', semantic: false, regex: false }, runtime: runtimeIdentity }); return; }
+      if (request.method === 'GET') { json(response, 200, { config: options.runtime.repository.loadConfig(), capabilities: { storage: 'local-file', semantic: false, regex: false }, product: { id: profile.id, modules: profile.modules }, runtime: runtimeIdentity }); return; }
       if (request.method === 'PUT') {
         if(changingThinking)throw new BookError('busy','思考强度设置尚未结束，不能同时修改配置。');
         const previousCompanion = options.runtime.repository.loadConfig().companion;
@@ -174,7 +206,7 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
         const previousCharacterId=options.runtime.repository.loadConfig().currentCharacterId;
         const receipt = options.runtime.repository.commitConfig(data.config as RuntimeConfig, data.expectedRevision, data.operationId);
         const savedConfig = options.runtime.repository.loadConfig();
-        if(previousCharacters.some(role=>JSON.stringify(role.voice)!==JSON.stringify(savedConfig.characters.find(row=>row.id===role.id)?.voice))||previousCharacterId!==savedConfig.currentCharacterId)voice.close();
+        if(voice&&(previousCharacters.some(role=>JSON.stringify(role.voice)!==JSON.stringify(savedConfig.characters.find(row=>row.id===role.id)?.voice))||previousCharacterId!==savedConfig.currentCharacterId))voice.close();
         for (const role of previousCharacters) if (!savedConfig.characters.some(current => current.id === role.id)&&!savedConfig.archivedCharacters?.some(current=>current.id===role.id)) options.runtime.removeCharacterResources(role.id);
         if (!previousCompanion?.proactive && savedConfig.companion?.proactive) options.runtime.userInteraction(options.runtime.scope(savedConfig.currentCharacterId,'web-chat'));
         for (const id of new Set([...previousCharacters, ...options.runtime.repository.loadConfig().characters].map(role => role.id))) options.runtime.invalidate(id);
@@ -323,6 +355,7 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
       }
     }
     if(route.startsWith('/tools')){
+      if(!profile.modules.tools)throw new BookError('unavailable','本机工具模块未安装。');
       if(!bookTools)throw new BookError('unavailable','当前存储不支持本机工具账本。');
       if(route==='/tools'&&request.method==='GET'){json(response,200,bookTools.view(scope));return;}
       if(route==='/tools/profiles'&&request.method==='PUT'){json(response,200,await bookTools.configure(data.profile,data.expectedRevision,data.confirmed));return;}
@@ -342,15 +375,17 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
       if(result.accepted&&Object.values(options.runtime.interactionPresence.read(scope.characterId)).some(Boolean))options.onInteractionPresence?.(scope);
       json(response,200,result);return;
     }
-    if(route==='/screen/capabilities'&&request.method==='GET'){json(response,200,await options.runtime.screen.capabilities(signal));return;}
+    if(route==='/screen/capabilities'&&request.method==='GET'){json(response,200,profile.modules.screen?{...await options.runtime.screen.capabilities(signal),installed:true}:{installed:false,available:false,reason:'屏幕模块未安装。'});return;}
+    if(route.startsWith('/screen/')&&!profile.modules.screen)throw new BookError('unavailable','屏幕模块未安装。');
     if(route==='/screen/recognize'&&request.method==='POST'){json(response,200,await options.runtime.screen.recognize(scope,{imageBase64:data.imageBase64,mime:data.mime,sourceName:data.sourceName,sourceKind:data.sourceKind,confirmed:data.confirmed},signal));return;}
     if(route==='/screen/cancel'&&request.method==='POST'){options.runtime.screen.clearScope(scope);json(response,200,{cancelled:true});return;}
     const screenClear=/^\/screen\/observations\/(screen-[0-9a-f-]{36})$/.exec(route);
     if(screenClear&&request.method==='DELETE'){options.runtime.screen.clear(scope,screenClear[1]!);json(response,200,{cleared:true});return;}
-    if(route==='/voice/capabilities'&&request.method==='GET'){json(response,200,await voice.capabilities(signal));return;}
-    if(route==='/voice/synthesize'&&request.method==='POST'){json(response,200,await voice.synthesize(scope,data.text,signal));return;}
-    if(route==='/voice/recognize'&&request.method==='POST'){json(response,200,await voice.recognize(scope,data.audioBase64,signal));return;}
-    if(route==='/voice/cancel'&&request.method==='POST'){voice.cancel(scope);json(response,200,{cancelled:true});return;}
+    if(route==='/voice/capabilities'&&request.method==='GET'){json(response,200,voice?{...await voice.capabilities(signal),installed:true}:{installed:false,available:false,voices:[],recognizers:[],reason:'语音模块未安装。'});return;}
+    if(route.startsWith('/voice/')&&!voice)throw new BookError('unavailable','语音模块未安装。');
+    if(route==='/voice/synthesize'&&request.method==='POST'){json(response,200,await voice!.synthesize(scope,data.text,signal));return;}
+    if(route==='/voice/recognize'&&request.method==='POST'){json(response,200,await voice!.recognize(scope,data.audioBase64,signal));return;}
+    if(route==='/voice/cancel'&&request.method==='POST'){voice!.cancel(scope);json(response,200,{cancelled:true});return;}
     if (route.startsWith('/wiki/synthesis')) {
       const synthesis=options.runtime.synthesis;
       if(route==='/wiki/synthesis'&&request.method==='GET'){json(response,200,{jobs:synthesis.list(scope)});return;}
@@ -446,8 +481,9 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
         if(!job||job.status!=='review')throw new BookError('invalid_input','待审阅任务不存在。');job.status='cancelled';job.claims=[];repository.saveCompanionData(scope,ledger);json(response,200,{rejected:true});return;
       }
       if(route==='/memory/erase'&&request.method==='POST'){
+        if(options.runtime.externalExecutor || options.runtime.repository.readSession(scope).some(row=>row.traceId.startsWith('astrbot.')))throw new BookError('conflict','请先在 AstrBot 删除远端历史；当前入口不能保证跨服务完整删除。');
         if(data.eraseRaw!==true)throw new BookError('invalid_input','请明确选择清除原文及应用管理的本实例备份。');
-        voice.cancel(scope);options.runtime.clearSensitiveCaches(characterId);const receipt=repository.eraseTurns(scope,data.turnIds,data.expectedRevision);options.onErase?.(scope,data.turnIds);json(response,200,{receipt,book:repository.snapshot(scope),turns:repository.readSession(scope)});return;
+        voice?.cancel(scope);options.runtime.clearSensitiveCaches(characterId);const receipt=repository.eraseTurns(scope,data.turnIds,data.expectedRevision);options.onErase?.(scope,data.turnIds);json(response,200,{receipt,book:repository.snapshot(scope),turns:repository.readSession(scope)});return;
       }
       if(route==='/memory/backup'&&request.method==='POST'){json(response,200,repository.exportPrivate(scope));return;}
     }
@@ -706,7 +742,7 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
         if(!data.transcript||typeof data.transcript!=='object'||Array.isArray(data.transcript)||Object.keys(data.transcript).some(key=>!['id','start'].includes(key))||typeof data.text!=='string')throw new BookError('invalid_input','转写来源参数无效。');
         const prior=typeof data.turnId==='string'?options.runtime.turnStatus(scope,data.turnId,data.incognito===true).turn:null;
         if(prior){if(!prior.transcript||prior.user!==data.text||prior.transcript.id!==data.transcript.id||prior.transcript.start!==data.transcript.start)throw new BookError('conflict','已保存轮次的转写来源不同。');transcript=prior.transcript;}
-        else transcript=voice.verifyTranscript(scope,data.transcript.id,data.text,data.transcript.start);
+        else { if(!voice)throw new BookError('unavailable','语音模块未安装。'); transcript=voice.verifyTranscript(scope,data.transcript.id,data.text,data.transcript.start); }
       }
       if (data.replyStyle !== undefined && data.replyStyle !== null && !TURN_REPLY_STYLES.includes(data.replyStyle)) throw new BookError('invalid_input', '本轮回复风格必须为沿用设置、简短、适中或详细。');
       options.onChatState?.({state:'pending',scope,incognito:data.incognito===true});
@@ -737,5 +773,5 @@ export async function startBookServer(options: { runtime: BookRuntime; qq?:QqCha
   const bound = server.address(); if (!bound || typeof bound === 'string') throw Error('Invalid local server address');
   const address = { port: bound.port, origin: `http://127.0.0.1:${bound.port}` };
   return { server, token, url: `${address.origin}/#token=${token}`, runtimeIdentity,
-    close: async () => {await bookTools?.close();return new Promise<void>((done, reject) => { voice.close();options.runtime.screen.close();server.close(error => error ? reject(error) : done()); server.closeIdleConnections(); });} };
+    close: async () => {await bookTools?.close();return new Promise<void>((done, reject) => { voice?.close();options.runtime.closeScreen();server.close(error => error ? reject(error) : done()); server.closeIdleConnections(); });} };
 }

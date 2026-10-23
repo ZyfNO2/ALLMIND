@@ -267,7 +267,7 @@ export interface SemanticSearchPort {
   search(scope: BookScope, query: string, limits: RecallLimits, signal: AbortSignal): Promise<Candidate[]>;
 }
 export class BookError extends Error {
-  constructor(public code: 'invalid_input' | 'conflict' | 'corrupt_data' | 'not_found' | 'budget' | 'unavailable' | 'busy', message: string, options?: ErrorOptions) {
+  constructor(public code: 'invalid_input' | 'conflict' | 'corrupt_data' | 'not_found' | 'budget' | 'unavailable' | 'busy' | 'forbidden', message: string, options?: ErrorOptions) {
     super(message, options); this.name = 'BookError';
   }
 }

@@ -1,5 +1,9 @@
+import {installedModules} from './module-runtime.js';
+import {fileURLToPath} from 'node:url';
+import {compileExternalPrompt} from './external-prompt.js';
+import {createRequire} from 'node:module';
 import {BookInteractionPresence} from '../core/book-interaction-presence.js';
-import {BookScreenService} from '../core/book-screen.js';
+import type {BookScreenService} from '../core/book-screen.js';
 import {dialogueRoute} from '../core/book-dialogue.js';
 import {validateTextTranscript,type TextTranscriptReceipt,type MessageContent} from '../contracts/book-message.js';
 import {BUBBLE_REPLY_POLICY} from '../core/bubble-reply.js';
@@ -35,7 +39,8 @@ import { normalizeResourceSelections, resourceRequestHash, DEFAULT_RESOURCE_CAPA
 import type { RichModelResult } from '../contracts/book-resources.js';
 
 /** W01 wiring: the composition root owns the store; the Runtime only consumes the service. */
-export interface ResourceRuntimeOptions { resources?: BookResourceService; artifacts?: ArtifactSource;screen?:BookScreenService }
+export interface ResourceRuntimeOptions { resources?: BookResourceService; artifacts?: ArtifactSource;screen?:BookScreenService;screenEnabled?:boolean }
+const require = createRequire(import.meta.url);
 
 const MODEL_TEST_PROMPT = '连接测试：请只回复「测试成功」。';
 const MODEL_TEST_OUTPUT_LIMIT = 512, MODEL_TEST_REPLY_EXCERPT = 2000;
@@ -172,16 +177,23 @@ export class BookRuntime {
   cancelProactive(characterId:string):void{for(const [key,work] of this.proactiveWork)if((JSON.parse(key) as BookScope).characterId===characterId)work.controller.abort(new BookError('conflict','主动设置已变更。'));}
   isConversing(characterId:string):boolean{return [...this.inFlight].some(([key,controller])=>JSON.parse(key).characterId===characterId&&this.proactiveWork.get(key)?.controller!==controller);}
   private screenService:BookScreenService|undefined;
+  private screenEnabled:boolean;
   private screenInFlight=new Map<string,string>();
   get screen():BookScreenService{
-    this.screenService??=new BookScreenService(this.repository);
-    this.screenService.onInvalidated=(scope,id)=>{if(this.screenInFlight.get(JSON.stringify(scope))===id)this.cancel(scope);for(const [key,trace] of this.traces)if(trace.screenObservation?.id===id)this.traces.delete(key)};
+    if(!this.screenEnabled)throw new BookError('unavailable','屏幕模块未安装。');
+    if(!this.screenService){
+      const {BookScreenService:ScreenService}=(installedModules().screen?require(fileURLToPath(installedModules().screen!)):require('../core/book-screen.js')) as typeof import('../core/book-screen.js');
+      this.screenService=new ScreenService(this.repository);
+      this.screenService.onInvalidated=(scope,id)=>{if(this.screenInFlight.get(JSON.stringify(scope))===id)this.cancel(scope);for(const [key,trace] of this.traces)if(trace.screenObservation?.id===id)this.traces.delete(key)};
+    }
     return this.screenService;
   }
+  closeScreen():void{this.screenService?.close();}
   constructor(readonly repository: BookRepository & RuntimeRepository, private readonly model: BookModelPort, resourceOptions: ResourceRuntimeOptions = {}) {
     const config = repository.loadConfig();
     this.engine = this.createEngine(config); this.modelRevision = config.revision;
-    this.resourceService = resourceOptions.resources;this.screenService=resourceOptions.screen;
+    this.resourceService = resourceOptions.resources;this.screenEnabled=resourceOptions.screenEnabled!==false;this.screenService=resourceOptions.screen;
+    if(this.screenService)this.screenService.onInvalidated=(scope,id)=>{if(this.screenInFlight.get(JSON.stringify(scope))===id)this.cancel(scope);for(const [key,trace] of this.traces)if(trace.screenObservation?.id===id)this.traces.delete(key)};
     this.artifactSource = resourceOptions.artifacts;
     this.builder = new BookContextBuilder(repository); this.imports = new BookImportService(repository);
     this.wiki = new FactWikiService(repository);
@@ -241,6 +253,17 @@ export class BookRuntime {
     const range=excluded?undefined:replyLength??role?.replyLength??{minChars:null,maxChars:null};
     const decision=excluded?undefined:resolveReplyStyle({requestedStyle:replyStyle??'inherit',roleStyle:role?.replyStyle??'natural',roleRange:range!,query});
     return this.inspectContext(scope,query,signal,config,mode,range,decision);
+  }
+  /** Wiki fragments for an external executor. Does not call the reply model or attach local history. */
+  async prepareExternal(scope: BookScope, query: string, signal: AbortSignal, allowedEntryIds?: ReadonlySet<string>, external?: {history?:unknown[];config?:RuntimeConfig;snapshot?:import('../contracts/memory-book.js').BookSnapshot}) {
+    if (typeof query !== 'string' || !query.trim() || query.length > 16000) throw new BookError('invalid_input', '能力准备的当前消息无效。');
+    const config = external?.config ?? this.repository.loadConfig();
+    const source = external?.snapshot ? new Proxy(this.repository,{get:(target,key)=>key==='snapshot'?()=>structuredClone(external.snapshot):typeof Reflect.get(target,key)==='function'?Reflect.get(target,key).bind(target):Reflect.get(target,key)}) : this.repository;
+    const engine = new BookRecallEngine(source, new LocalBookIndex());
+    const result = await engine.run({scope, currentMessage:query, recentMessages:[], config:structuredClone(config.recall), signal, view:config.characters.find(role=>role.id===scope.characterId)?.knowledgeView});
+    const selected = [...result.base,...result.selected].filter((item,index,items)=>items.findIndex(other=>other.candidate.ref.chunkId===item.candidate.ref.chunkId)===index&&(!allowedEntryIds||allowedEntryIds.has(item.entry.id)));
+    const fragments=selected.map(item=>({entryId:item.entry.id,revision:item.entry.revision,type:item.entry.type,title:item.entry.title,text:item.text}));
+    return {recallId:result.id,bookRevision:result.bookRevision,fragments,...compileExternalPrompt(config,scope,query,external?.history??[],fragments)};
   }
   private async inspectContext(scope:BookScope,query:string,signal:AbortSignal,config:RuntimeConfig,mode?:RuntimeConfig['recall']['mode'],range?:ReplyLengthSettings,decision?:ReplyStyleDecision,materials?:SourceMaterial[],reservedTokens=0):Promise<BuiltBookContext>{
     this.refresh(config);
@@ -317,7 +340,7 @@ export class BookRuntime {
     if (trace.runtimeRevision !== undefined && trace.runtimeRevision !== this.repository.loadConfig().revision) throw new BookError('conflict', '角色视角或设置已修改，旧 Context 已失效。');
     this.builder.assertCurrent(trace.recall); return structuredClone(trace);
   }
-  cancel(scope: BookScope): void { this.inFlight.get(JSON.stringify(scope))?.abort(); }
+  cancel(scope: BookScope): void { this.externalExecutor?.cancel(scope); this.inFlight.get(JSON.stringify(scope))?.abort(); }
   clearSensitiveCaches(characterId:string):void{
     this.invalidate(characterId);this.wiki.clearPreviews(characterId);this.imports.clearPreviews(characterId);this.state.clearPreviews(characterId);
     for(const key of this.memoryFailures.keys())if(JSON.parse(key)[0]===characterId)this.memoryFailures.delete(key);
@@ -423,7 +446,10 @@ export class BookRuntime {
    * already-persisted turn instead of paying the model twice and writing a second record. The replay
    * is read-only; its trace may have expired (context null), the turn itself stays readable.
    */
+  externalExecutor?: {cancel(scope:BookScope):void; chat(scope:BookScope,text:string,signal:AbortSignal,options?: { transcript?:TextTranscriptReceipt;dialogueMode?:import('../contracts/book-dialogue.js').DialogueMode|'inherit';turnId?: string; incognito?:boolean; replyStyle?:import('../contracts/reply-length.js').TurnReplyStyle; replySurface?:'bubble'; inputResources?:ResourceSelection[];screenObservationId?:string;screenConfirmed?:boolean }):Promise<{turn:SavedTurn;context:null;replayed:boolean}>};
   async chat(scope: BookScope, query: string, signal: AbortSignal, options?: { transcript?:TextTranscriptReceipt;dialogueMode?:import('../contracts/book-dialogue.js').DialogueMode|'inherit';turnId?: string; incognito?:boolean; replyStyle?:import('../contracts/reply-length.js').TurnReplyStyle; replySurface?:'bubble'; inputResources?:ResourceSelection[];screenObservationId?:string;screenConfirmed?:boolean }) {
+    if (this.externalExecutor) { validateIdentity(scope.characterId); validateIdentity(scope.pairingId); validateIdentity(scope.sessionId); if(typeof query!=='string'||!query.trim()||query.length>16000)throw new BookError('invalid_input','消息无效。'); if(options?.turnId)validateIdentity(options.turnId); return this.externalExecutor.chat(scope,query,signal,options); }
+    if (this.repository.readSession(scope).some(row=>row.traceId.startsWith('astrbot.'))) throw new BookError('conflict','当前会话属于 AstrBot，请新建本地会话。');
     if(this.synthesis.processing)throw new BookError('busy','正在综合编纂，请先取消或等待本次整理结束后聊天。');
     if (typeof query !== 'string' || !query.trim()) throw new BookError('invalid_input','用户消息不能为空。');
     if(options?.transcript){validateTextTranscript(options.transcript,query);if(createHash('sha256').update(query.slice(options.transcript.start,options.transcript.end)).digest('hex')!==options.transcript.sha256)throw new BookError('invalid_input','转写来源正文校验失败；未调用模型。');}

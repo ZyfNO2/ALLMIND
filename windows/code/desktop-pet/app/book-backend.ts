@@ -5,7 +5,7 @@ import {focusState} from '../core/book-focus.js';
 import {memoryJobId} from '../memory/automatic-book-memory.js';
 import { createInterface } from 'node:readline';
 import { randomUUID, createHash } from 'node:crypto';
-import { writeFileSync, unlinkSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { stat, readdir } from 'node:fs/promises';
 import { dirname, basename, relative, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,10 +43,15 @@ import { relationshipFor } from '../core/companion-relationship.js';
 import { bookReplyExpression } from '../core/book-reply-expression.js';
 import { BookProactiveScheduler, type ProactivePresence } from '../core/book-proactive.js';
 import {BookActivity} from '../core/book-activity.js';
-import {QqChannelManager} from './qq-channel-manager.js';
+import type {QqChannelManager} from './qq-channel-manager.js';
+import {resolveProductProfile} from './product-profile.js';
+import {loadAstrbotSettings} from './astrbot-settings.js';
 
 /** New default composition root. Only file Book, text model, management and appearance are loaded. */
 export async function runBookBackend(directory: string, options: { clock?:()=>number } = {}) {
+  const profile = resolveProductProfile();
+  const astrbotSettings = loadAstrbotSettings(directory);
+  if (astrbotSettings?.execution === 'astrbot' && !profile.modules.astrbot) throw new BookError('conflict', '当前产品组合不包含 AstrBot 连接器，不会改走本地生成。');
   const petRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..'), desktop = join(petRoot, 'desktop');
   const resourceService=new BookResourceService(new FileResourceStore({directory:join(directory,'resources')}));
   const erasedRequests:string[]=[];let clearCompleted=(ids:string[])=>{erasedRequests.push(...ids);};
@@ -77,18 +82,30 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
   const runtime = new BookRuntime(repository, createModelRouter({
     http: new BookHttpModel(id => credentials.get(id)),
     chatgpt: () => chatgptModel,
-  }),{resources:resourceService,artifacts:{readArtifact:(candidate,signal)=>chatgptModel.readArtifact({projectId:candidate.scope?repository.loadConfig().chatgptProjects?.find(row=>row.enabled&&row.characterId===candidate.scope!.characterId&&row.pairingId===candidate.scope!.pairingId)?.projectId??null:null,...(candidate.requestId?{requestId:candidate.requestId}:{}),handleId:candidate.candidateId,nameHint:candidate.nameHint,messageId:candidate.messageId,...(candidate.mimeHint?{mimeHint:candidate.mimeHint}:{})},signal)}});
-  const qq=new QqChannelManager({directory:join(directory,'channels','qq'),source:repository,credentials,model:externalConfig=>{
+  }),{resources:resourceService,artifacts:{readArtifact:(candidate,signal)=>chatgptModel.readArtifact({projectId:candidate.scope?repository.loadConfig().chatgptProjects?.find(row=>row.enabled&&row.characterId===candidate.scope!.characterId&&row.pairingId===candidate.scope!.pairingId)?.projectId??null:null,...(candidate.requestId?{requestId:candidate.requestId}:{}),handleId:candidate.candidateId,nameHint:candidate.nameHint,messageId:candidate.messageId,...(candidate.mimeHint?{mimeHint:candidate.mimeHint}:{})},signal)},screenEnabled:profile.modules.screen});
+  let qq: QqChannelManager | undefined;
+  if (profile.modules.qqDirect) {
+    if (astrbotSettings?.execution === 'astrbot') throw new BookError('conflict', 'AstrBot 执行与旧 QQ 直连不能同时启用。');
+    const {QqChannelManager: QqManager} = await import('./qq-channel-manager.js');
+    qq = new QqManager({directory:join(directory,'channels','qq'),source:repository,credentials,model:externalConfig=>{
     const web=new ChatgptWebModel({bridge:chatgptBridge,config:()=>externalConfig().chatgptWeb??DEFAULT_CHATGPT_WEB_SOURCE,runtime:externalConfig,artifacts:chatgptBridge});
     const router=createModelRouter({http:new BookHttpModel(id=>credentials.get(id)),chatgpt:()=>web});
     return {complete:(binding,messages,signal,callOptions)=>router.complete(binding,messages,signal,{...callOptions,...(binding.kind==='chatgpt-web'?{requiredThinking:'high' as const}:{})})};
   }});
+  }
+  let astrbotConnector: import('./astrbot-connector.js').AstrbotConnector | undefined;
+
+  if (astrbotSettings?.execution === 'astrbot') {
+    const loaded = await import('./astrbot-connector.js');
+    astrbotConnector = new loaded.AstrbotConnector(directory, astrbotSettings, await credentials.get(astrbotSettings.credentialId));
+    (await import('./astrbot-chat.js')).attachAstrbotChat(runtime, astrbotConnector);
+  }
   // The desktop pet shares ONE addressable session with the full chat window: a stable id keeps the
   // conversation discoverable and continuable across restarts instead of orphaning a random UUID
   // session nobody can reopen. Per-character isolation comes from the scope, not from a fresh id.
   let desktopIncognito=repository.loadConfig().incognitoDefault??false,privateSessionId='private-desktop-'+randomUUID();
   const privateScope=()=>runtime.scope(activeCharacter,privateSessionId);
-  const sessionId = 'desktop'; let generation = 0, closing = false, activeController: AbortController | null = null;
+  const sessionId = astrbotConnector?'desktop-astrbot-'+createHash('sha256').update(JSON.stringify([astrbotSettings?.instanceId,astrbotSettings?.configId])).digest('hex').slice(0,12):'desktop'; let generation = 0, closing = false, activeController: AbortController | null = null;
   const backendInstanceId = randomUUID();
   const turnReceipts = new Map<string, Extract<BackendToDesktop, {channel:'book_turn_state'}>>();
   const receipt = (value: Extract<BackendToDesktop, {channel:'book_turn_state'}>) => {
@@ -262,7 +279,25 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
         return { width: sprite.width, height: sprite.height, minAlpha: sprite.alpha?.min ?? 0, maxAlpha: sprite.alpha?.max ?? 255, touchesEdge: bounds.x <= 1 || bounds.y <= 1 || bounds.x + bounds.width >= sprite.width - 1 || bounds.y + bounds.height >= sprite.height - 1 };
       } finally { unlinkSync(file); }
     }, async (scope, skinId) => {if(scope.characterId!==activeCharacter||currentManifest?.skinId!==skinId||process.env.AIKI_BOOK_WEB_ONLY!=='1'&&!appearanceAcknowledged)throw new BookError('conflict','当前角色或宿主载入状态已变化。');});
-    server = await startBookServer({ runtime, credentials,qq,...(process.env.AIKI_WPF_HOST==='1'?{onChatState:(value:{state:'pending'|'completed'|'failed';scope:BookScope;text?:string;incognito?:boolean})=>send({channel:'book_chat_notice',...value})}:{}), uiRoot: join(petRoot, 'management'), onConfig: applyCharacter,onInteractionPresence:()=>proactive.cancel(),activity,...(process.env.AIKI_BOOK_WEB_ONLY==='1'?{}:{companionInteractions:interactionControls}),
+    let astrbotToken: string | undefined;
+    if (profile.modules.astrbot) astrbotToken = (await import('../management/allmind-capabilities.js')).ensureCapabilityToken(directory);
+    let gptText: import('../providers/gpt-text-endpoint.js').GptTextEndpoint | undefined;
+    const gptFile = join(directory, 'gpt-text.json');
+    if (existsSync(gptFile)) {
+      const gptConfig = JSON.parse(readFileSync(gptFile, 'utf8')) as {enabled?: boolean; credentialId?: string};
+      if (gptConfig.enabled === true) {
+        if (!profile.modules.gptText) throw new BookError('conflict', '当前产品组合不包含 GPT 文本端点。');
+        if (typeof gptConfig.credentialId !== 'string') throw new BookError('invalid_input', 'gpt-text.json 缺少 credentialId。');
+        const binding = repository.loadConfig().mainModel;
+        if (!binding || binding.kind !== 'chatgpt-web') throw new BookError('unavailable', 'GPT 文本端点只调用网页桥；当前主模型不是网页来源，没有改走其他模型。');
+        gptText = {token: await credentials.get(gptConfig.credentialId), port: {async complete(messages, signal) {
+          const isolated = new ChatgptWebModel({bridge:chatgptBridge,config:()=>({...chatgptConfig(),conversationMode:'temporary',temporaryChatTests:true}),runtime:()=>({...repository.loadConfig(),chatgptProjects:[]})});
+          const text = await isolated.complete(binding, messages, signal);
+          return {text, requestId: randomUUID()};
+        }}};
+      }
+    }
+    server = await startBookServer({ runtime, credentials, ...(qq ? {qq} : {}), profile, ...(astrbotToken ? {astrbotToken} : {}), ...(gptText ? {gptText} : {}),...(process.env.AIKI_WPF_HOST==='1'?{onChatState:(value:{state:'pending'|'completed'|'failed';scope:BookScope;text?:string;incognito?:boolean})=>send({channel:'book_chat_notice',...value})}:{}), uiRoot: join(petRoot, 'management'), onConfig: applyCharacter,onInteractionPresence:()=>proactive.cancel(),activity,...(process.env.AIKI_BOOK_WEB_ONLY==='1'?{}:{companionInteractions:interactionControls}),
       companionLife:{
         read(characterId){if(!behavior||characterId!==activeCharacter)throw new BookError('unavailable','请切换到当前桌面角色后操作。');return behavior.snapshot();},
         change(characterId,action,expectedRevision,enabled){
@@ -286,7 +321,7 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
       ...(process.env.AIKI_BOOK_WEB_ONLY === '1' ? {} : {chatgptEmbedded:{login:()=>host.request('chatgpt-page',{action:'login'}),probe:()=>host.request('chatgpt-page',{action:'probe'})}}),
       chatgptPairing: reset => reset ? extension.resetPairing() : extension.pairing(),
       ...(process.env.AIKI_BOOK_PORT ? { port: Number(process.env.AIKI_BOOK_PORT) } : {}) });
-    try{await qq.restore();}catch(error){process.stderr.write('QQ channel restore failed; channel remains unavailable: '+(error instanceof BookError?error.message:'check channel settings and listener port')+'\n');}
+    if(qq)try{await qq.restore();}catch(error){process.stderr.write('QQ channel restore failed; channel remains unavailable: '+(error instanceof BookError?error.message:'check channel settings and listener port')+'\n');}
     const sessionFile = join(directory, 'management-session.json');
     writeFileSync(sessionFile, JSON.stringify({ version: 1, url: server.url, ...server.runtimeIdentity }) + '\n', { mode: 0o600 }); restrictPrivatePathSync(sessionFile);
     process.stderr.write('Memory Book backend ready: local-file storage; optional memory and proactive companion services; local Windows speech and OCR are opt-in.\n');
@@ -295,13 +330,13 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
     if (process.env.AIKI_BOOK_WEB_ONLY !== '1') lifeTimer = setInterval(() => {
       try { publishLife(); if (Date.now() - lastLifeSave >= 60000) saveLife(); } catch (error) { lifeFailure(error); }
     }, 1000);
-    if (process.env.AIKI_BOOK_WEB_ONLY !== '1') proactiveTimer=setInterval(()=>{
+    if (!astrbotConnector && process.env.AIKI_BOOK_WEB_ONLY !== '1') proactiveTimer=setInterval(()=>{
       void proactive.tick(lifeScope(),effectivePresence()).catch(error=>{
         if(error instanceof BookError&&error.code==='conflict'){process.stderr.write(JSON.stringify({diagnostic:'proactive-cancelled',code:error.code})+'\n');return;}
         process.stderr.write(`Proactive scheduler failed: ${error instanceof Error?error.stack:String(error)}\n`);send({channel:'companion_error',message:error instanceof BookError?error.message:'主动交流失败，请检查账本与本机日志。'});
       });
     },10000);
-  } catch (error) { clearInterval(resourceSweepTimer);await qq.close();await extension.close(); await server?.close(); repository.close(); throw error; }
+  } catch (error) { clearInterval(resourceSweepTimer);await qq?.close();await extension.close(); await server?.close(); repository.close(); throw error; }
   const lines = createInterface({ input: process.stdin, crlfDelay: Infinity });
   lines.on('line', line => {
     let message: DesktopToBackend;
@@ -416,12 +451,15 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
     send({ channel: 'event', event: { type: 'turn', input: { scope, kind: 'text', startedAt: new Date().toISOString(), text: command.text, ...(command.clientRequestId ? { clientRequestId: command.clientRequestId } : {}) } } });
     send({ channel: 'input_route', scope, route: 'companion' });
     send({ channel: 'event', event: { type: 'presentation', presentation: { scope, state: 'thinking', expression, mouth: 0 } } });
-    void runtime.chat(desktopIncognito?privateScope():runtime.scope(activeCharacter, sessionId), command.text, controller.signal, { turnId,incognito:desktopIncognito,...(command.replyStyle===undefined||command.replyStyle===null?{}:{replyStyle:command.replyStyle}) }).then(result => {
+    void (async()=>{
+      const result=await runtime.chat(desktopIncognito?privateScope():runtime.scope(activeCharacter, sessionId), command.text, controller.signal, { turnId,incognito:desktopIncognito,...(command.replyStyle===undefined||command.replyStyle===null?{}:{replyStyle:command.replyStyle}) });
+      const attachmentCount=result.turn.artifactDeliveryId?resourceService.getDelivery(runtime.scope(activeCharacter,sessionId),result.turn.artifactDeliveryId).resourceIds.length:0;
+      return {text:result.turn.assistant,attachmentCount,replyLength:result.turn.replyLength,replyStyleDecision:result.turn.replyStyleDecision};
+    })().then(result => {
       controller.signal.throwIfAborted();
       if(activeController===controller)activeController=null;
-      const attachmentCount=result.turn.artifactDeliveryId?resourceService.getDelivery(runtime.scope(activeCharacter,sessionId),result.turn.artifactDeliveryId).resourceIds.length:0;
-      receipt({channel:'book_turn_state',clientRequestId,scope,attachmentCount,state:'completed',text:result.turn.assistant,...(result.turn.replyLength?{replyLength:result.turn.replyLength}:{}),...(result.turn.replyStyleDecision?{replyStyleDecision:result.turn.replyStyleDecision}:{})});
-      send({ channel: 'event', event: { type: 'reply', reply: { scope, attachmentCount, text: result.turn.assistant, expression:bookReplyExpression(result.turn.assistant),...(result.turn.replyLength?{replyLength:result.turn.replyLength}:{}),...(result.turn.replyStyleDecision?{replyStyleDecision:result.turn.replyStyleDecision}:{}) } } });
+      receipt({channel:'book_turn_state',clientRequestId,scope,attachmentCount:result.attachmentCount,state:'completed',text:result.text,...(result.replyLength?{replyLength:result.replyLength}:{}),...(result.replyStyleDecision?{replyStyleDecision:result.replyStyleDecision}:{})});
+      send({ channel: 'event', event: { type: 'reply', reply: { scope, attachmentCount:result.attachmentCount, text: result.text, expression:bookReplyExpression(result.text),...(result.replyLength?{replyLength:result.replyLength}:{}),...(result.replyStyleDecision?{replyStyleDecision:result.replyStyleDecision}:{}) } } });
     }).catch(error => {
       receipt({channel:'book_turn_state',clientRequestId,scope,state:'failed',message:controller.signal.aborted ? '本轮已停止。' : error instanceof BookError ? error.message : '本轮失败，请检查本机运行日志。'});
       if (!controller.signal.aborted) process.stderr.write(`Memory Book turn failed: ${error instanceof Error ? error.stack : String(error)}\n`);
@@ -432,7 +470,7 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
     });
   });
   const close = async () => { if (closing) return; closing = true;clearInterval(resourceSweepTimer);cancelInteraction();if (lifeTimer) clearInterval(lifeTimer);if(proactiveTimer)clearInterval(proactiveTimer);proactive.cancel(); host.close(); activeController?.abort();
-    await qq.close();await activity.close();await runtime.wikiMaintenance?.stopActive();
+    await qq?.close();await activity.close();await runtime.wikiMaintenance?.stopActive();
     for(const role of repository.loadConfig().characters)runtime.automaticMemory?.cancel(role.id);await runtime.automaticMemory?.flush();
     try { saveLife(); } finally { for (const role of repository.loadConfig().characters) runtime.invalidate(role.id); await extension.close(); await server!.close(); repository.close(); } };
   lines.once('close', () => { void close().catch(error => { process.stderr.write(String(error) + '\n'); process.exitCode = 1; }); });
