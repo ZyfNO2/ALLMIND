@@ -193,7 +193,9 @@ export class StdioJsonRpcProcess {
 
   private route(message: RpcMessage): void {
     if (typeof message.method === 'string' && Object.hasOwn(message, 'id')) {
-      if (typeof message.id !== 'number' || !Number.isSafeInteger(message.id)) {
+      // Peers own their request IDs; JSON-RPC permits strings as well as integers.
+      if (!(typeof message.id === 'string' && message.id.length > 0 && message.id.length <= 256) &&
+          !(typeof message.id === 'number' && Number.isSafeInteger(message.id))) {
         this.failAll(protocolError('invalid_server_request_id'));
         this.child.kill();
         return;

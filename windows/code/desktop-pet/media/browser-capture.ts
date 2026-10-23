@@ -20,6 +20,9 @@ export interface CaptureDiagnostic {
 /** Ephemeral scalar envelope of the mono PCM already being recorded. */
 export interface CaptureLevel { readonly rms:number; readonly peak:number; }
 export interface BrowserCaptureOptions {
+  /** Voice-only callers must explicitly disable camera acquisition. */
+  readonly cameraEnabled?:boolean;
+  readonly sampleRate?:number;
   readonly workletModuleUrl?: string | URL;
   readonly cameraWidth: number;
   readonly jpegQuality: number;
@@ -49,7 +52,7 @@ export interface BrowserCaptureOptions {
 /** Devices are acquired only for this explicit voice turn, never during idle/text input. */
 export class BrowserCaptureDriver implements CaptureDriver {
   constructor(private readonly options: BrowserCaptureOptions) {
-    if (!Number.isFinite(options.cameraWidth) || options.cameraWidth <= 0 || options.jpegQuality <= 0 || options.jpegQuality > 1 || !Number.isInteger(options.maxBufferedSamples) || options.maxBufferedSamples <= 0) throw new Error('Explicit valid capture options required');
+    if ((options.sampleRate!==undefined&&(!Number.isFinite(options.sampleRate)||options.sampleRate<8000||options.sampleRate>48000)) || !Number.isFinite(options.cameraWidth) || options.cameraWidth <= 0 || options.jpegQuality <= 0 || options.jpegQuality > 1 || !Number.isInteger(options.maxBufferedSamples) || options.maxBufferedSamples <= 0) throw new Error('Explicit valid capture options required');
   }
   async open(signal: AbortSignal): Promise<CaptureSession> {
     checkAbort(signal);
@@ -124,7 +127,7 @@ export class BrowserCaptureDriver implements CaptureDriver {
       }).catch(error=>{throw captureFailure(error,'get_user_media',signal);});
       // A synchronous context-construction failure must still observe the pending device request.
       void pendingMicrophone.catch(()=>{});
-      stage='unknown';context=new AudioContext();diagnostic('context_created');
+      stage='unknown';context=new AudioContext(this.options.sampleRate?{sampleRate:this.options.sampleRate}:undefined);diagnostic('context_created');
       const audio=context;
       const prepareRecorder=async()=>{
         try{
@@ -171,7 +174,7 @@ export class BrowserCaptureDriver implements CaptureDriver {
         audio.createMediaStreamSource(stream).connect(recorder!);diagnostic('graph_connected');
       });
       await abortable(Promise.all([connected,resumeAudio()]),signal);checkAbort(signal);
-      await abortable(pcmReady,signal);checkAbort(signal);if(stopped)throw failure??abortError();diagnostic('audio_ready');void startCamera();
+      await abortable(pcmReady,signal);checkAbort(signal);if(stopped)throw failure??abortError();diagnostic('audio_ready');if(this.options.cameraEnabled!==false)void startCamera();
       const audioContext=context,node=recorder!;
       return {stop,finish:async():Promise<CapturedBytes>=>{
         if(failure)throw failure;if(stopped||finishing)throw Error('Capture already stopped');

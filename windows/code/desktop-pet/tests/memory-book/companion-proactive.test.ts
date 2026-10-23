@@ -177,3 +177,39 @@ test('generation failure consumes call budget while successful display has indep
   const metrics = scheduler.budget(scope,now);
   assert.equal(metrics.callsToday,1); assert.equal(metrics.displaysToday,0); assert.equal(metrics.unknownDisplays,0);
 });
+
+
+test('frequency settings preserve legacy defaults, persist and reject invalid values without a revision change',t=>{
+  const repository=fixture(t),config=repository.loadConfig();
+  const legacy={...config.companion!};delete legacy.dailyLimit;delete legacy.minimumIntervalMinutes;
+  repository.commitConfig({...config,companion:legacy},config.revision,'legacy-frequency');
+  const next=repository.loadConfig();
+  for(const [field,values] of [['dailyLimit',[null,0,7,1.5,'2']],['minimumIntervalMinutes',[null,29,1441,30.5,'180']]] as const){
+    for(const value of values){assert.throws(()=>repository.commitConfig({...next,companion:{...next.companion!,[field]:value}},next.revision,'invalid-frequency-'+field+String(value)),{code:'invalid_input'});assert.equal(repository.loadConfig().revision,next.revision);}
+  }
+  repository.commitConfig({...next,companion:{...legacy,dailyLimit:4,minimumIntervalMinutes:45}},next.revision,'custom-frequency');
+  repository.close();const reopened=new FileBookRepository(repository.directory);
+  try{assert.equal(reopened.loadConfig().companion!.dailyLimit,4);assert.equal(reopened.loadConfig().companion!.minimumIntervalMinutes,45);}finally{reopened.close();}
+});
+
+test('frequency drives actual reservations while retaining failure, rolling-day, busy and unanswered gates',async t=>{
+  for(const variant of ['legacy','shorter','lower-limit','higher-limit','rolling','unanswered','busy'])await t.test(variant,async t=>{
+    const repository=fixture(t),config=repository.loadConfig(),settings={...config.companion!};
+    delete settings.dailyLimit;delete settings.minimumIntervalMinutes;
+    if(variant!=='legacy'){settings.minimumIntervalMinutes=30;settings.dailyLimit=variant==='lower-limit'||variant==='rolling'?1:6;}
+    repository.commitConfig({...config,companion:settings},config.revision,'frequency');
+    const now=zonedTime('2026-10-14',14,40,'Asia/Singapore'),data=repository.loadCompanionData(scope),count=variant==='higher-limit'||variant==='unanswered'?2:1;
+    for(let i=0;i<count;i++){
+      const at=now-(variant==='rolling'?18*3600000:3600000)-i*3600000;
+      data.deliveries.push({id:'prior-'+i,dedupKey:'prior-'+i,basisRefs:[],reason:'prior fixture attempt',day:variant==='rolling'?'2026-10-13':'2026-10-14',timezone:'Asia/Singapore',reservedAt:at,expiresAt:at+120000,status:variant==='unanswered'?'committed':'failed',text:null,error:null,acknowledgedAt:variant==='unanswered'?at:null,respondedAt:null});
+    }
+    repository.saveCompanionData(scope,data);let calls=0;
+    const scheduler=new BookProactiveScheduler(repository,async()=>{calls++;return '面试前，愿意聊聊准备情况吗？'},()=>{},()=>now);scheduler.takeover(scope,null);
+    await scheduler.tick(scope,{...available,busy:variant==='busy'});
+    const allowed=variant==='shorter'||variant==='higher-limit';assert.equal(calls,allowed?1:0,variant);assert.equal(repository.loadCompanionData(scope).deliveries.length,count+(allowed?1:0));
+    if(variant==='legacy')assert.match(scheduler.reason,/180 分钟/);
+    if(variant==='lower-limit'||variant==='rolling')assert.match(scheduler.reason,/调用预算/);
+    if(variant==='unanswered')assert.match(scheduler.reason,/未回应暂停/);
+    if(allowed){const id=repository.loadCompanionData(scope).deliveries.at(-1)!.id;assert.ok(scheduler.claim(scope,id,available,now));const current=repository.loadConfig();repository.commitConfig({...current,companion:{...settings,dailyLimit:1}},current.revision,'lower-after-reserve');assert.equal(scheduler.claim(scope,id,available,now),null,'a saved frequency change invalidates pending offers');assert.equal(repository.loadCompanionData(scope).deliveries.length,count+1,'frequency edit does not refund attempts');}
+  });
+});

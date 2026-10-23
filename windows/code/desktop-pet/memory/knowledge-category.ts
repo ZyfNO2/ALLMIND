@@ -1,4 +1,5 @@
 import type { BookEntry, EntryType } from '../contracts/memory-book.js';
+import {isSimulatedEntry} from '../core/entry-domain.js';
 
 /** Browse-only shelves. They do not rewrite entry type, origin, or pairing. */
 export type KnowledgeCategory = 'world' | 'persona' | 'knowledge' | 'companion';
@@ -28,7 +29,7 @@ export function defaultEntryType(category: KnowledgeCategory): EntryType {
 }
 
 function baseDecision(entry: BookEntry): CategoryDecision {
-  const simulated = entry.synthesis?.domain === 'simulated'||entry.organization?.domain==='rp'&&(entry.type==='memory'||entry.type==='state');
+  const simulated = isSimulatedEntry(entry);
   if(entry.knowledgeCategory)return {category:entry.knowledgeCategory,crossClass:false,simulated};
   if(entry.knowledge&&entry.type==='wiki')return {category:'world',crossClass:false,simulated};
   if (entry.type === 'story' || entry.type === 'lore') return { category: 'world', crossClass: false, simulated };
@@ -51,7 +52,7 @@ export function classifyBook(entries: readonly BookEntry[]): Map<string, Categor
     let decision = baseDecision(entry);
     const basis = entry.synthesis?.basis ?? [];
     const resolved = basis.map(ref => byId.get(ref.entryId)).filter((row): row is BookEntry => Boolean(row));
-    if (entry.synthesis && resolved.length) {
+    if (entry.synthesis && resolved.length && !entry.knowledgeCategory) {
       const parts = resolved.map(visit);
       const categories = new Set(parts.map(part => part.category));
       const simulated = entry.synthesis.domain === 'simulated' || parts.some(part => part.simulated);
@@ -69,4 +70,12 @@ export function classifyBook(entries: readonly BookEntry[]): Map<string, Categor
 
 export function classifyEntry(entry: BookEntry, entries: readonly BookEntry[]): CategoryDecision {
   return classifyBook(entries).get(entry.id) ?? baseDecision(entry);
+}
+
+/** Model suggestions are browse categories, not permission to inject a core persona. */
+export function synthesisPageCategory(page:import('../contracts/wiki-synthesis.js').SynthesisPage,entries:readonly BookEntry[]):KnowledgeCategory{
+  if(page.category)return page.category;
+  const ids=new Set(page.paragraphs.flatMap(row=>row.evidence.map(ref=>ref.entryId)));
+  const categories=new Set(entries.filter(entry=>ids.has(entry.id)).map(entry=>classifyEntry(entry,entries).category));
+  return categories.size===1?[...categories][0]!:page.domain==='real'?'companion':'knowledge';
 }

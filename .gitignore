@@ -52,6 +52,9 @@ id_ed25519*
 # Media / archives produced at runtime
 *.webm
 *.wav
+# Fixed upstream click clips; user recordings remain ignored.
+!windows/code/desktop-pet/desktop/wpf/shell/assets/press.wav
+!windows/code/desktop-pet/desktop/wpf/shell/assets/release.wav
 *.mp3
 *.m4a
 *.mp4
@@ -77,6 +80,18 @@ test-results/
 
 # Isolated verification output (screenshots, traces, eval reports)
 validation/output/
+
+# Local working documentation and plans; keep README, licenses and validation guides tracked.
+**/doc/
+**/docs/
+**/plan/
+**/plans/
+**/*-PLAN*.md
+**/*-Plan*.md
+**/*-plan*.md
+**/PLAN*.md
+**/Plan*.md
+**/plan*.md
 
 # OS / packaging
 .DS_Store

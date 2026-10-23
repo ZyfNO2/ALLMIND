@@ -50,6 +50,18 @@ test('Duplicate identifiers, dangling order, bad depth and unknown order blocks 
   assert.throws(()=>compile(preset([{identifier:'bad',content:'bad',injection_depth:-1}])),/无效/);
   const block=preset();block.orderBlock=123;assert.throws(()=>compile(block),/order block/);
 });
+
+test('date and time macros share a zoned instant without rewriting source or expanding user data',()=>{
+  const record=preset([{identifier:'clock',role:'system',content:'{{date}} {{time}} / {{date}}'}]);
+  const ctx={...context(record),now:new Date('2026-10-20T18:30:00Z'),timezone:'Asia/Singapore'};
+  const original=record.original;
+  const result=compilePreset(ctx,{current:'literal {{date}}',history:[],segments:[],policy:'',budget:10000});
+  assert.equal(presetCompatibility(record).errors.length,0);
+  assert.ok(result.messages.some(row=>row.content==='2026-10-21 02:30 / 2026-10-21'));
+  assert.equal(result.messages[result.compilation.currentMessageIndex]!.content,'literal {{date}}');
+  assert.equal(record.original,original);assert.equal(record.document.prompts.at(-1)!.content,'{{date}} {{time}} / {{date}}');
+  assert.throws(()=>compilePreset({...ctx,timezone:'invalid/timezone'},{current:'x',history:[],segments:[],policy:'',budget:10000}),/time zone/i);
+});
 test('Budget removes old complete turns, recalculates Depth, protects preset and selected materials',()=>{
   const record=preset([{identifier:'depth',content:'D',injection_position:1,injection_depth:1}]);
   const result=compile(record,150,[{role:'user',content:'X'.repeat(500)},{role:'assistant',content:'old answer'}]);
@@ -78,6 +90,45 @@ test('Web transport serializes all roles after the user, without treating post-h
   const model=new ChatgptWebModel({config:()=>({...DEFAULT_CHATGPT_WEB_SOURCE}),bridge:{async ask(input:any){ask=input;return {kind:'completed' as const,text:'合成回复',conversationId:null,durationMs:1};}}});
   await model.complete({...context(record).binding,kind:'chatgpt-web'},compiled.messages,new AbortController().signal,{purpose:'reply',promptCompilation:compiled.compilation,requiredThinking:'high'});
   assert.ok(ask.prompt.indexOf('[用户]\nC')<ask.prompt.indexOf('[角色]\nAFTER'));assert.equal(ask.context,undefined);assert.equal(ask.requiredThinking,'high');
+});
+
+test('runtime passes more than six saved turns to the preset compiler within the configured window',async t=>{
+  const directory=mkdtempSync(join(tmpdir(),'allmind-preset-history-')),repo=new FileBookRepository(directory);t.after(()=>{repo.close();rmSync(directory,{recursive:true,force:true});});
+  const record=preset(),config=repo.loadConfig();repo.commitConfig({...config,promptPresets:[record],characters:config.characters.map(role=>({...role,promptPresetId:record.id})),mainModel:context(record).binding},config.revision,'history-config');
+  const scope={characterId:config.currentCharacterId,pairingId:'local-user',sessionId:'long-history'};
+  for(let index=0;index<12;index++)repo.appendTurn(scope,{...scope,id:'past-'+index,traceId:'trace-'+index,timestamp:new Date().toISOString(),user:'PAST_USER_'+index,assistant:'PAST_ASSISTANT_'+index});
+  let calls=0;const runtime=new BookRuntime(repo,{async complete(_binding,messages){calls++;for(let index=0;index<12;index++){
+    assert.equal(messages.filter(message=>message.role==='user'&&message.content==='PAST_USER_'+index).length,1);
+    assert.equal(messages.filter(message=>message.role==='assistant'&&message.content==='PAST_ASSISTANT_'+index).length,1);
+  }return 'history response';}});
+  const result=await runtime.chat(scope,'CURRENT',new AbortController().signal,{turnId:'long-history-reply'});
+  assert.equal(calls,1);assert.equal(result.context!.compilation!.omissions.filter(row=>row.id==='history').length,0);assert.equal(repo.readSession(scope).length,13);
+});
+
+test('private preset chat retains its seventh and eighth preceding turns without persisting them',async t=>{
+  const directory=mkdtempSync(join(tmpdir(),'allmind-private-preset-history-')),repo=new FileBookRepository(directory);t.after(()=>{repo.close();rmSync(directory,{recursive:true,force:true});});
+  const record=preset(),config=repo.loadConfig();repo.commitConfig({...config,promptPresets:[record],characters:config.characters.map(role=>({...role,promptPresetId:record.id})),mainModel:context(record).binding},config.revision,'private-history-config');
+  const scope={characterId:config.currentCharacterId,pairingId:'local-user',sessionId:'private-history'};let calls=0,last:ChatMessage[]=[];
+  const runtime=new BookRuntime(repo,{async complete(_binding,messages){last=messages;calls++;return 'PRIVATE_ASSISTANT_'+(calls-1);}});
+  for(let index=0;index<9;index++)await runtime.chat(scope,'PRIVATE_USER_'+index,new AbortController().signal,{turnId:'private-'+index,incognito:true});
+  for(let index=0;index<8;index++){
+    assert.equal(last.filter(message=>message.role==='user'&&message.content==='PRIVATE_USER_'+index).length,1);
+    assert.equal(last.filter(message=>message.role==='assistant'&&message.content==='PRIVATE_ASSISTANT_'+index).length,1);
+  }
+  assert.equal(calls,9);assert.equal(repo.readSession(scope).length,0);assert.equal(runtime.incognitoHistory(scope).length,9);
+  runtime.clearIncognito(scope);assert.equal(runtime.incognitoHistory(scope).length,0);
+});
+
+test('saved history still drops only complete old turns when the effective preset window is exhausted',async t=>{
+  const directory=mkdtempSync(join(tmpdir(),'allmind-preset-history-budget-')),repo=new FileBookRepository(directory);t.after(()=>{repo.close();rmSync(directory,{recursive:true,force:true});});
+  const record=preset();record.document.openai_max_context=5000;const config=repo.loadConfig();repo.commitConfig({...config,promptPresets:[record],characters:config.characters.map(role=>({...role,promptPresetId:record.id})),mainModel:context(record).binding},config.revision,'budget-config');
+  const scope={characterId:config.currentCharacterId,pairingId:'local-user',sessionId:'budget-history'};
+  for(let index=0;index<12;index++)repo.appendTurn(scope,{...scope,id:'past-'+index,traceId:'trace-'+index,timestamp:new Date().toISOString(),user:'USER_'+index+' '+'.'.repeat(200),assistant:'ASSISTANT_'+index+' '+'.'.repeat(200)});
+  const runtime=new BookRuntime(repo,{async complete(){return 'unused';}}),built=await runtime.inspect(scope,'CURRENT',new AbortController().signal);
+  const history=built.messages.filter(message=>message.role==='user'||message.role==='assistant').slice(0,-1);
+  assert.ok(built.compilation!.omissions.some(row=>row.reason==='oldest_complete_turn_budget'));assert.ok(built.usedTokens<=built.compilation!.inputBudget);assert.ok(history.length>0&&history.length<24);assert.equal(history.length%2,0);
+  for(let index=0;index<history.length;index+=2){assert.equal(history[index]!.role,'user');assert.equal(history[index+1]!.role,'assistant');assert.equal(/USER_(\d+)/.exec(history[index]!.content)![1],/ASSISTANT_(\d+)/.exec(history[index+1]!.content)![1]);}
+  assert.ok(history.at(-1)!.content.startsWith('ASSISTANT_11 '));assert.equal(built.messages.at(-1)!.content,'CURRENT');
 });
 test('preset slots without a data source report an explicit diagnostic and are never filled with unusable data',()=>{
   const record=preset([{identifier:'scenario',marker:true},{identifier:'personaDescription',marker:true},{identifier:'extra',content:'S={{scenario}} P={{persona}} N={{personality}}',injection_position:1,injection_depth:0}]);

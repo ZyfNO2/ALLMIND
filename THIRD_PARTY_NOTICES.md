@@ -71,3 +71,9 @@ WPF 整合版本另在 `windows/code/desktop-pet/desktop/wpf/shell/` 保留 GPT-
 管理界面使用 [hhikr/endfield-ui-skill](https://github.com/hhikr/endfield-ui-skill) 的样式、token 与等高线资源，取自提交 `96702a36317b4c76538d1a20ed6beaae4e6067e2`。上游 `SKILL.md` 声明其代码、模板、token 和规则可自由使用；等高线由上游脚本生成，不包含游戏官方素材。资源位于 `windows/code/desktop-pet/management/character-ui/src/vendor/endfield/`，ALLMIND 的布局适配位于相邻 `endfield-allmind.css`；未接入上游示例数据或动效脚本。
 
 随附 Saira 可变字体，Copyright 2020 The Saira Project Authors，适用 SIL Open Font License 1.1。完整许可证见上述目录 `fonts/Saira-OFL.txt`。字体从本地加载，不访问外部字体服务；中文使用系统黑体。
+
+## 9. QQ OneBot 通道（2026-10-21）
+
+新增运行时依赖 [ws](https://github.com/websockets/ws) 8.22.0，适用 MIT License。Copyright (c) 2011 Einar Otto Stangvik；Copyright (c) 2013 Arnout Kazemier and contributors；Copyright (c) 2016 Luigi Pinca and contributors。完整许可证随依赖的 `node_modules/ws/LICENSE` 分发，便携包按生产依赖闭包保留该文件。
+
+QQ 适配器按 OneBot v11 接口独立实现。NapCatQQ 为用户自行安装、登录的外部服务，不捆绑其代码或客户端；Cyrene-Agent、MaiBot、AstrBot、LangBot 仅用于机制调研，本轮未复制其实现代码。真实 QQ 联调尚未运行。

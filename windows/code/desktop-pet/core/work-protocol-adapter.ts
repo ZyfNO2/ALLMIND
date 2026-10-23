@@ -132,8 +132,13 @@ export class AcpProtocolAdapter {
     const operationId = request.operationId;
     this.activeProcesses.set(operationId, rpc);
     const stopPermissionRequests = rpc.onRequest(message => {
-      // No permission UI/bridge is wired yet. Fail closed by denying every agent request.
-      if (message.method === 'session/request_permission') return { outcome: { outcome: 'cancelled' } };
+      if (message.method === 'session/request_permission') {
+        // Only a locally reviewed delegated-task grant can select one-time permission.
+        // Remote tool descriptions/annotations cannot manufacture this grant.
+        const params=message.params as {options?:{optionId?:unknown;kind?:unknown}[]}|undefined;
+        const allowed=request.permissionGrant.includes('acp.allow_once')&&Array.isArray(params?.options)?params.options.find(option=>option.kind==='allow_once'&&typeof option.optionId==='string'):undefined;
+        return allowed?{outcome:{outcome:'selected',optionId:allowed.optionId}}:{outcome:{outcome:'cancelled'}};
+      }
       throw Object.assign(new Error(`Unsupported ACP client request: ${String(message.method)}`), { code: -32601 });
     });
     let abortListener: (() => void) | undefined;
@@ -153,6 +158,8 @@ export class AcpProtocolAdapter {
       if (typeof created.sessionId !== 'string' || !created.sessionId) throw new Error('ACP session/new returned no sessionId');
       sessionId = created.sessionId;
       let summary = '';
+      let outputExceeded=false,rejectOutput!:(error:Error)=>void;
+      const boundedOutput=new Promise<never>((_resolve,reject)=>rejectOutput=reject);
       rpc.onNotification(message => {
         if (message.method !== 'session/update' || !message.params || typeof message.params !== 'object') return;
         const update = (message.params as Record<string, unknown>).update;
@@ -161,7 +168,10 @@ export class AcpProtocolAdapter {
         const content = body.content;
         if (body.sessionUpdate === 'agent_message_chunk' && content && typeof content === 'object' &&
           (content as Record<string, unknown>).type === 'text' && typeof (content as Record<string, unknown>).text === 'string') {
-          summary = `${summary}${(content as Record<string, unknown>).text as string}`.slice(-32_000);
+          if(outputExceeded)return;
+          const chunk=(content as Record<string, unknown>).text as string;
+          if(summary.length+chunk.length>32000){outputExceeded=true;rejectOutput(new Error('ACP output exceeded 32000 characters; result is incomplete and will not be reported as success'));return;}
+          summary+=chunk;
         }
       });
       let cancelRequested = false;
@@ -187,7 +197,7 @@ export class AcpProtocolAdapter {
         signal.addEventListener('abort', abortListener, { once: true });
         if (signal.aborted) abortListener();
       });
-      const result = signal ? await Promise.race([promptPromise, cancelled]) : await promptPromise;
+      const result = await Promise.race([promptPromise,boundedOutput,...(signal?[cancelled]:[])]);
       if (!['end_turn', 'max_tokens', 'max_turn_requests', 'refusal', 'cancelled'].includes(String(result.stopReason))) {
         throw new Error(`invalid_acp_stop_reason:${String(result.stopReason)}`);
       }

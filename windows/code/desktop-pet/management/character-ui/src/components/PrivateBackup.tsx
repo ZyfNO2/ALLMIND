@@ -1,0 +1,15 @@
+import {useState} from 'react'
+import {api} from '../book-api'
+import type {RuntimeConfig} from '../../../../contracts/memory-book'
+
+type Preview={hash:string;name:string;sessions:number;turns:number;entries:number;conflicts:string[];exclusions:string[];integrity:'verified'|'legacy-unverified'}
+export default function PrivateBackup({config,sessionId,update,disabled,action}:{config:RuntimeConfig;sessionId:string;update:(config:RuntimeConfig)=>void;disabled:boolean;action:(fn:()=>Promise<void>)=>Promise<void>}){
+  const [text,setText]=useState(''),[preview,setPreview]=useState<Preview|null>(null),[confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('')
+  async function work(fn:()=>Promise<void>){if(busy||disabled)return;await action(async()=>{setBusy(true);setError('');setNotice('');try{await fn()}catch(e){setError(e instanceof Error?e.message:String(e))}finally{setBusy(false)}})}
+  return <section className="mb-card" aria-label="私人备份与恢复"><h3>私人备份与恢复</h3><p>包含当前角色的全部已保存会话、标题、归档状态、知识和私人记忆。排除模型凭据、网页登录态、外观与附件文件、外部通道配置；这些项目需要在恢复后重新连接。与公开角色包分开保存。</p>
+    {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
+    <fieldset disabled={disabled||busy}><button type="button" onClick={()=>void work(async()=>{const result=await api<{text:string;filename:string}>('/memory/backup',{method:'POST',body:{characterId:config.currentCharacterId,sessionId}});const url=URL.createObjectURL(new Blob([result.text],{type:'application/json'}));try{const link=document.createElement('a');link.href=url;link.download=result.filename;link.click()}finally{URL.revokeObjectURL(url)}setNotice('已导出私人备份。包含敏感原文，请保存到可信位置。')})}>备份当前角色的全部会话与记忆</button>
+    <label>选择私人备份（v1/v2，最多128 MiB）<input type="file" accept=".json" onChange={event=>{const file=event.target.files?.[0];setPreview(null);setConfirmed(false);setText('');if(file)void work(async()=>{if(file.size>128*1024*1024)throw Error('备份超过128 MiB');const source=await file.text();const result=await api<Preview>('/private-backup/preview',{method:'POST',body:{text:source},timeoutMs:180000});setText(source);setPreview(result)})}}/></label>
+    {preview&&<><p>{preview.name}：{preview.entries} 条知识、{preview.sessions} 个会话、{preview.turns} 轮聊天。{preview.integrity==='verified'?'完整性校验通过。':'旧v1无内置完整性哈希，仅格式校验通过；请核对原件。'}</p><p>不恢复：{preview.exclusions.join('、')}。</p>{preview.conflicts.map((row,i)=><p role="alert" key={i}>{row}</p>)}<p>恢复保留备份中的角色身份，仅写入空目标。已有同角色数据时拒绝覆盖；请使用独立数据目录恢复。自动记忆队列在恢复后暂停。</p><label><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/>我已核对内容、排除项和目标，确认恢复私人数据</label><button disabled={!confirmed||preview.conflicts.length>0} type="button" onClick={()=>void work(async()=>{const result=await api<{config:RuntimeConfig}>('/private-backup/restore',{method:'POST',body:{text,hash:preview.hash,expectedRevision:config.revision,confirmed},timeoutMs:180000});update(result.config);setPreview(null);setText('');setConfirmed(false);setNotice('恢复完成。请选择恢复的角色；模型、网页登录态与外观需要重新核对。')})}>确认恢复到空目标</button></>}
+    </fieldset></section>
+}

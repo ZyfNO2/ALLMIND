@@ -346,6 +346,16 @@ test('model router: legacy bindings keep the HTTP path; web bindings route to th
   assert.deepEqual(httpCalls, ['legacy']);
 });
 
+test('web resume independently rejects empty or oversized receipts without asking again',async()=>{
+ let asks=0,resumes=0,text='   ';
+ const model=new ChatgptWebModel({config:()=>({...DEFAULT_CHATGPT_WEB_SOURCE}),bridge:{async ask(){asks++;throw Error('Resume must never submit');},async resume(){resumes++;return {kind:'completed',text,conversationId:null,durationMs:0};}}});
+ const binding:ModelBinding={kind:'chatgpt-web',baseUrl:'chatgpt-web',model:'current',credentialId:'none',inputTokens:8192,outputTokens:128};
+ for(const json of [false,true])await assert.rejects(model.resume(binding,'saved-empty',new AbortController().signal,{json}),/接续网页回复为空/);
+ text='x'.repeat(1025);await assert.rejects(model.resume(binding,'saved-long',new AbortController().signal),{code:'budget'});
+ text='```json\n{"ok":true}\n```';assert.equal(await model.resume(binding,'saved-json',new AbortController().signal,{json:true}),'{"ok":true}');
+ assert.equal(resumes,4);assert.equal(asks,0);
+});
+
 const scope: BookScope = { characterId: 'aika', pairingId: 'local-user', sessionId: 'chatgpt-web-tests' };
 const webBinding: ModelBinding = { kind: 'chatgpt-web', baseUrl: 'chatgpt-web', model: 'auto', credentialId: 'none', inputTokens: 8192, outputTokens: 1024 };
 const httpBinding: ModelBinding = { baseUrl: 'http://127.0.0.1:9999/v1', model: 'stub', credentialId: 'local', inputTokens: 8192, outputTokens: 1024 };

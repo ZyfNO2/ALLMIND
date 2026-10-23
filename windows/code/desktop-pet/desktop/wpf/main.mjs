@@ -8,6 +8,7 @@ import {randomUUID,randomBytes} from 'node:crypto';
 import {restrictPrivatePathSync,isPrivateFileSync} from '../../dist/core/platform-files.js';
 import {startBrowserHost} from './browser-channel.mjs';
 import {createQuickChat} from './quick-chat.mjs';
+import {createRotatingLog} from './rotating-log.mjs';
 import {createWpfPipe,pipeRequest,validateVisibility} from './pipe.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..'),option=(name,fallback)=>{const i=process.argv.indexOf(name);return i<0?fallback:process.argv[i+1];};
@@ -23,7 +24,8 @@ const instanceId=randomUUID(),token=randomBytes(32).toString('hex'),pipeName='AL
 const descriptor={version:1,pid:process.pid,instanceId,endpoint,pipeName,token,dataDir:hostData,nodePath:process.execPath,appDir:shellRoot,product:'allmind',appVersion:'0.2.0-dev',automation:process.argv.includes('--native-test')};
 const fd=openSync(lock,'wx',0o600);try{writeFileSync(fd,JSON.stringify(descriptor)+'\n');}finally{closeSync(fd);}restrictPrivatePathSync(lock);
 const config=join(hostData,'widget-config.json');writeFileSync(config,JSON.stringify(descriptor)+'\n',{mode:0o600});restrictPrivatePathSync(config);
-const log=createWriteStream(join(hostData,'runtime.log'),{flags:'a',mode:0o600});
+const log=createRotatingLog(join(hostData,'runtime.log'));
+log.on('error',error=>process.stderr.write('ALLMIND runtime log failed: '+error.message+'\n'));
 let backend=null,widget=null,browser=null,browserStarting=null,management=null,appearance=null,stopping=false,backendExpected=false,widgetExpected=false;
 let state={instanceId,backend:'starting',characterId:null,characterLabel:'ALLMIND',sessionId:'desktop',hidden:true,visibility:null,capabilities:{staticPortrait:true,live2d:false,chatgptWeb:true}};
 let presence={hidden:true,dnd:true};

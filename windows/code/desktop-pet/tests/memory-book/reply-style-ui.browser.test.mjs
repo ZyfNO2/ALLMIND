@@ -46,7 +46,7 @@ test('default style saves per role, 恢复自然长度 clears both, per-turn sel
   const policyResponse=page.waitForResponse(response=>response.url().endsWith('/chat/policy')&&response.request().postDataJSON()?.text==='这次不超过50字，而且这次至少100字');
   await page.getByLabel('聊天消息', { exact: true }).fill('这次不超过50字，而且这次至少100字');
   assert.equal((await (await policyResponse).json()).decision.requestConflict,true,'conflict policy still applies without a banner');
-  assert.equal(await page.locator('.mb-composer-hint').count(),0,'bound model hides the entire yellow banner even after policy preview returns');
+  assert.equal(await page.locator('.mb-chat-setup-hint').count(),0,'bound model hides connection setup help');await page.getByText(/发送前：/).waitFor();assert.equal(await page.locator('.mb-composer-hint').count(),1,'bound model retains the reply policy preview');
   assert.equal(calls,0,'发送前冲突预览不触发模型');
   await turnSelect.selectOption('short');
   await page.getByLabel('聊天消息', { exact: true }).fill('你好');
@@ -72,6 +72,9 @@ test('default style saves per role, 恢复自然长度 clears both, per-turn sel
   await page.getByRole('combobox',{name:'当前角色',exact:true}).selectOption('aika');
   await expect(page.getByLabel('本次回复风格', { exact: true })).toHaveValue('detailed', { timeout: 8000 });
   const failedRequest=submitted.find(row=>row.text==='第二次输入');
+  await page.getByRole('button',{name:'核对原请求结果（不重发）',exact:true}).click();
+  await page.getByLabel('我已核对来源，理解重新请求可能重复生成或计费',{exact:true}).check();
+  await page.getByRole('button',{name:'明确准备新请求',exact:true}).click();
   await turnSelect.selectOption('short');
   await page.getByRole('button',{name:'发送',exact:true}).click();
   await expect(turnSelect).toHaveValue('inherit');
@@ -83,7 +86,7 @@ test('default style saves per role, 恢复自然长度 clears both, per-turn sel
   await page.getByRole('button',{name:'发送',exact:true}).click();
   await page.getByRole('alert').waitFor();
   const lostId=submitted.at(-1).turnId,beforeRetry=calls;
-  await page.getByRole('button',{name:'发送',exact:true}).click();
+  await page.getByRole('button',{name:'核对原请求结果（不重发）',exact:true}).click();
   await expect(turnSelect).toHaveValue('inherit');
   assert.equal(submitted.at(-1).turnId,lostId);assert.equal(calls,beforeRetry,'丢包重试回放历史，不再次调用模型');
   // settings: 恢复自然长度 clears BOTH the default style and the saved bounds

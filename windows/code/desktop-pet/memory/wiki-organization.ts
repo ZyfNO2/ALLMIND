@@ -14,6 +14,7 @@ import { FactWikiService, wikiExclusions } from './fact-wiki.js';
 import type { BookResourceService } from './book-resources.js';
 import { bookTokenCost } from './local-book-index.js';
 import type { RecallMode } from '../contracts/memory-book.js';
+import {isSimulatedEntry} from '../core/entry-domain.js';
 
 function compilationBinding(config: RuntimeConfig): ModelBinding | null { return config.wikiModel ?? config.fastModel ?? null; }
 function compilationBudget(config: RuntimeConfig): number {
@@ -30,6 +31,7 @@ export function realExperienceBlocked(quote: string): boolean {
 
 export function organizationExclusion(entry: BookEntry, mode: RecallMode): string | null {
   const meta = entry.organization;
+  if(mode!=='story-rp'&&isSimulatedEntry(entry))return 'domain_fiction_isolated';
   if (!meta) return null;
   if (meta.evidenceStatus === 'hypothesis') return 'hypothesis_not_experience';
   if (mode === 'story-rp' && meta.domain === 'real') return 'domain_real_isolated';

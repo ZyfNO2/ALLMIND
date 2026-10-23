@@ -1,6 +1,6 @@
 # ALLMIND 工作树约束（发布整理期）
 
-适用范围：本发布树。P0–P4 整理与本轮剩余验收状态以 `validation/release-status.json` 为准，不在此处宣称完成；当前版本 `0.1.0-beta.1`，安装与验证见 `README.md`、`validation/RUNBOOK.md`。历史基线保留当时的来源与结果，不将其当成每次改动后的新测试证据。
+适用范围：本发布树。P0–P4 整理与本轮剩余验收状态以 `validation/release-status.json` 为准，不在此处宣称完成；当前版本 `0.1.0-beta.2`，安装与验证见 `README.md`、`validation/RUNBOOK.md`。历史基线保留当时的来源与结果，不将其当成每次改动后的新测试证据。
 
 ## 边界（硬性）
 
@@ -12,6 +12,8 @@
 - `LICENSE` 原样保留；`THIRD_PARTY_NOTICES.md` 记录最小来源/修改/素材声明；署名与来源声明不因 README 后置而后置。
 
 ## 工程规则
+
+- 2026-10-22 用户新授权：按新增产品需求自主完成、验证后，将当前已审查工作提交为 PR。允许新建 `codex/` 分支、正常增量提交、push 该分支与创建 PR；不合并、不重写已有历史。此授权覆盖上文历史 Init/无 remote/不 push 限制；原工作区只读与隐私边界不变。
 
 - 默认中文交流，技术术语保留英文。
 - 按已授权 P0 Plan 实现 Wiki 图谱、轻量酒馆 Prompt Compiler 与必要 UI 修复；保留相对目录结构，不顺手重构无关模块。

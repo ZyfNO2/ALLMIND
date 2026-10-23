@@ -218,7 +218,9 @@ export class FactWikiService {
     for(const node of nodes){
       node.categories=[...new Set(node.entryIds.flatMap(id=>{const category=decisions.get(id)?.category;return category?[category]:[];}))];
       const entries=book.entries.filter(entry=>node.entryIds.includes(entry.id));
-      node.pageType=node.kind==='source'?'source':entries.some(entry=>entry.event)?'event':entries.some(entry=>entry.entities.includes(node.title)||entry.fact?.subject===node.title)?'entity':entries.some(entry=>entry.synthesis)?'topic':'unclassified';
+      // A synthesis title was historically copied into entities; it is not evidence of an entity.
+      const synthesized=entries.find(entry=>entry.synthesis&&entry.title===node.title)?.synthesis;
+      node.pageType=node.kind==='source'?'source':synthesized?(synthesized.pageType??'topic'):entries.some(entry=>entry.event)?'event':entries.some(entry=>entry.entities.includes(node.title)||entry.fact?.subject===node.title)?'entity':'unclassified';
     }
     const selected=selectGraph(nodes,[...uniqueEdges.values()],selection);
     const visible=selected.nodes.slice(0,128),ids=new Set(visible.map(node=>node.id)),connected=selected.edges.filter(edge=>ids.has(edge.from)&&ids.has(edge.to));

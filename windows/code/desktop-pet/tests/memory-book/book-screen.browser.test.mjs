@@ -1,0 +1,71 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdirSync,mkdtempSync} from 'node:fs';
+import {join,resolve} from 'node:path';
+import {chromium} from '@playwright/test';
+import {FileBookRepository} from '../../dist/memory/file-book-repository.js';
+import {FileResourceStore} from '../../dist/memory/file-resource-store.js';
+import {BookResourceService} from '../../dist/memory/book-resources.js';
+import {BookHttpModel} from '../../dist/providers/book-model.js';
+import {BookRuntime} from '../../dist/app/book-runtime.js';
+import {BookScreenService} from '../../dist/core/book-screen.js';
+import {BookCredentials} from '../../dist/management/book-credentials.js';
+import {startBookServer} from '../../dist/management/book-server.js';
+
+for(const surface of ['window','browser','monitor'])test(`screen UI (${surface}) previews before local OCR, explicitly selects text for a single chat, cancels and excludes sensitive sources`,{timeout:90000},async t=>{
+ const out=resolve(process.env.ALLMIND_TEST_OUTPUT??'.local/goal-completion/screen-browser',surface);mkdirSync(out,{recursive:true});const directory=mkdtempSync(join(out,'data-')),repo=new FileBookRepository(directory),config=repo.loadConfig();
+ repo.commitConfig({...config,mainModel:{baseUrl:'http://127.0.0.1:1/v1',model:'synthetic-chat',credentialId:'none',inputTokens:16000,outputTokens:2048}},config.revision,'config');
+ let captures=0,calls=0,last,delay=false,release;
+ const screen=new BookScreenService(repo,{async capabilities(){return {available:true}},async recognize(bytes){captures++;assert.equal(bytes[0],137);if(delay)await new Promise(resolve=>release=resolve);return {status:'ok',engine:'controlled-ocr',language:'en-US',readingOrderText:'Synthetic meeting at 10:30 in room 42.',blocks:[]}}}),runtime=new BookRuntime(repo,{async complete(_binding,messages){calls++;last=messages;return '合成模型回复。'}},{screen}),server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management')});
+ const browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];t.after(async()=>{release?.();await browser.close();await server.close();repo.close()});page.setDefaultTimeout(12000);page.on('pageerror',error=>errors.push(error.message));
+ await page.addInitScript(surface=>{navigator.mediaDevices.getDisplayMedia=async constraints=>{window.screenRequests=(window.screenRequests??[]).concat(constraints);if(window.denyScreen)throw new DOMException('Denied','NotAllowedError');const canvas=document.createElement('canvas');canvas.width=640;canvas.height=200;const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,640,200);const stream=canvas.captureStream(5),track=stream.getVideoTracks()[0];Object.defineProperty(track,'label',{value:window.sourceLabel??'Synthetic meeting window'});track.getSettings=()=>({displaySurface:surface});setTimeout(()=>{ctx.fillStyle='black';ctx.font='28px Arial';ctx.fillText('Meeting at 10:30, room 42.',20,90)},10);window.screenStream=stream;return stream}},surface);
+ await page.goto(server.url);const open=page.getByRole('button',{name:'查看屏幕 · 图片或 OCR',exact:true});await open.click();const panel=page.locator('.mb-screen-context');
+ const choose=panel.getByRole('button',{name:'选择屏幕或窗口',exact:true}),recognize=panel.getByRole('button',{name:'本地识别屏幕文字',exact:true}),previewConsent=panel.getByRole('checkbox',{name:'我已检查预览，同意只在本机识别这张截图',exact:true}),sendConsent=panel.getByRole('checkbox',{name:/将这次识别文字发送给当前模型/});
+ await choose.click();await previewConsent.waitFor();assert.equal(await page.evaluate(()=>window.screenStream.active),false);assert.equal(await recognize.isEnabled(),false);assert.equal(captures,0);assert.equal(calls,0);assert.equal(await panel.getByRole('img',{name:'待确认的本次屏幕截图'}).count(),1);
+ await previewConsent.focus();await page.keyboard.press('Space');await recognize.click();await panel.getByRole('textbox',{name:'本次识别文字',exact:true}).waitFor();assert.equal(captures,1);assert.equal(calls,0);assert.equal(await sendConsent.isChecked(),false);
+ assert.ok((await panel.getByRole('textbox',{name:'本次识别文字',exact:true}).boundingBox()).height>=120,'OCR reader shows several lines without composer overlap');await page.screenshot({path:join(out,'screen-local-result.png'),fullPage:true});
+ await page.keyboard.press('Escape');await page.getByRole('dialog',{name:'查看屏幕文字',exact:true}).waitFor({state:'hidden'});assert.equal(await open.evaluate(element=>element===document.activeElement),true);
+ const input=page.getByRole('textbox',{name:'聊天消息',exact:true});await input.fill('普通问候');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('合成模型回复。',{exact:true}).waitFor();assert.equal(calls,1);assert.ok(!JSON.stringify(last).includes('Synthetic meeting'));
+ await open.click();await sendConsent.check();await panel.getByRole('button',{name:'返回聊天',exact:true}).click();await input.fill('屏幕是什么内容？');await page.getByRole('button',{name:'发送',exact:true}).click();await page.getByText('本次屏幕文字已用于一轮',{exact:true}).waitFor();await open.click();await panel.getByText('已用于一轮；再次使用需要重新选取。',{exact:false}).waitFor();assert.equal(calls,2);assert.ok(JSON.stringify(last).includes('untrustedScreenText'));assert.ok(JSON.stringify(last).includes('Synthetic meeting at 10:30'));assert.equal(await sendConsent.count(),0);
+ const cleared=page.waitForResponse(r=>r.request().method()==='DELETE'&&r.url().includes('/screen/observations/'));await panel.getByRole('button',{name:'取消并清除屏幕资料',exact:true}).click();assert.equal((await cleared).status(),200);assert.equal(await panel.getByRole('textbox',{name:'本次识别文字',exact:true}).count(),0);
+ await page.evaluate(()=>window.sourceLabel='1Password vault');await choose.click();await panel.getByRole('alert').filter({hasText:'敏感窗口排除项'}).waitFor();assert.equal(captures,1);assert.equal(await page.evaluate(()=>window.screenStream.active),false);
+ await page.evaluate(()=>{window.sourceLabel='Synthetic meeting window';window.denyScreen=true});await choose.click();await panel.getByRole('alert').filter({hasText:'没有授权屏幕来源'}).waitFor();assert.equal(captures,1);
+ await page.evaluate(()=>window.denyScreen=false);delay=true;await choose.click();await previewConsent.check();await recognize.click();for(let i=0;i<100&&!release;i++)await new Promise(resolve=>setTimeout(resolve,20));assert.ok(release);
+ await panel.getByRole('button',{name:'取消并清除屏幕资料',exact:true}).click();release();await new Promise(resolve=>setTimeout(resolve,100));assert.equal(await panel.getByRole('textbox',{name:'本次识别文字',exact:true}).count(),0);assert.equal(calls,2);
+ await page.keyboard.press('Escape');await page.getByRole('navigation',{name:'主导航'}).getByRole('link',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'通知与隐私',exact:true}).click();
+ const excluded=page.getByRole('textbox',{name:'附加排除的窗口名称',exact:true});await excluded.fill(Array.from({length:33},(_,i)=>'Blocked '+i).join('\n'));
+ const rejected=page.waitForResponse(r=>r.url().endsWith('/runtime')&&r.request().method()==='PUT');await page.getByRole('button',{name:'保存设置',exact:true}).click();assert.equal((await rejected).status(),400);assert.equal(repo.loadConfig().characters[0].screen,undefined);
+ await excluded.fill('TestVault');const saved=page.waitForResponse(r=>r.url().endsWith('/runtime')&&r.request().method()==='PUT');await page.getByRole('button',{name:'保存设置',exact:true}).click();assert.equal((await saved).status(),200);assert.deepEqual(repo.loadConfig().characters[0].screen.blockedWindows,['TestVault']);
+ await page.getByRole('navigation',{name:'主导航'}).getByRole('link',{name:'首页',exact:true}).click();await open.click();await page.evaluate(()=>window.sourceLabel='TestVault document');await choose.click();await panel.getByRole('alert').filter({hasText:'敏感窗口排除项'}).waitFor();assert.equal(captures,2);assert.equal(calls,2);
+ for(const width of [320,768,1440]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'no overflow '+width)}
+ await page.screenshot({path:join(out,'screen-context.png'),fullPage:true});assert.deepEqual(errors,[]);assert.ok((await page.evaluate(()=>window.screenRequests)).every(row=>row.audio===false));
+});
+
+
+test('screen image bypasses OCR, requires separate consent and a manual send, and is not reused next turn',{timeout:90000},async t=>{
+ const out=resolve(process.env.ALLMIND_TEST_OUTPUT??'.local/goal-completion/screen-browser','image');mkdirSync(out,{recursive:true});const directory=mkdtempSync(join(out,'data-')),repo=new FileBookRepository(directory),config=repo.loadConfig();
+ repo.commitConfig({...config,mainModel:{baseUrl:'http://127.0.0.1:1/v1',model:'synthetic-vlm',credentialId:'none',inputTokens:16000,outputTokens:2048,imageInput:true}},config.revision,'config');
+ let ocr=0;const requests=[];
+ const model=new BookHttpModel(async()=>'',async (_url,init)=>{requests.push(JSON.parse(String(init.body)));return new Response(JSON.stringify({choices:[{message:{content:'合成图片回复 '+requests.length},finish_reason:'stop'}]}),{headers:{'Content-Type':'application/json'}})});
+ const resources=new BookResourceService(new FileResourceStore({directory:join(directory,'resources')}),{capabilities:()=>model.capabilities(repo.loadConfig().mainModel)});
+ let holdUpload=false,uploadSaved,releaseUpload;const receiveUpload=resources.receiveUpload.bind(resources);resources.receiveUpload=async(...args)=>{const result=await receiveUpload(...args);if(holdUpload){uploadSaved?.();await new Promise(resolve=>releaseUpload=resolve)}return result};
+ const screen=new BookScreenService(repo,{async capabilities(){return {available:false}},async recognize(){ocr++;throw Error('Image path must not invoke OCR')}}),runtime=new BookRuntime(repo,model,{screen,resources}),server=await startBookServer({runtime,credentials:new BookCredentials(join(directory,'credentials')),uiRoot:resolve('management')});
+ const browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:1440,height:1000}});t.after(async()=>{await browser.close();await server.close();repo.close()});page.setDefaultTimeout(12000);
+ let uploads=0;page.on('request',request=>{if(request.method()==='POST'&&request.url().includes('/resources/upload'))uploads++});
+ await page.addInitScript(()=>{navigator.mediaDevices.getDisplayMedia=async()=>{const canvas=document.createElement('canvas');canvas.width=640;canvas.height=200;const context=canvas.getContext('2d');context.fillStyle='white';context.fillRect(0,0,640,200);const stream=canvas.captureStream(5),track=stream.getVideoTracks()[0];Object.defineProperty(track,'label',{value:'Synthetic image source'});track.getSettings=()=>({displaySurface:'window'});window.imageStream=stream;return stream}});
+ await page.goto(server.url);const open=page.getByRole('button',{name:'查看屏幕 · 图片或 OCR',exact:true});await open.click();const panel=page.locator('.mb-screen-context'),choose=panel.getByRole('button',{name:'选择屏幕或窗口',exact:true}),attach=panel.getByRole('button',{name:'将截图作为图片加入本轮',exact:true}),consent=panel.getByRole('checkbox',{name:/我已检查预览，同意保存截图/});
+ await choose.click();await consent.waitFor();assert.equal(await attach.isEnabled(),false);assert.equal(await page.evaluate(()=>window.imageStream.active),false);assert.equal(uploads,0);assert.equal(requests.length,0);
+ await consent.check();await attach.click();await panel.getByText('截图已作为图片加入本轮；请返回聊天手动发送，可在“本轮资料与图片”中移除选择。',{exact:true}).waitFor().catch(async failure=>{throw new Error('Image attach failed: '+await panel.innerText(),{cause:failure})});assert.equal(uploads,1);assert.equal(requests.length,0);assert.equal(ocr,0);
+ await panel.getByRole('button',{name:'返回聊天',exact:true}).click();await page.getByText('本轮资料与图片',{exact:true}).click();assert.equal(await page.getByText(/图片（将传给当前模型）/).count(),1);
+ const input=page.getByRole('textbox',{name:'聊天消息',exact:true}),send=page.getByRole('button',{name:'发送',exact:true});await input.fill('这张截图中是什么？');await send.click();await page.getByText('合成图片回复 1',{exact:true}).waitFor();assert.equal(requests.length,1);
+ const image=requests[0].messages.at(-1).content.find(part=>part.type==='image_url');assert.ok(image.image_url.url.startsWith('data:image/png;base64,'));assert.ok(Buffer.from(image.image_url.url.split(',')[1],'base64').length>100);assert.equal(ocr,0);
+ await input.fill('普通文字下一轮');await send.click();await page.getByText('合成图片回复 2',{exact:true}).waitFor();assert.equal(requests.length,2);assert.ok(requests[1].messages.every(message=>typeof message.content==='string'),'no image carried into later history');
+ const current=repo.loadConfig();repo.commitConfig({...current,mainModel:{...current.mainModel,imageInput:false}},current.revision,'disable-image');
+ await open.click();await choose.click();await consent.check();await attach.click();await panel.getByRole('alert').filter({hasText:'启用图片输入'}).waitFor();assert.equal(uploads,1);assert.equal(requests.length,2);assert.equal(ocr,0);
+ const enabled=repo.loadConfig();repo.commitConfig({...enabled,mainModel:{...enabled.mainModel,imageInput:true}},enabled.revision,'enable-image');
+ holdUpload=true;const saved=new Promise(resolve=>uploadSaved=resolve);await choose.click();await consent.check();await attach.click();await saved;
+ await panel.getByRole('button',{name:'取消并清除屏幕资料',exact:true}).click();releaseUpload();await page.keyboard.press('Escape');
+ await input.fill('取消截图后的普通消息');await send.click();await page.getByText('合成图片回复 3',{exact:true}).waitFor();assert.equal(requests.length,3);assert.ok(requests[2].messages.every(message=>typeof message.content==='string'),'cancelled late upload never selects an image');assert.equal(ocr,0);
+ await open.click();
+ for(const width of [320,768,1440]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'image dialog no overflow '+width)}
+});

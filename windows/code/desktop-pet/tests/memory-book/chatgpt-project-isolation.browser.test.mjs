@@ -32,10 +32,11 @@ test('project settings isolate roles and drafts across in-flight checks, saves, 
   await page.route('**/api/memory-book/v1/runtime', route => { if (delayPuts && route.request().method() === 'PUT') setTimeout(() => void route.continue(), 1200); else void route.continue(); });
   await page.goto(server.url);
   await page.getByRole('link', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: 'ChatGPT 网页接入', exact: true }).click();
   const section = page.getByRole('region', { name: '对话所属 ChatGPT 项目', exact: true });
   const input = section.getByLabel('已有项目链接', { exact: true });
   // the sidebar label wraps its <select>, so its accessible text includes the option names: scope it instead of exact-matching.
-  const roleSelect = page.locator('.mb-sidebar').getByLabel('当前角色');
+  const roleSelect = page.getByRole('combobox', { name: '当前角色', exact: true });
   const check = section.getByRole('button', { name: '检查项目链接', exact: true });
   await input.waitFor();
   // invalid URL: rejected in place, the draft input is kept, nothing is saved
@@ -60,8 +61,10 @@ test('project settings isolate roles and drafts across in-flight checks, saves, 
   assert.equal(saved.projectId, projectId); assert.equal(saved.characterId, 'aika');
   // reload keeps the saved binding visible
   await page.reload();
+  await page.getByRole('button', { name: 'ChatGPT 网页接入', exact: true }).click();
   await section.getByText(/项目：链接测试项目/).waitFor();
   // a dirty draft in another setting blocks the project save and survives it
+  await page.getByText('回复语言与表达偏好', { exact: true }).click();
   await page.getByLabel('回复语言', { exact: true }).selectOption('ja-JP');
   checkDelay = 0;
   await input.fill('https://chatgpt.com/g/' + projectId + '/project');

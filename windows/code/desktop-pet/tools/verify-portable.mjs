@@ -1,7 +1,7 @@
 import {spawn} from 'node:child_process';
 import {existsSync,readFileSync,writeFileSync,lstatSync} from 'node:fs';
 import {resolve,join} from 'node:path';
-import {pathToFileURL} from 'node:url';
+import {pathToFileURL,fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
@@ -23,6 +23,23 @@ const fixture=createServer(async(req,res)=>{
  for await(const chunk of req){}replyRequests++;notifyIncoming();await new Promise(r=>releaseReply=r);
  res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({choices:[{message:{role:'assistant',content:'Synthetic reply survives a hidden pet.'}}],usage:{prompt_tokens:1,completion_tokens:1,total_tokens:2}}));
 });
+// Let Windows avoid reserved ports; discard only fetch-forbidden allocations.
+async function listenFixture(){
+ for(let attempt=0;attempt<10;attempt++){
+  try{
+   await new Promise((resolve,reject)=>{
+    const failed=error=>{fixture.off('error',failed);reject(error);};fixture.once('error',failed);
+    fixture.listen(0,'127.0.0.1',()=>{fixture.off('error',failed);resolve();});
+   });
+   assert.equal((await fetch('http://127.0.0.1:'+fixture.address().port+'/fixture-readiness')).status,404);
+   return;
+  }catch(error){
+   if(!(error instanceof TypeError&&error.cause instanceof Error&&error.cause.message==='bad port'))throw error;
+   await new Promise((resolve,reject)=>fixture.close(error=>error?reject(error):resolve()));
+  }
+ }
+ throw Error('No fetch-compatible OS-allocated port for the controlled HTTP fixture.');
+}
 const read=path=>JSON.parse(readFileSync(path,'utf8'));
 const descriptor=()=>read(data+'/host/controller.json');
 async function command(method,params={}){const d=descriptor();return pipeRequest(d.endpoint,d.token,method,params);}
@@ -36,17 +53,36 @@ try{
  const helper=await startBrowserHost({executable:join(root,'node_modules/electron/dist/electron.exe'),script:join(root,'desktop/wpf/browser-host.mjs'),data:join(data,'browser-smoke')});
  try{await assert.rejects(helper.request('probe-invalid-1',{action:'invalid'}),/未知/);await delay(500);assert.equal(helper.closed,false);await assert.rejects(helper.request('probe-invalid-2',{action:'invalid'}),/未知/);checks+=3;}finally{await helper.close();assert.equal(helper.closed,true);checks++;}
  facts.push('Packaged GUI Electron accepted repeated authenticated named-pipe requests with stdin ignored, then shut down on channel close. No login/model request in this fixture suite.');
- await new Promise(r=>fixture.listen(0,'127.0.0.1',r));
+ await listenFixture();
  assert.equal(existsSync(data+'/host/controller.json'),false,'Use an unused isolated directory');
  let state=await start();assert.equal(state.characterId,'gpt-niang');assert.equal(state.appearanceSkinId,'starter-gpt-niang');assert.equal(resolve(descriptor().nodePath),join(root,'runtime/node.exe'));checks+=3;assert.equal(state.visibility.mode,'smart');assert.equal(state.visibility.manualHidden,false);checks+=2;
  const session=read(data+'/book/management-session.json');const backendPid=session.pid,origin=state.managementOrigin;
  const token=new URLSearchParams(new URL(session.url).hash.slice(1)).get('token');
- async function api(path,method='GET',body){const response=await fetch(origin+'/api/memory-book/v1'+path,{method,headers:{authorization:'Bearer '+token,'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(30000)});const value=await response.json();assert.equal(response.status,200,JSON.stringify(value));return value;}
+ async function api(path,method='GET',body){const response=await fetch(origin+'/api/memory-book/v1'+path,{method,headers:{authorization:'Bearer '+token,'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(30000)});const value=await response.json();assert.equal(response.status,200,method+' '+path+': '+JSON.stringify(value));return value;}
  const preview=await fetch(origin+'/preview-runtime/presentation-preview.js');assert.equal(preview.status,200);assert.ok((await preview.text()).length>100);checks+=2;
- const loaded=await api('/runtime');const config=loaded.config;assert.equal(config.mainModel,null);checks++;config.mainModel={baseUrl:'http://127.0.0.1:'+fixture.address().port+'/v1',model:'synthetic-fixture',credentialId:'local-no-auth',inputTokens:8192,outputTokens:512};
+ const loaded=await api('/runtime');let config=loaded.config;assert.equal(config.mainModel,null);checks++;
+ const voiceCapabilities=await api('/voice/capabilities'),screenCapabilities=await api('/screen/capabilities');assert.equal(typeof voiceCapabilities.available,'boolean');assert.equal(typeof screenCapabilities.available,'boolean');checks+=2;
+ const voice=voiceCapabilities.voices?.find(row=>voiceCapabilities.recognizers?.some(recognizer=>recognizer.culture===row.culture));
+ if(voiceCapabilities.available&&voice){
+  config={...config,characters:config.characters.map(role=>role.id===state.characterId?{...role,voice:{enabled:true,language:voice.culture,voiceName:voice.name,autoRead:false}}:role)};
+  config=(await api('/runtime','PUT',{config,expectedRevision:config.revision,operationId:'portable-local-voice'})).config;
+  const scope={characterId:state.characterId,sessionId:'portable-local-media'},spoken=await api('/voice/synthesize','POST',{...scope,text:voice.culture==='zh-CN'?'你好，今天的天气很好。我们一起完成测试。':'Hello, the weather is nice today. Let us finish the test.'});
+  assert.ok(spoken.audioBase64);assert.ok(spoken.durationMs>0);checks+=2;
+  const recognized=await api('/voice/recognize','POST',{...scope,audioBase64:spoken.audioBase64});assert.ok(recognized.text.trim());checks++;
+  facts.push('Packaged Windows speech helper synthesized and recognized a synthetic file-stream phrase; no microphone or speaker was opened.');
+ }else facts.push('Local speech exercise NOT_RUN: matching installed voice/recognizer unavailable; capability endpoint returned explicitly.');
+ if(screenCapabilities.available){
+  const image=readFileSync(fileURLToPath(new URL('../tests/companion-knowledge/fixtures/ocr/english.png',import.meta.url)));
+  const capture=await api('/screen/recognize','POST',{characterId:state.characterId,sessionId:'portable-local-media',imageBase64:image.toString('base64'),mime:'image/png',sourceName:'Synthetic portable image; no real screen',sourceKind:'window',confirmed:true});
+  assert.match(capture.text,/Meet.*10.*30.*42/);assert.match(capture.id,/^screen-/);checks+=2;
+  await api('/screen/observations/'+capture.id+'?'+new URLSearchParams({characterId:state.characterId,sessionId:'portable-local-media'}),'DELETE',{});checks++;
+  facts.push('Packaged WinRT OCR helper recognized synthetic English image pixels through its authenticated endpoint; observation explicitly cleared, no real screen capture.');
+ }else facts.push('Local OCR exercise NOT_RUN: Windows OCR unavailable; no fixture substituted for native recognition.');
+ assert.equal(replyRequests,0);checks++;const localMediaHistory=await api('/chat/history?characterId='+state.characterId+'&sessionId=portable-local-media');assert.equal(localMediaHistory.turns.length,0);checks++;
+ config.mainModel={baseUrl:'http://127.0.0.1:'+fixture.address().port+'/v1',model:'synthetic-fixture',credentialId:'local-no-auth',inputTokens:8192,outputTokens:512};
  await api('/runtime','PUT',{config,expectedRevision:config.revision,operationId:'floating-fixture-binding'});
  const chat=api('/chat','POST',{characterId:state.characterId,sessionId:'floating-fixture',text:'Synthetic request; reply after hide.',turnId:'floating-fixture-turn'});
- await Promise.race([incoming,delay(20000).then(()=>{throw Error('Fixture never received model request');})]);checks++;
+ await Promise.race([incoming,chat,delay(20000).then(()=>{throw Error('Fixture never received model request');})]);checks++;
  const accepted=await command('visible',{visible:false});assert.equal(accepted.accepted,true);assert.equal(accepted.requestedVisible,false);checks+=2;
  state=await wait(s=>s.hidden&&s.visibility.manualHidden&&!s.visibility.visible,'manual hide');
  assert.equal(state.backend,'ready');assert.equal(state.managementOrigin,origin);process.kill(backendPid,0);checks+=3;

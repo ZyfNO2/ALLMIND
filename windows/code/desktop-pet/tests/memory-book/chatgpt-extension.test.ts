@@ -6,9 +6,26 @@ import { DEFAULT_CHATGPT_WEB_SOURCE } from '../../contracts/memory-book.js';
 import { mkdirSync, mkdtempSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 
+// Let Windows avoid reserved ports, then reject fetch-forbidden allocations.
+async function fixtureHost(options: ConstructorParameters<typeof ChatgptExtensionHost>[0] = {}) {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const host = new ChatgptExtensionHost({ ...options, port: 0 });
+    try {
+      const pair = await host.pairing();
+      // This rejected web-origin request cannot pair or dispatch a command.
+      assert.equal((await fetch(pair.url + '/pull', { method: 'POST', headers: { Origin: 'https://chatgpt.com' }, body: '{}' })).status, 403);
+      return host;
+    } catch (error) {
+      await host.close();
+      if (!(error instanceof TypeError && error.cause instanceof Error && error.cause.message === 'bad port')) throw error;
+    }
+  }
+  throw new Error('No fetch-compatible OS-allocated port for the extension test fixture.');
+}
+
 const origin = 'chrome-extension://' + 'a'.repeat(32);
 test('extension bridge: rejects web origins, missing auth and malformed actions; binds loopback', async () => {
-  const host = new ChatgptExtensionHost({ port: 0 });
+  const host = await fixtureHost();
   try {
     const pair = await host.pairing(); assert.match(pair.url, /^http:\/\/127\.0\.0\.1:/);
     assert.equal((await fetch(pair.url + '/pull', { method: 'POST', headers: { Origin: 'https://chatgpt.com', Authorization: 'Bearer ' + pair.code }, body: '{}' })).status, 403);
@@ -20,13 +37,15 @@ test('extension bridge: rejects web origins, missing auth and malformed actions;
 });
 
 test('extension bridge: actual HTTP relay preserves prompts, model, temporary mode and never calls CLI', async () => {
-  const host = new ChatgptExtensionHost({ port: 0, timeoutMs: 1000 });
+  const host = await fixtureHost({ timeoutMs: 1000 });
   const pair = await host.pairing(); const controller = new AbortController(); const calls: any[] = [];
   const post = (path: string, body: object) => fetch(pair.url + path, { method: 'POST', headers: { Origin: origin, Authorization: 'Bearer ' + pair.code }, body: JSON.stringify({ client: 'test-extension', ...body }), signal: controller.signal });
-  let ready!: () => void; const connected = new Promise<void>(resolve => { ready = resolve; });
+  // Pair through an acknowledged authenticated request, not a scheduling delay.
+  assert.equal((await post('/result', { id: 'pairing-check', value: {} })).status, 409);
+  assert.equal((await host.pairing()).connected, true);
   const relay = (async () => {
     try {
-      let response = post('/pull', {}); await new Promise(resolve => setTimeout(resolve, 20)); ready();
+      let response = post('/pull', {});
       for (;;) {
         const command = await (await response).json() as any;
         if (command.idle) { response = post('/pull', {}); continue; }
@@ -42,10 +61,9 @@ test('extension bridge: actual HTTP relay preserves prompts, model, temporary mo
     } catch (error) { if (!controller.signal.aborted) throw error; }
   })();
   try {
-    await connected;
     const bridge = new ChatgptBackgroundBridge({ config: () => ({ ...DEFAULT_CHATGPT_WEB_SOURCE }), pageHost: host, runner: async () => { throw new Error('CLI must never run'); }, intervalMs: 0, pollMs: 1 });
     const result = await bridge.ask({ requestId: 'bridge-reply', prompt: '问题', context: '设定\n召回事实\n历史', temporary: true, model: 'GPT-6', timeoutMs: 5000 });
-    assert.equal(result.kind, 'completed');
+    assert.equal(result.kind, 'completed', JSON.stringify(result));
     assert.equal(calls.filter(call => call.action === 'submit').length, 1);
     assert.equal(calls.find(call => call.action === 'model').input.model, 'GPT-6');
     assert.equal(calls.find(call => call.action === 'write').input.text, '设定\n召回事实\n历史\n\n[当前任务]\n问题');
@@ -55,11 +73,13 @@ test('extension bridge: actual HTTP relay preserves prompts, model, temporary mo
 });
 
 test('extension bridge: lost submit receipt times out without replay; stale replies rejected', async () => {
-  const host = new ChatgptExtensionHost({ port: 0, timeoutMs: 100 });
+  const host = await fixtureHost({ timeoutMs: 100 });
   const pair = await host.pairing();
   const post = (path: string, body: object) => fetch(pair.url + path, { method: 'POST', headers: { Origin: origin, Authorization: 'Bearer ' + pair.code }, body: JSON.stringify({ client: 'extension', ...body }) });
   try {
-    const pull = post('/pull', {}); await new Promise(resolve => setTimeout(resolve, 15));
+    // Prove the authenticated relay is paired before timing a lost submission receipt.
+    assert.equal((await post('/result', { id: 'pairing-check', value: {} })).status, 409);
+    const pull = post('/pull', {});
     const command = host.execute('submit', { id: 'turn-1' });
     const rejection = assert.rejects(command, /不自动重放/);
     const delivered = await (await pull).json() as any; assert.equal(delivered.action, 'submit');
@@ -74,16 +94,16 @@ test('extension bridge: lost submit receipt times out without replay; stale repl
 test('extension bridge: selected browser stays pinned across restart; reset explicitly permits a different browser', async () => {
   const root = resolve('.local/memory-book-tests'); mkdirSync(root, { recursive: true });
   const keyPath = join(mkdtempSync(join(root, 'bridge-key-')), 'local-key');
-  let host = new ChatgptExtensionHost({ port: 0, keyPath });
+  let host = await fixtureHost({ keyPath });
   let pair = await host.pairing();
   const post = (client: string) => fetch(pair.url + '/result', { method: 'POST', headers: { Origin: origin, Authorization: 'Bearer ' + pair.code }, body: JSON.stringify({ client, id: 'stale', value: {} }) });
   try {
     assert.equal((await post('browser-A')).status, 409);
-    await host.close(); host = new ChatgptExtensionHost({ port: 0, keyPath }); pair = await host.pairing();
+    await host.close(); host = await fixtureHost({ keyPath }); pair = await host.pairing();
     const wrong = await post('browser-B'); assert.equal(wrong.status, 409); assert.deepEqual(await wrong.json(), { error: 'another_extension' });
     const oldCode = pair.code; pair = await host.resetPairing(); assert.notEqual(pair.code, oldCode);
     const changed = await post('browser-B'); assert.equal(changed.status, 409); assert.deepEqual(await changed.json(), { error: 'stale_command' });
-    await host.close(); host = new ChatgptExtensionHost({ port: 0, keyPath }); pair = await host.pairing();
+    await host.close(); host = await fixtureHost({ keyPath }); pair = await host.pairing();
     assert.deepEqual(await (await post('browser-A')).json(), { error: 'another_extension' });
   } finally { await host.close(); }
 });
@@ -91,12 +111,12 @@ test('extension bridge: selected browser stays pinned across restart; reset expl
 test('extension bridge: an already paired cold backend waits for reconnect without resetting its binding', async () => {
   const root = resolve('.local/memory-book-tests'); mkdirSync(root, { recursive: true });
   const keyPath = join(mkdtempSync(join(root, 'bridge-reconnect-')), 'local-key');
-  let host = new ChatgptExtensionHost({ port: 0, keyPath, reconnectMs: 1000 });
+  let host = await fixtureHost({ keyPath, reconnectMs: 1000 });
   let pair = await host.pairing();
   const post = (path: string, body: object) => fetch(pair.url + path, { method: 'POST', headers: { Origin: origin, Authorization: 'Bearer ' + pair.code }, body: JSON.stringify(body) });
   try {
     await post('/result', { client: 'paired-browser', id: 'stale', value: {} });
-    await host.close(); host = new ChatgptExtensionHost({ port: 0, keyPath, reconnectMs: 1000 }); pair = await host.pairing();
+    await host.close(); host = await fixtureHost({ keyPath, reconnectMs: 1000 }); pair = await host.pairing();
     assert.equal(pair.connected, false);
     const pending = host.execute('probe', {});
     await new Promise(resolve => setTimeout(resolve, 40));

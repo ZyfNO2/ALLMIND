@@ -116,13 +116,13 @@ if($script:allmindMode -and $script:config.automation){$script:window.ShowInTask
 $script:designWidth=[double]$script:window.FindName('AnimationStage').Width
 $script:designHeight=[double]$script:window.FindName('AnimationStage').Height
 $script:ui=@{}
-foreach($name in @('Root','Bubble','Tail','TailNear','SceneText','QuotaText','QuoteText','BubbleShape','Girl','PressScale','FacingScale','TextFacingScale','Header','Refresh','MenuButton','Status','LiveDot','ShortRow','WeekRow','ShortLabel','WeekLabel','ShortUsed','ShortLeft','ShortReset','ShortBar','WeekUsed','WeekLeft','WeekReset','WeekBar')){$script:ui[$name]=$script:window.FindName($name)}
+foreach($name in @('Root','Bubble','Tail','TailNear','SceneText','QuotaText','QuoteText','BubbleShape','Girl','PressScale','LifeMotion','FacingScale','TextFacingScale','Header','Refresh','MenuButton','Status','LiveDot','ShortRow','WeekRow','ShortLabel','WeekLabel','ShortUsed','ShortLeft','ShortReset','ShortBar','WeekUsed','WeekLeft','WeekReset','WeekBar')){$script:ui[$name]=$script:window.FindName($name)}
 $script:characterId='gpt-dragon';$script:activeCharacter=$null
 $script:status=$null
 $script:statusStamp=0
 $script:offsetRight=0.0;$script:offsetBottom=0.0;$script:offsetLeft=$null;$script:anchor='right';$script:side='right';$script:scale=1.0;$script:bubbleScale=1.0;$script:collapsed=$true
 $script:soundOn=$true;$script:soundVolume=0.9;$script:bubbleTapAdvance=$false;$script:hideMenu=$false
-$script:followHost=$true;$script:desktopTopmost=$false;$script:desktopLeft=$null;$script:desktopTop=$null
+$script:allmindPerchEnabled=$false;$script:followHost=$true;$script:desktopTopmost=$false;$script:desktopLeft=$null;$script:desktopTop=$null
 $script:hostReadiness=New-WidgetReadinessState
 $script:bubbleMode='quota';$script:sceneStartedAt=0;$script:sceneDeadline=0;$script:sceneTimer=$null;$script:sceneRevision=0
 $script:resetTimeMode='countdown';$script:resetPhaseTimer=$null
@@ -155,6 +155,7 @@ try{$settings=Get-Content -LiteralPath $settingsFile -Raw -Encoding UTF8 | Conve
   if($null-ne $settings.colorChance){try{$chance=[double]$settings.colorChance;if(![double]::IsNaN($chance) -and $chance-ge 0 -and $chance-le 30){$script:colorChance=$chance}}catch{}}
   if($null-ne $settings.colorTextChance){try{$chance=[double]$settings.colorTextChance;if(![double]::IsNaN($chance) -and $chance-ge 0 -and $chance-le 30){$script:colorTextChance=$chance}}catch{}}
   if($null-ne $settings.colorPaused){$script:colorPaused=($settings.colorPaused-is [bool] -and $settings.colorPaused)}
+  if($null-ne $settings.allmindPerchEnabled){$script:allmindPerchEnabled=($settings.allmindPerchEnabled-is [bool] -and $settings.allmindPerchEnabled)}
   if($null-ne $settings.followHost){$script:followHost=($settings.followHost-is [bool] -and $settings.followHost)}
   if($null-ne $settings.desktopTopmost){$script:desktopTopmost=($settings.desktopTopmost-is [bool] -and $settings.desktopTopmost)}
   if($null-ne $settings.desktopLeft){try{$value=[double]$settings.desktopLeft;if(![double]::IsNaN($value)-and ![double]::IsInfinity($value)-and [Math]::Abs($value)-le 100000){$script:desktopLeft=$value}}catch{}}
@@ -169,7 +170,7 @@ function Write-WidgetJson($file,$value){
   $temp=$file+'.tmp';[IO.File]::WriteAllText($temp,($value|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
   if([IO.File]::Exists($file)){[IO.File]::Replace($temp,$file,($file+'.bak'),$true)}else{[IO.File]::Move($temp,$file)}
 }
-function Save-Settings {Write-WidgetJson $settingsFile @{layoutVersion=2;right=$script:offsetRight;left=$script:offsetLeft;bottom=$script:offsetBottom;anchor=$script:anchor;side=$script:side;scale=$script:scale;bubbleScale=$script:bubbleScale;collapsed=$script:collapsed;soundOn=$script:soundOn;soundVolume=$script:soundVolume;bubbleTapAdvance=$script:bubbleTapAdvance;hideMenu=$script:hideMenu;colorMode=$script:colorMode;colorChance=$script:colorChance;colorTextChance=$script:colorTextChance;colorPaused=$script:colorPaused;followHost=$script:followHost;desktopTopmost=$script:desktopTopmost;desktopLeft=$script:desktopLeft;desktopTop=$script:desktopTop;characterId=$script:characterId;autoQuoteEnabled=$script:autoQuoteEnabled;autoQuoteIntervalSeconds=$script:autoQuoteIntervalSeconds;taskCompletionBubble=$script:completionNotificationsEnabled}}
+function Save-Settings {Write-WidgetJson $settingsFile @{layoutVersion=2;allmindPerchEnabled=$script:allmindPerchEnabled;right=$script:offsetRight;left=$script:offsetLeft;bottom=$script:offsetBottom;anchor=$script:anchor;side=$script:side;scale=$script:scale;bubbleScale=$script:bubbleScale;collapsed=$script:collapsed;soundOn=$script:soundOn;soundVolume=$script:soundVolume;bubbleTapAdvance=$script:bubbleTapAdvance;hideMenu=$script:hideMenu;colorMode=$script:colorMode;colorChance=$script:colorChance;colorTextChance=$script:colorTextChance;colorPaused=$script:colorPaused;followHost=$script:followHost;desktopTopmost=$script:desktopTopmost;desktopLeft=$script:desktopLeft;desktopTop=$script:desktopTop;characterId=$script:characterId;autoQuoteEnabled=$script:autoQuoteEnabled;autoQuoteIntervalSeconds=$script:autoQuoteIntervalSeconds;taskCompletionBubble=$script:completionNotificationsEnabled}}
 function Set-WidgetCharacter([string]$Id,[switch]$NoSave) {
   if($script:widgetMusic -and $script:widgetMusic.Enabled){Stop-WidgetMusic}
   $character=Get-WidgetCharacter $script:appDir $script:dataDir $Id
@@ -764,7 +765,11 @@ $script:occlusionRecovery=[GptWidgetOcclusionRecovery]::new($script:widgetHandle
 $script:hostFollower=[GptWidgetHostFollower]::new($script:widgetHandle)
 $script:hostFollower.LayoutRequested=[Action]{if(!$script:hostEventTimer.IsEnabled){$script:hostEventTimer.Start()}}
 $ex=[GptWidgetNative]::GetWindowLongPtr($script:widgetHandle,-20).ToInt64()
-if($script:allmindMode -and $script:config.automation){[GptWidgetNative]::SetWindowLongPtr($script:widgetHandle,-20,[IntPtr]($ex-band (-bnot 0x80)))|Out-Null}else{[GptWidgetNative]::SetWindowLongPtr($script:widgetHandle,-20,[IntPtr]($ex-bor 0x08000000-bor 0x80))|Out-Null}
+# Native acceptance exposes a taskbar entry only. Keep production's passive
+# activation style so clicking the composer must exercise InputActivation.
+$passiveEx=$ex-bor 0x08000000
+if($script:allmindMode -and $script:config.automation){$passiveEx=$passiveEx-band (-bnot 0x80)}else{$passiveEx=$passiveEx-bor 0x80}
+[GptWidgetNative]::SetWindowLongPtr($script:widgetHandle,-20,[IntPtr]$passiveEx)|Out-Null
 $source=[Windows.Interop.HwndSource]::FromHwnd($script:widgetHandle)
 $script:messageHook=[Windows.Interop.HwndSourceHook]{param($hwnd,$msg,$w,$l,[ref]$handled)
   if($script:allmindMode -and $script:allmindObserver){
@@ -833,6 +838,7 @@ $pressMove={param($sender,$event)
     $script:drag.left=$musicRect.Left;$script:drag.top=$musicRect.Top
   }
   $script:drag.moved=$true
+  if($script:allmindMode -and $script:allmindPerchEnabled){$script:allmindPerchEnabled=$false;if($script:allmindPerchItem){$script:allmindPerchItem.IsChecked=$false}}
   if($script:followHost -and $script:hostHandle-eq [IntPtr]::Zero){return}
   if(!$script:followHost){$script:desktopLeft=$script:drag.left+$dx;$script:desktopTop=$script:drag.top+$dy}
   $frame=Get-WidgetPlacementFrame;$dpi=Get-WidgetPlacementDpi
@@ -1008,6 +1014,7 @@ function Tick-Widget {
       }else{$x=[int]($frame.Right-$w-$script:offsetRight*$dpi)}
       $desiredY=if($script:followHost){$frame.Bottom-$h-$script:offsetBottom*$dpi}else{$script:desktopTop}
       $y=[int]$desiredY
+      if($script:allmindMode -and $script:allmindPerchEnabled){$blocked=[bool]($script:allmindHidden -or $script:allmindQuiet -or $script:allmindFocus -or $script:context.IsOpen -or ($script:allmindQuickChat -and $script:allmindQuickChat.Visible));$perch=[AllmindPerchPolicy]::Position($script:allmindObservation,$w,$h,$blocked);if($perch){$x=$perch[0];$y=$perch[1];$desiredY=$y}}
       if(!$script:followHost){
         $x=Limit-WidgetHorizontalPosition $frame $dpi $x
         $y=Limit-WidgetVerticalPosition $frame $dpi $desiredY

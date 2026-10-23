@@ -1,4 +1,6 @@
+import {validateBookScreen} from '../contracts/book-screen.js';
 import { validateCompanionSettings } from '../contracts/book-companion.js';
+import {validateBookVoice} from '../contracts/book-voice.js';
 import { validateProjectBinding } from '../contracts/chatgpt-project.js';
 import {validateReplyLength, validateReplyStyle} from '../contracts/reply-length.js';
 import { BookError, type BookEntry, type BookScope, type ChatgptWebSourceConfig, type ModelBinding, type RuntimeConfig, type WikiSource } from '../contracts/memory-book.js';
@@ -26,6 +28,7 @@ function date(value: unknown): void {
 }
 export function validateEntry(entry: BookEntry): void {
   if(entry?.knowledgeCategory!==undefined&&!['world','persona','knowledge','companion'].includes(entry.knowledgeCategory))throw new BookError('invalid_input','知识分类无效。');
+  if(entry?.corePersona!==undefined&&(typeof entry.corePersona!=='boolean'||entry.type!=='wiki'||!entry.synthesis||entry.knowledgeCategory!=='persona'))throw new BookError('invalid_input','核心人设启用只适用于已审核的人设分类派生页。');
   if (!entry || typeof entry !== 'object') throw new BookError('invalid_input', 'Entry 无效。');
   validateIdentity(entry.id); text(entry.title, 200, 'title'); text(entry.body, 65536, 'body');
   if (!['persona', 'wiki', 'story', 'lore', 'memory', 'state'].includes(entry.type) || !['authored', 'observed', 'inferred'].includes(entry.origin)) throw new BookError('invalid_input', '条目类型/来源无效。');
@@ -80,6 +83,7 @@ export function validateEntry(entry: BookEntry): void {
     const meta = entry.synthesis;
     if (entry.type !== 'wiki' || !entry.pairingId || entry.fact || meta.version !== 'allmind-wiki/v1' || !['canon', 'author', 'simulated', 'real', 'external'].includes(meta.domain)) throw new BookError('invalid_input', '派生Wiki类型或作用域无效。');
     validateIdentity(meta.pageId);
+    if (meta.pageType !== undefined && !['entity', 'topic', 'event'].includes(meta.pageType)) throw new BookError('invalid_input', '派生Wiki页面类型无效。');
     if (!Array.isArray(meta.basis) || !meta.basis.length || meta.basis.length > 64 || new Set(meta.basis.map(ref => ref.entryId)).size !== meta.basis.length || !Array.isArray(meta.sources) || meta.sources.length > 64 || !Array.isArray(meta.relations) || meta.relations.length > 64) throw new BookError('invalid_input', '派生Wiki依据无效。');
     for (const ref of meta.basis) { validateIdentity(ref.entryId); integer(ref.revision, 0, Number.MAX_SAFE_INTEGER, 'basis revision'); if (!/^[a-f0-9]{64}$/.test(ref.hash)) throw new BookError('invalid_input', '派生Wiki依据hash无效。'); }
     for (const ref of meta.sources) { validateIdentity(ref.id); integer(ref.revision, 1, Number.MAX_SAFE_INTEGER, 'source revision'); if (!/^[a-f0-9]{64}$/.test(ref.hash)) throw new BookError('invalid_input', '派生Wiki来源hash无效。'); }
@@ -113,6 +117,8 @@ export function validateFactSources(entries: BookEntry[], sources: WikiSource[])
 /** Shared by saved runtime config and the explicit draft model test; one source of binding truth. */
 export function validateModelBinding(model: ModelBinding): void {
   if (!model || typeof model !== 'object') throw new BookError('invalid_input', '模型绑定无效。');
+  if(model.imageInput!==undefined&&typeof model.imageInput!=='boolean')throw new BookError('invalid_input','API 图片输入设置无效。');
+  if(model.structuredOutput!==undefined&&!['json-object','json-schema','prompt'].includes(model.structuredOutput))throw new BookError('invalid_input','结构化输出模式无效。');
   if (model.reasoningEffort !== undefined && !['low', 'medium', 'high'].includes(model.reasoningEffort)) throw new BookError('invalid_input', 'API reasoning effort 无效。');
   if (model.name !== undefined) text(model.name, 200, '来源名称');
   if (model.kind === 'chatgpt-web') {
@@ -156,6 +162,20 @@ export function validateChatgptWebSource(source: ChatgptWebSourceConfig): void {
   }
 }
 export function validateRuntime(config: RuntimeConfig): void {
+  if(config?.dialogueRouting!==undefined){
+    const routing=config.dialogueRouting;
+    if(!routing||typeof routing!=='object'||Array.isArray(routing)||Object.keys(routing).some(key=>!['defaultMode','profiles'].includes(key))||!['auto','smart','quick','rp'].includes(routing.defaultMode)||!routing.profiles||typeof routing.profiles!=='object'||Array.isArray(routing.profiles)||Object.keys(routing.profiles).some(key=>!['smart','quick','rp'].includes(key)))throw new BookError('invalid_input','场景路由配置无效。');
+    for(const profile of Object.values(routing.profiles)){
+      if(!profile||typeof profile!=='object'||Array.isArray(profile)||Object.keys(profile).some(key=>!['model','presetId','recallMode','memoryDomain','inputTokens','outputTokens'].includes(key)))throw new BookError('invalid_input','场景配置字段无效。');
+      if(profile.model!==undefined)validateModelBinding(profile.model);
+      if(profile.presetId!==undefined&&profile.presetId!==null&&!config.promptPresets?.some(row=>row.id===profile.presetId))throw new BookError('invalid_input','场景预设不存在。');
+      if(profile.recallMode!==undefined&&!['off','smart','deep','story-rp'].includes(profile.recallMode))throw new BookError('invalid_input','场景召回模式无效。');
+      if(profile.memoryDomain!==undefined&&!['all','core-only','fiction'].includes(profile.memoryDomain))throw new BookError('invalid_input','场景记忆域无效。');
+      for(const value of [profile.inputTokens,profile.outputTokens])if(value!==undefined&&(!Number.isInteger(value)||value<256||value>2000000))throw new BookError('invalid_input','场景 Token 预算无效。');
+      if(profile.inputTokens!==undefined&&profile.outputTokens!==undefined&&profile.inputTokens<=profile.outputTokens)throw new BookError('invalid_input','场景输入窗口必须大于输出预算。');
+    }
+  }
+  if(config?.recall?.memoryDomain!==undefined&&!['all','core-only','fiction'].includes(config.recall.memoryDomain))throw new BookError('invalid_input','召回记忆域无效。');
   if(config?.gptNiangStarterVersion!==undefined&&config.gptNiangStarterVersion!==1)throw new BookError('invalid_input','初始角色版本无效。');
   if(config?.promptPresets!==undefined){
     if(!Array.isArray(config.promptPresets)||config.promptPresets.length>32)throw new BookError('invalid_input','对话预设最多32份。');
@@ -168,18 +188,20 @@ export function validateRuntime(config: RuntimeConfig): void {
   integer(config.revision, 0, Number.MAX_SAFE_INTEGER, 'revision'); validateIdentity(config.currentCharacterId);
   if (!Array.isArray(config.characters) || !config.characters.length || config.characters.length > 128) throw new BookError('invalid_input', '角色列表无效。');
   const seen = new Set<string>();
-  for (const role of config.characters) {
+  if(config.archivedCharacters!==undefined&&(!Array.isArray(config.archivedCharacters)||config.archivedCharacters.length>128))throw new BookError('invalid_input','归档角色列表无效。');
+  for (const role of [...config.characters,...config.archivedCharacters??[]]) {
     if(role.userName!==undefined)text(role.userName,100,'用户称呼');
     if(role.promptPresetId){const preset=config.promptPresets?.find(row=>row.id===role.promptPresetId);if(!preset)throw new BookError('invalid_input','所选对话预设不存在。');const result=presetCompatibility(preset);if(result.errors.length)throw new BookError('invalid_input',result.errors.join('\n'));}
     if(role.replyLength!==undefined)validateReplyLength(role.replyLength);
     if(role.replyStyle!==undefined)validateReplyStyle(role.replyStyle);
+    if(role.voice!==undefined)validateBookVoice(role.voice);if(role.screen!==undefined)validateBookScreen(role.screen);
     validateIdentity(role.id); text(role.name, 200, '角色名'); text(role.intro, 4000, '简介');
     if (role.appearancePath !== null) text(role.appearancePath, 2048, '形象路径');
     if (role.appearanceSkinId !== undefined && role.appearanceSkinId !== null) validateIdentity(role.appearanceSkinId, '形象包 ID');
     if (role.knowledgeView) { validateIdentity(role.knowledgeView.worldId); validateIdentity(role.knowledgeView.branch); integer(role.knowledgeView.cutoff, 0, 1000000, 'cutoff'); }
     if (seen.has(role.id)) throw new BookError('invalid_input', '重复角色 ID。'); seen.add(role.id);
   }
-  if (!seen.has(config.currentCharacterId)) throw new BookError('invalid_input', '当前角色不存在。');
+  if (!config.characters.some(role=>role.id===config.currentCharacterId)) throw new BookError('invalid_input', '当前角色不存在或已归档。');
   for (const model of [config.mainModel, config.fastModel, config.wikiModel ?? null]) {
     if (model === null) continue;
     validateModelBinding(model);
@@ -203,7 +225,7 @@ export function validateRuntime(config: RuntimeConfig): void {
   }
   // A web binding selects the source declared by chatgptWeb; without that declaration it has no
   // browser context at all, so it is rejected at the config boundary instead of failing per turn.
-  if ((config.mainModel?.kind === 'chatgpt-web' || config.wikiModel?.kind === 'chatgpt-web') && config.chatgptWeb === undefined) {
+  if ((config.mainModel?.kind === 'chatgpt-web' || config.wikiModel?.kind === 'chatgpt-web'||Object.values(config.dialogueRouting?.profiles??{}).some(row=>row.model?.kind==='chatgpt-web')) && config.chatgptWeb === undefined) {
     throw new BookError('invalid_input', 'ChatGPT 网页绑定需要同时配置 chatgptWeb 来源（浏览器上下文与会话）。');
   }
   if (!config.recall || !['off', 'smart', 'deep', 'story-rp'].includes(config.recall.mode) || typeof config.recall.continueLocalOnError !== 'boolean' || typeof config.recall.regexEnabled !== 'boolean') throw new BookError('invalid_input', '召回配置无效。');

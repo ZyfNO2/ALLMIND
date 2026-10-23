@@ -33,6 +33,10 @@ body{background:var(--mb-bg);color:var(--mb-ink)}
 /* Keep the input anchored while asynchronous reply-policy text changes. */
 .v2-app .mb-composer-hint{height:56px;overflow:auto;flex-shrink:0}
 .v2-app .mb-style-preview,.v2-app .mb-style-preview:empty{display:block;min-height:16px}
+.v2-app .mb-policy-slot{height:63px;flex-shrink:0;overflow:auto}
+.v2-app .mb-policy-slot .mb-composer-hint{height:100%;margin:0;box-sizing:border-box}
+@media(max-width:760px){.v2-app .mb-policy-slot{height:74px}}
+@media(max-height:650px){.v2-app .mb-policy-slot{height:46px}}
 @media(max-width:760px){.v2-app .mb-page-chat{min-height:0}.v2-app .mb-composer-hint{height:68px}}
 @media(max-height:650px){.v2-app .mb-chat-log{min-height:0;padding-block:8px}.v2-app .mb-composer{gap:5px;padding:8px}.v2-app .mb-composer textarea{height:40px;min-height:40px}.v2-app .mb-composer-hint{height:42px;padding:4px 8px}.v2-app .mb-chat-toolbar{padding:6px 10px}.v2-app .mb-chat-main>details.mb-card summary{padding:4px 0}}
 .v2-app input[type=file]{max-width:100%;min-width:0;width:100%;font-size:12px}
@@ -41,3 +45,7 @@ body{background:var(--mb-bg);color:var(--mb-ink)}
 .v2-app .mb-empty-avatar:has(img){width:100px;height:100px;background:transparent}
 
 .mb-chat-setup-hint{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.mb-chat-setup-hint>button:last-child{margin-left:auto}.mb-web-chat-mode{display:flex;gap:8px;align-items:center;font-size:12px}.mb-web-chat-mode select{max-width:200px}
+.mb-dialogue-control{display:flex;align-items:center;gap:8px;flex:0 0 auto;min-width:0;max-width:100%;padding:3px 0;font-size:11px}.mb-dialogue-control label{display:flex;align-items:center;gap:4px;flex:0 0 auto}.mb-dialogue-control select{max-width:100px;padding:3px;font-size:11px}.mb-dialogue-control small{min-width:0;overflow-wrap:anywhere;line-height:1.25;max-height:2.5em;overflow:auto}
+.mb-card[aria-label="选择性跨设备同步"] code,.mb-card[aria-label="选择性跨设备同步"] li,.mb-card[aria-label="本机工具与委托"] small{overflow-wrap:anywhere;min-width:0}.mb-card[aria-label="选择性跨设备同步"] li small{display:block}
+.v2-app .mb-dialogue-control label{margin:0}
+@media(max-height:650px){.v2-app .mb-dialogue-control{padding:0}.v2-app .mb-dialogue-control select{min-height:28px;height:28px}}

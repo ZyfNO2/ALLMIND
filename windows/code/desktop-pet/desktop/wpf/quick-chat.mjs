@@ -19,10 +19,10 @@ export function createQuickChat({getState,getSession,publish,fetchImpl=fetch}){
     if(!configResponse.ok)throw Error('无法读取当前模型配置。');
     const {config}=await configResponse.json();if(!config.mainModel)throw Error('请先在设置中绑定对话模型。');
     const budget=config.mainModel.kind==='chatgpt-web'?(config.chatgptWeb?.replyBudgetMs??300000)+20000:80000;
-    const response=await fetchImpl(url.origin+'/api/memory-book/v1/chat',{method:'POST',headers,body:JSON.stringify({...scope,text,turnId,incognito:false,inputResources:[]}),signal:AbortSignal.timeout(budget)});
+    const response=await fetchImpl(url.origin+'/api/memory-book/v1/chat',{method:'POST',headers,body:JSON.stringify({...scope,text,turnId,incognito:false,inputResources:[],replySurface:'bubble'}),signal:AbortSignal.timeout(budget)});
     const result=await response.json();if(!response.ok)throw Error(result.error?.message??'桌宠聊天失败，请打开聊天页核对。');
     if(result.turn?.id!==turnId||result.turn.characterId!==scope.characterId||result.turn.sessionId!==scope.sessionId||typeof result.turn.assistant!=='string')throw Error('聊天回执范围不符，请打开聊天页核对。');
-    event('completed',{text:result.turn.assistant.slice(0,16000),truncated:result.turn.assistant.length>16000});
+    event('completed',{text:result.turn.assistant.slice(0,16000),truncated:result.turn.assistant.length>16000,length:result.turn.bubbleReplyLength??null});
    }catch(error){event('failed',{message:(error instanceof Error?error.message:String(error)).slice(0,1000)});}
    finally{busy=false;}
   })();

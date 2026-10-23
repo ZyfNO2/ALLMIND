@@ -22,7 +22,7 @@ function Initialize-AllmindVisibility($LegacySettings) {
  $null=$script:allmindObserver.ConfigureHotkey($script:allmindVisibility.HotkeyModifiers,$script:allmindVisibility.HotkeyKey)
  $script:allmindLastSample=-1000;$script:allmindLastRevision=-1;$script:allmindLastPresence=$null;$script:allmindLastCenter=$null;$script:allmindAppliedVisible=$null
  $script:allmindPolicyTimer=[Windows.Threading.DispatcherTimer]::new();$script:allmindPolicyTimer.Interval=[TimeSpan]::FromMilliseconds(100)
- $script:allmindPolicyTimer.Add_Tick({try{$before=$script:allmindLastRevision;Update-AllmindVisibility;if($before-ne $script:allmindLastRevision){Tick-Widget}}catch{Write-AllmindWindowError $_}})
+ $script:allmindPolicyTimer.Add_Tick({try{$before=$script:allmindLastRevision;Update-AllmindVisibility;if($before-ne $script:allmindLastRevision -or $script:allmindPerchEnabled){Tick-Widget}}catch{Write-AllmindWindowError $_}})
  $script:allmindPolicyTimer.Start()
 }
 function Write-AllmindWindowError($Failure) {
@@ -54,6 +54,7 @@ function Update-AllmindVisibility([switch]$Force) {
  $connected=[bool]($script:allmindPipe -and $script:allmindPipe.Connected -and $script:allmindBackendReady)
  $decision=$script:allmindVisibility.Evaluate($script:allmindObservation,$now,$busy,($script:allmindQuiet -or $script:allmindFocus),$connected)
  $script:allmindDecision=$decision;$script:allmindHidden=!$decision.Visible;$script:allmindNotificationAllowed=$decision.NotificationAllowed;$script:desktopTopmost=$decision.Topmost
+ Update-AllmindLifeMotion
  $script:allmindPolicyTimer.Interval=[TimeSpan]::FromMilliseconds([Math]::Min(100,$script:allmindVisibility.DelayUntilTransition($now)))
  if($decision.Revision-ne $script:allmindLastRevision){
   $script:allmindLastRevision=$decision.Revision

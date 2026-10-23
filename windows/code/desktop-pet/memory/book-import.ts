@@ -11,6 +11,13 @@ export class BookImportService {
   private previews = new Map<string, BookImportPreview>();
   clearPreviews(characterId:string):void{for(const [id,preview] of this.previews)if(preview.characterId===characterId)this.previews.delete(id);}
   constructor(private readonly repository: BookRepository) {}
+  /** Ordinary documents become reviewed source materials, never implicit persona or shared memories. */
+  previewDocument(scope:BookScope,text:string,name:string,domain:'external'|'author'|'simulated'):BookImportPreview{
+    if(typeof text!=='string'||!text.trim()||Buffer.byteLength(text)>1024*1024||typeof name!=='string'||!name.trim()||name.length>180||!['external','author','simulated'].includes(domain))throw new BookError('invalid_input','普通资料需要非空正文、文件名及明确的资料域（最多1 MiB）。');
+    const documentHash=createHash('sha256').update(JSON.stringify([name,text,domain])).digest('hex'),entries:BookEntry[]=[];
+    for(let offset=0;offset<text.length;){let end=Math.min(offset+60000,text.length);if(end<text.length&&/[\uD800-\uDBFF]/.test(text[end-1]!))end--;const body=text.slice(offset,end),entry=emptyEntry('document.'+documentHash.slice(0,24)+'.'+entries.length,'wiki',name+(text.length>60000?' · '+(entries.length+1):''),body);entry.knowledgeCategory='knowledge';entry.organization={domain:domain==='simulated'?'rp':domain,evidenceStatus:'source_asserted'};if(domain==='simulated')entry.tags=['simulated','domain:simulated'];entries.push(entry);offset=end;}
+    return this.preview(scope,JSON.stringify({schemaVersion:'memory-book/v1',name,entries}),name);
+  }
   async previewZip(scope: BookScope, bytes: Buffer, sourceName: string): Promise<BookImportPreview> {
     const unpacked = await unpackBookZip(bytes);
     const preview = this.preview(scope, unpacked.text, sourceName);

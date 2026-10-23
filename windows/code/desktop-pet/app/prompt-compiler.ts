@@ -6,12 +6,15 @@ import {createHash} from 'node:crypto';
 
 export interface PresetContext {
   preset:StoredPromptPreset;char:string;user:string;intro:string;binding:ModelBinding;
+  /** One timestamp per runtime compilation, shared by budget and final assembly. */
+  now?:Date;timezone?:string;
 }
 export function presetBudget(context:PresetContext):{input:number;output:number;parameters:Record<string,number>}{
   const document=context.preset.document,binding=context.binding;
   const window=Math.min(binding.inputTokens,document.openai_max_context??binding.inputTokens);
-  const output=document.openai_max_tokens??binding.outputTokens;
-  if(!Number.isSafeInteger(output)||output<1||output>=window)throw new BookError('budget','预设输出预留必须小于有效模型窗口，请调整预设或模型配置。');
+  const requestedOutput=document.openai_max_tokens??binding.outputTokens;
+  if(!Number.isSafeInteger(requestedOutput)||requestedOutput<1||requestedOutput>=window)throw new BookError('budget','预设输出预留必须小于有效模型窗口，请调整预设或模型配置。');
+  const output=Math.min(requestedOutput,binding.outputTokens);
   const parameters:Record<string,number>={};
   if(binding.kind!=='chatgpt-web')for(const key of ['temperature','top_p','frequency_penalty','presence_penalty'] as const){
     const value=document[key];if(value===undefined)continue;
@@ -32,12 +35,22 @@ export function compilePreset(context:PresetContext,input:{current:string;histor
   const warnings=[...compatibility.warnings],omissions:PromptCompilation['omissions']=[];
   const retained=new Set(input.segments.map(segment=>segment.id));
   const history=[...input.history].filter(message=>message.role==='user'||message.role==='assistant');
+  let temporal:Record<string,string>|undefined;
+  const timeMacro=(key:string)=>{
+    if(!temporal){
+      const parts=new Intl.DateTimeFormat('en-CA',{...(context.timezone?{timeZone:context.timezone}:{}),year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(context.now??new Date());
+      const values=Object.fromEntries(parts.map(part=>[part.type,part.value]));
+      temporal={date:`${values.year}-${values.month}-${values.day}`,time:`${values.hour}:${values.minute}`};
+    }
+    return temporal[key]!;
+  };
   const macroSlots:Record<string,string>={description:'charDescription',personality:'charPersonality',scenario:'scenario',persona:'personaDescription'};
   const usedSlots=new Set<string>(active.filter(row=>row.marker).map(row=>row.identifier));
   for(const prompt of active)for(const macro of (prompt.content??'').matchAll(/\{\{\s*(description|personality|scenario|persona)\s*\}\}/g))usedSlots.add(macroSlots[macro[1]!]!);
   for(const segment of input.segments)if(!usedSlots.has(segment.slot)){retained.delete(segment.id);omissions.push({id:segment.id,reason:'slot_disabled'});}
   const expand=(text:string)=>text.replace(/\{\{\/\/[\s\S]*?\}\}/g,'').replace(/\{\{([\s\S]*?)\}\}/g,(_all,key:string)=>{
     key=key.trim();if(key==='char'||key==='charIfNotGroup')return context.char;if(key==='user')return context.user;if(key==='trim')return '';
+    if(key==='date'||key==='time')return timeMacro(key);
     const slot=macroSlots[key];if(slot)return (slot==='charDescription'?context.intro+'\n':'')+input.segments.filter(segment=>segment.slot===slot&&retained.has(segment.id)).map(segment=>segment.content).join('\n\n');
     throw new BookError('invalid_input','不支持宏 '+key+'，未发送。');
   });
@@ -79,7 +92,7 @@ export function compilePreset(context:PresetContext,input:{current:string;histor
   while(cost()>input.budget&&history.length){
     history.shift();while(history[0]?.role==='assistant')history.shift();omissions.push({id:'history',reason:'oldest_complete_turn_budget'});pieces=build();
   }
-  const optional=input.segments.filter(segment=>!['charDescription','charPersonality','allmindMaterials'].includes(segment.slot)).reverse();
+  const optional=input.segments.filter(segment=>!['charDescription','charPersonality','allmindMaterials','allmindDesktopContext'].includes(segment.slot)).reverse();
   while(cost()>input.budget&&optional.length){const segment=optional.shift()!;if(retained.delete(segment.id))omissions.push({id:segment.id,reason:'token_budget'});pieces=build();}
   if(cost()>input.budget)throw new BookError('budget','预设固定指令、角色、本轮材料与输入超出预算；请缩小材料或调整模型窗口。未截断预设，未发送。');
   const currentMessageIndex=pieces.findIndex(piece=>piece.identifier==='allmind.current');

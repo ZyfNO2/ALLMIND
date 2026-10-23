@@ -1,3 +1,5 @@
+import type {QqChannelManager} from '../app/qq-channel-manager.js';
+import {BookVoiceService} from './book-voice.js';
 import {resourceRoute} from './book-resource-routes.js';
 import {GptNiangLocal} from './gpt-niang-local.js';
 import {focusState} from '../core/book-focus.js';
@@ -32,13 +34,18 @@ import { DEFAULT_COMPANION_SETTINGS } from '../contracts/book-companion.js';
 import { TURN_REPLY_STYLES } from '../contracts/reply-length.js';
 import { projectIdFromUrl, type ChatgptProjectBinding } from '../contracts/chatgpt-project.js';
 import { zipWikiTask } from '../memory/wiki-task-zip.js';
+import {bookDiagnostics} from './book-diagnostics.js';
+import {dialogueRoute} from '../core/book-dialogue.js';
+import {BookTools} from './book-tools.js';
+import {BookSync} from '../memory/book-sync.js';
+import {join} from 'node:path';
 
 const json = (response: ServerResponse, status: number, body: unknown) => {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); response.end(JSON.stringify(body));
 };
-async function body(request: IncomingMessage): Promise<Record<string, any>> {
+async function body(request: IncomingMessage,limit=2 * 1024 * 1024): Promise<Record<string, any>> {
   let bytes = 0; const chunks: Buffer[] = [];
-  for await (const chunk of request) { bytes += chunk.length; if (bytes > 2 * 1024 * 1024) throw new BookError('invalid_input', '请求正文超过 2 MiB。'); chunks.push(chunk); }
+  for await (const chunk of request) { bytes += chunk.length; if (bytes > limit) throw new BookError('invalid_input', `请求正文超过 ${Math.round(limit/1024/1024)} MiB。`); chunks.push(chunk); }
   let parsed; try { parsed = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (cause) { throw new BookError('invalid_input', 'JSON 正文无效。', { cause }); }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new BookError('invalid_input', '请求必须为对象。');
   return parsed;
@@ -59,11 +66,15 @@ export interface ChatgptWebManagement {
   openLoginPage(options?: { standalone?: boolean }): Promise<void>;
 }
 
-export async function startBookServer(options: { runtime: BookRuntime; uiRoot: string; credentials: BookCredentials; port?: number; onChatState?: (value:{state:'pending'|'completed'|'failed';scope:import('../contracts/memory-book.js').BookScope;text?:string;incognito?:boolean})=>void; onConfig?: (config: RuntimeConfig) => void | Promise<void>; onErase?: (scope:import('../contracts/memory-book.js').BookScope,turnIds:string[])=>void; companionInteractions?:CompanionInteractionControls; companionLife?: {read(characterId:string):CompanionLifeState;change(characterId:string,action:"set_enabled"|"set_quiet"|"clear_history",expectedRevision:number,enabled?:boolean):CompanionLifeState}; activity?:import('../core/book-activity.js').BookActivity; appearance?: { skins: SkinManagement; host?: DesktopHostBridge; portraits?: PortraitStore; outfits?: OutfitService }; chatgptWeb?: ChatgptWebManagement; chatgptEmbedded?: { login(): Promise<unknown>; probe(): Promise<unknown> }; chatgptPairing?: (reset?: boolean) => Promise<{ url: string; code: string; connected: boolean }> }) {
+export async function startBookServer(options: { runtime: BookRuntime; qq?:QqChannelManager; uiRoot: string; credentials: BookCredentials; port?: number; voice?:BookVoiceService; onInteractionPresence?:(scope:import('../contracts/memory-book.js').BookScope)=>void; onChatState?: (value:{state:'pending'|'completed'|'failed';scope:import('../contracts/memory-book.js').BookScope;text?:string;incognito?:boolean})=>void; onConfig?: (config: RuntimeConfig) => void | Promise<void>; onErase?: (scope:import('../contracts/memory-book.js').BookScope,turnIds:string[])=>void; companionInteractions?:CompanionInteractionControls; companionLife?: {read(characterId:string):CompanionLifeState;change(characterId:string,action:"set_enabled"|"set_quiet"|"clear_history",expectedRevision:number,enabled?:boolean):CompanionLifeState}; activity?:import('../core/book-activity.js').BookActivity; appearance?: { skins: SkinManagement; host?: DesktopHostBridge; portraits?: PortraitStore; outfits?: OutfitService }; chatgptWeb?: ChatgptWebManagement; chatgptEmbedded?: { login(): Promise<unknown>; probe(): Promise<unknown> }; chatgptPairing?: (reset?: boolean) => Promise<{ url: string; code: string; connected: boolean }> }) {
   const token = randomBytes(32).toString('hex'), instanceId = randomUUID();
   const sessionCookie = 'allmind-management-' + instanceId;
   const appearanceHost = options.appearance ? desktopHostManagement(options.appearance.host, { instanceId, skins: options.appearance.skins }) : undefined;
   const gptNiang=new GptNiangLocal();
+  const voice=options.voice??new BookVoiceService(options.runtime.repository);
+  const bookDirectory=(options.runtime.repository as {directory?:string}).directory;
+  const bookTools=bookDirectory?new BookTools(join(bookDirectory,'tools')):undefined;
+  const bookSync=bookDirectory?new BookSync(options.runtime.repository as import('../memory/file-book-repository.js').FileBookRepository,id=>options.runtime.clearSensitiveCaches(id)):undefined;
   const previewAssets = options.appearance ? await presentationAssetRoutes(resolve(options.uiRoot, '../../..'), resolve(options.uiRoot, '../desktop')) : new Map<string, string>();
   const runtimeIdentity = { pid: process.pid, instanceId, sourceRevision: 'memory-book/v1' };
   let changingThinking=false;
@@ -116,7 +127,42 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
     if (!path.startsWith(prefix + '/')) { json(response, 410, { error: { code: 'legacy_disabled', message: '旧功能暂未启用，请使用聊天、Memory Book 和设置。' } }); return; }
     const route = path.slice(prefix.length);
     if(route.startsWith('/resources/')||route.startsWith('/artifact-deliveries/')){const resourceScope=options.runtime.scope(url.searchParams.get('characterId')??options.runtime.repository.loadConfig().currentCharacterId,url.searchParams.get('sessionId')??'web-chat',url.searchParams.get('pairingId')??'local-user');if(await resourceRoute(request,response,route,url,resourceScope,options.runtime,signal,()=>body(request)))return;}
-    const data = request.method === 'GET' ? {} : await body(request);
+    const data = request.method === 'GET' ? {} : await body(request,route.startsWith('/private-backup/')?160*1024*1024:route.startsWith('/sync/')?40*1024*1024:2*1024*1024);
+    if(route==='/diagnostics'&&request.method==='POST'){
+      if(data.probeModels!==undefined&&typeof data.probeModels!=='boolean')throw new BookError('invalid_input','连接检查选项无效。');
+      json(response,200,await bookDiagnostics({runtime:options.runtime,credentials:options.credentials,probeModels:data.probeModels===true,signal,...(options.chatgptWeb?{webProbe:()=>options.chatgptWeb!.probe()}:{}),...(options.qq?{channel:()=>options.qq!.view()}:{})}));return;
+    }
+    if(route.startsWith('/private-backup/')){
+      const repository=options.runtime.repository as import('../memory/file-book-repository.js').FileBookRepository;
+      if(typeof repository.previewPrivate!=='function')throw new BookError('unavailable','当前存储不支持私人恢复。');
+      if(route==='/private-backup/preview'&&request.method==='POST'){json(response,200,repository.previewPrivate(data.text));return;}
+      if(route==='/private-backup/restore'&&request.method==='POST'){
+        if(options.runtime.isConversing(repository.loadConfig().currentCharacterId)||options.runtime.synthesis.processing)throw new BookError('busy','请先结束当前生成。');
+        repository.restorePrivate(data.text,data.hash,data.expectedRevision,data.confirmed);await options.onConfig?.(repository.loadConfig());json(response,200,{config:repository.loadConfig()});return;
+      }
+    }
+    if(route.startsWith('/channels/qq')){
+      if(!options.qq)throw new BookError('unavailable','QQ 通道未装配。');
+      const qq=options.qq;
+      if(route==='/channels/qq/napcat'&&request.method==='GET'){json(response,200,await qq.napcat.view());return;}
+      if(route==='/channels/qq/napcat'&&request.method==='PUT'){json(response,200,await qq.napcat.configure(data.settings,data.expectedRevision));return;}
+      if(route==='/channels/qq/napcat/start'&&request.method==='POST'){json(response,200,await qq.napcat.start());return;}
+      if(route==='/channels/qq/napcat/stop'&&request.method==='POST'){json(response,200,await qq.napcat.stop());return;}
+      if(route==='/channels/qq/napcat/qr'&&request.method==='POST'){json(response,200,await qq.napcat.qr(data.refresh===true));return;}
+      if(route==='/channels/qq/napcat/switch-account'&&request.method==='POST'){if(data.confirmed!==true)throw new BookError('invalid_input','请确认停止当前登录并重新扫码。');json(response,200,await qq.napcat.switchAccount());return;}
+      if(route==='/channels/qq/napcat/prepare'&&request.method==='POST'){json(response,200,await qq.napcat.prepareBridge());return;}
+      if(route==='/channels/qq'&&request.method==='GET'){json(response,200,qq.view());return;}
+      if(route==='/channels/qq'&&request.method==='PUT'){json(response,200,await qq.configure(data.config,data.expectedRevision,data.token));return;}
+      if(route==='/channels/qq/start'&&request.method==='POST'){json(response,200,await qq.start(data.expectedRevision));return;}
+      if(route==='/channels/qq/stop'&&request.method==='POST'){json(response,200,await qq.stop(data.expectedRevision));return;}
+      if(route==='/channels/qq/resume'&&request.method==='POST'){json(response,200,await qq.resume());return;}
+      if(route==='/channels/qq/new-topic'&&request.method==='POST'){json(response,200,qq.newTopic(data.kind,data.targetId,data.expectedRevision));return;}
+      if(route==='/channels/qq/review'&&request.method==='POST'){json(response,200,await qq.review(data.key,data.index,data.action,data.messageId,data.confirmed));return;}
+      if(route==='/channels/qq/preview'&&request.method==='POST'){json(response,200,{publication:qq.preview(data.selection)});return;}
+      if(route==='/channels/qq/publish'&&request.method==='POST'){json(response,200,{publication:qq.publish(data.selection,data.hash,data.confirmed)});return;}
+      if(route==='/channels/qq/revoke'&&request.method==='POST'){qq.revoke(data.id);json(response,200,qq.view());return;}
+      throw new BookError('not_found','QQ 操作不存在。');
+    }
     if (route === '/runtime') {
       if (request.method === 'GET') { json(response, 200, { config: options.runtime.repository.loadConfig(), capabilities: { storage: 'local-file', semantic: false, regex: false }, runtime: runtimeIdentity }); return; }
       if (request.method === 'PUT') {
@@ -125,9 +171,11 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
         const previousSource = options.runtime.repository.loadConfig().chatgptWeb;
         if (options.chatgptWeb?.currentRequest?.() && (JSON.stringify(data.config?.chatgptWeb) !== JSON.stringify(previousSource) || JSON.stringify(data.config?.chatgptProjects) !== JSON.stringify(options.runtime.repository.loadConfig().chatgptProjects) || data.config?.currentCharacterId !== options.runtime.repository.loadConfig().currentCharacterId)) throw new BookError('busy', '网页请求尚未确认结束，不能修改其连接来源、角色或项目绑定；请先接续读取或确认停止。');
         const previousCharacters = options.runtime.repository.loadConfig().characters;
+        const previousCharacterId=options.runtime.repository.loadConfig().currentCharacterId;
         const receipt = options.runtime.repository.commitConfig(data.config as RuntimeConfig, data.expectedRevision, data.operationId);
         const savedConfig = options.runtime.repository.loadConfig();
-        for (const role of previousCharacters) if (!savedConfig.characters.some(current => current.id === role.id)) options.runtime.removeCharacterResources(role.id);
+        if(previousCharacters.some(role=>JSON.stringify(role.voice)!==JSON.stringify(savedConfig.characters.find(row=>row.id===role.id)?.voice))||previousCharacterId!==savedConfig.currentCharacterId)voice.close();
+        for (const role of previousCharacters) if (!savedConfig.characters.some(current => current.id === role.id)&&!savedConfig.archivedCharacters?.some(current=>current.id===role.id)) options.runtime.removeCharacterResources(role.id);
         if (!previousCompanion?.proactive && savedConfig.companion?.proactive) options.runtime.userInteraction(options.runtime.scope(savedConfig.currentCharacterId,'web-chat'));
         for (const id of new Set([...previousCharacters, ...options.runtime.repository.loadConfig().characters].map(role => role.id))) options.runtime.invalidate(id);
         let activationError: string | null = null;
@@ -136,7 +184,14 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
         json(response, 200, { receipt, config: options.runtime.repository.loadConfig(), activationError }); return;
       }
     }
-    if (route === '/credentials' && request.method === 'POST') { options.credentials.save(data.id, data.value); json(response, 200, { saved: true }); return; }
+    if (route === '/credentials' && request.method === 'POST') { options.credentials.save(data.id, data.value);for(const role of options.runtime.repository.loadConfig().characters)options.runtime.invalidate(role.id);if(options.qq){const current=options.qq.view().config;if(current.enabled&&(current.model?.credentialId===data.id||current.tokenCredentialId===data.id))await options.qq.stop(current.revision);} json(response, 200, { saved: true }); return; }
+    if(route==='/credentials/status'&&request.method==='POST'){json(response,200,options.credentials.status(data.id));return;}
+    if(route==='/credentials/revoke'&&request.method==='POST'){
+      if(data.confirmed!==true)throw new BookError('invalid_input','请明确确认撤销本机凭据；使用它的连接将需要重新授权。');
+      options.credentials.revoke(data.id);for(const role of options.runtime.repository.loadConfig().characters)options.runtime.invalidate(role.id);
+      if(options.qq){const current=options.qq.view().config;if(current.enabled&&(current.model?.credentialId===data.id||current.tokenCredentialId===data.id))await options.qq.stop(current.revision);}
+      json(response,200,{revoked:true});return;
+    }
     if (route === '/models' && request.method === 'POST') {
       let endpoint: URL;
       try { endpoint = new URL(data.baseUrl); } catch { throw new BookError('invalid_input', '模型端点无效。'); }
@@ -257,16 +312,55 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
     const sessionId = url.searchParams.get('sessionId') ?? data.sessionId ?? 'web-chat';
     validateIdentity(characterId, 'characterId'); validateIdentity(sessionId, 'sessionId');
     const scope = options.runtime.scope(characterId, sessionId, url.searchParams.get('pairingId') ?? data.pairingId ?? 'local-user');
+    if(route.startsWith('/sync')){
+      if(!bookSync)throw new BookError('unavailable','当前存储不支持选择性同步。');
+      if(route==='/sync'&&request.method==='GET'){json(response,200,bookSync.view());return;}
+      if(route==='/sync/export'&&request.method==='POST'){json(response,200,bookSync.export(scope,{entryIds:data.entryIds,recipientId:data.recipientId,includePrivate:data.includePrivate,includeRole:data.includeRole,deletedEntryIds:data.deletedEntryIds}));return;}
+      if(route==='/sync/preview'&&request.method==='POST'){json(response,200,bookSync.preview(scope,data.text));return;}
+      if(route==='/sync/apply'&&request.method==='POST'){
+        if(options.runtime.isConversing(scope.characterId)||options.runtime.synthesis.processing||options.runtime.automaticMemory?.processing||options.runtime.wikiMaintenance?.processing)throw new BookError('busy','请等待当前角色的聊天和整理任务结束后同步。');
+        const result=bookSync.apply(scope,data.text,{hash:data.hash,expectedRevision:data.expectedRevision,expectedLedgerRevision:data.expectedLedgerRevision,expectedConfigRevision:data.expectedConfigRevision,applyRole:data.applyRole,choices:data.choices,confirmed:data.confirmed});if(data.applyRole)await options.onConfig?.(options.runtime.repository.loadConfig());json(response,200,result);return;
+      }
+    }
+    if(route.startsWith('/tools')){
+      if(!bookTools)throw new BookError('unavailable','当前存储不支持本机工具账本。');
+      if(route==='/tools'&&request.method==='GET'){json(response,200,bookTools.view(scope));return;}
+      if(route==='/tools/profiles'&&request.method==='PUT'){json(response,200,await bookTools.configure(data.profile,data.expectedRevision,data.confirmed));return;}
+      if(route==='/tools/list'&&request.method==='POST'){json(response,200,{tools:await bookTools.listTools(data.profileId)});return;}
+      if(route==='/tools/prepare'&&request.method==='POST'){json(response,200,await bookTools.prepare(scope,{profileId:data.profileId,toolName:data.toolName,arguments:data.arguments,instruction:data.instruction}));return;}
+      if(route==='/tools/execute'&&request.method==='POST'){json(response,200,await bookTools.execute(scope,data.id,data.hash,data.confirmed,signal));return;}
+      if(route==='/tools/cancel'&&request.method==='POST'){json(response,200,bookTools.cancel(scope,data.id));return;}
+    }
+    if(route==='/dialogue/preview'&&request.method==='POST'){
+      if(typeof data.text!=='string'||data.text.length>16000)throw new BookError('invalid_input','场景预览输入无效。');
+      json(response,200,dialogueRoute(options.runtime.repository.loadConfig(),scope,data.text,data.dialogueMode).decision);return;
+    }
     const knowledgeView = options.runtime.repository.loadConfig().characters.find(role => role.id === characterId)?.knowledgeView;
+    if(route==='/interaction-presence'&&request.method==='POST'){
+      if(Object.keys(data).some(key=>!['characterId','sessionId','pairingId','viewId','sequence','typing','recording','speaking','busy','roleplay'].includes(key)))throw new BookError('invalid_input','页面交互状态不能携带输入正文或其他内容。');
+      const result=options.runtime.interactionPresence.update(scope,{viewId:data.viewId,sequence:data.sequence,typing:data.typing,recording:data.recording,speaking:data.speaking,busy:data.busy,...(data.roleplay===undefined?{}:{roleplay:data.roleplay})});
+      if(result.accepted&&Object.values(options.runtime.interactionPresence.read(scope.characterId)).some(Boolean))options.onInteractionPresence?.(scope);
+      json(response,200,result);return;
+    }
+    if(route==='/screen/capabilities'&&request.method==='GET'){json(response,200,await options.runtime.screen.capabilities(signal));return;}
+    if(route==='/screen/recognize'&&request.method==='POST'){json(response,200,await options.runtime.screen.recognize(scope,{imageBase64:data.imageBase64,mime:data.mime,sourceName:data.sourceName,sourceKind:data.sourceKind,confirmed:data.confirmed},signal));return;}
+    if(route==='/screen/cancel'&&request.method==='POST'){options.runtime.screen.clearScope(scope);json(response,200,{cancelled:true});return;}
+    const screenClear=/^\/screen\/observations\/(screen-[0-9a-f-]{36})$/.exec(route);
+    if(screenClear&&request.method==='DELETE'){options.runtime.screen.clear(scope,screenClear[1]!);json(response,200,{cleared:true});return;}
+    if(route==='/voice/capabilities'&&request.method==='GET'){json(response,200,await voice.capabilities(signal));return;}
+    if(route==='/voice/synthesize'&&request.method==='POST'){json(response,200,await voice.synthesize(scope,data.text,signal));return;}
+    if(route==='/voice/recognize'&&request.method==='POST'){json(response,200,await voice.recognize(scope,data.audioBase64,signal));return;}
+    if(route==='/voice/cancel'&&request.method==='POST'){voice.cancel(scope);json(response,200,{cancelled:true});return;}
     if (route.startsWith('/wiki/synthesis')) {
       const synthesis=options.runtime.synthesis;
       if(route==='/wiki/synthesis'&&request.method==='GET'){json(response,200,{jobs:synthesis.list(scope)});return;}
       if(route==='/wiki/synthesis/prepare'&&request.method==='POST'){json(response,200,{job:synthesis.prepare(scope,data.expectedRevision,data.operationId)});return;}
       if(route==='/wiki/synthesis/package'&&request.method==='POST'){const bundle=synthesis.package(scope,data.jobId);json(response,200,{...bundle,zipBase64:zipWikiTask(bundle.files).toString('base64')});return;}
       if(route==='/wiki/synthesis/run'&&request.method==='POST'){json(response,200,{job:await synthesis.run(scope,data.jobId,signal,data.budgetMs,data.confirmedSend)});return;}
+      if(route==='/wiki/synthesis/continue'&&request.method==='POST'){json(response,200,{job:await synthesis.continue(scope,data.jobId,signal,data.budgetMs,data.confirmedSend,data.retryFailed===true)});return;}
       if(route==='/wiki/synthesis/cancel'&&request.method==='POST'){json(response,200,{job:synthesis.cancel(scope,data.jobId)});return;}
       if(route==='/wiki/synthesis/resume'&&request.method==='POST'){json(response,200,{job:await synthesis.resume(scope,data.jobId,signal,data.confirmed)});return;}
-      if(route==='/wiki/synthesis/apply'&&request.method==='POST'){const receipt=synthesis.apply(scope,data.jobId,data.expectedRevision,data.operationId,data.confirmed);json(response,200,{receipt,book:options.runtime.repository.snapshot(scope)});return;}
+      if(route==='/wiki/synthesis/apply'&&request.method==='POST'){const receipt=synthesis.apply(scope,data.jobId,data.expectedRevision,data.operationId,data.confirmed,data.review);json(response,200,{receipt,book:options.runtime.repository.snapshot(scope)});return;}
     }
     if(route==='/services/status'&&request.method==='GET'){
       const config=options.runtime.repository.loadConfig(),book=options.runtime.repository.snapshot(scope),repository=options.runtime.repository as import('../memory/file-book-repository.js').FileBookRepository,ledger=repository.loadCompanionData(scope),binding=config.wikiModel??config.fastModel;
@@ -353,7 +447,7 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
       }
       if(route==='/memory/erase'&&request.method==='POST'){
         if(data.eraseRaw!==true)throw new BookError('invalid_input','请明确选择清除原文及应用管理的本实例备份。');
-        options.runtime.clearSensitiveCaches(characterId);const receipt=repository.eraseTurns(scope,data.turnIds,data.expectedRevision);options.onErase?.(scope,data.turnIds);json(response,200,{receipt,book:repository.snapshot(scope),turns:repository.readSession(scope)});return;
+        voice.cancel(scope);options.runtime.clearSensitiveCaches(characterId);const receipt=repository.eraseTurns(scope,data.turnIds,data.expectedRevision);options.onErase?.(scope,data.turnIds);json(response,200,{receipt,book:repository.snapshot(scope),turns:repository.readSession(scope)});return;
       }
       if(route==='/memory/backup'&&request.method==='POST'){json(response,200,repository.exportPrivate(scope));return;}
     }
@@ -434,8 +528,20 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
     if (route === '/sessions' && request.method === 'GET') {
       // Session summaries derived from persisted turns: refresh here discovers every session of this
       // character/pairing (including the desktop pet's shared session) without a second index.
-      json(response, 200, { sessions: options.runtime.repository.listSessions(characterId, scope.pairingId) });
+      const offset=Number(url.searchParams.get('offset')??0),limit=Number(url.searchParams.get('limit')??256),query=url.searchParams.get('query')??'';
+      if(!Number.isSafeInteger(offset)||offset<0||!Number.isSafeInteger(limit)||limit<1||limit>256||query.length>200)throw new BookError('invalid_input','会话分页或查询无效。');
+      const archived=url.searchParams.get('archived');
+      const rows=options.runtime.repository.listSessions(characterId,scope.pairingId,{all:true,query}).filter(row=>archived===null||Boolean(row.archivedAt)===(archived==='true'));
+      json(response, 200, { sessions:rows.slice(offset,offset+limit),total:rows.length,nextOffset:offset+limit<rows.length?offset+limit:null });
       return;
+    }
+    if(route==='/sessions/rename'&&request.method==='POST'){
+      if(!options.runtime.repository.renameSession)throw new BookError('unavailable','当前存储不支持重命名。');
+      options.runtime.repository.renameSession(scope,data.title);json(response,200,{sessions:options.runtime.repository.listSessions(characterId,scope.pairingId)});return;
+    }
+    const turnStatus=/^\/chat\/turns\/([A-Za-z0-9._-]+)$/.exec(route);
+    if(turnStatus&&request.method==='GET'){
+      json(response,200,options.runtime.turnStatus(scope,turnStatus[1]!,url.searchParams.get('incognito')==='true'));return;
     }
     const organizationOp=/^\/wiki\/organization\/operations\/([a-zA-Z0-9._-]+)$/.exec(route);if(organizationOp&&request.method==='GET'){json(response,200,options.runtime.organization.operation(scope,organizationOp[1]!));return;}
     if (route === '/wiki/organization/preview' && request.method === 'POST') { json(response, 200, await options.runtime.organization.preview(scope, data as import('../contracts/wiki-organization.js').OrganizationInput, signal)); return; }
@@ -555,6 +661,7 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
       const receipt = options.runtime.repository.commit(scope, { remove: [data.entryId] }, data.expectedRevision, data.operationId);
       options.runtime.invalidate(characterId); json(response, 200, { receipt, book: options.runtime.repository.snapshot(scope) }); return;
     }
+    if(route==='/imports/document-preview'&&request.method==='POST'){json(response,200,options.runtime.imports.previewDocument(scope,data.text,data.sourceName,data.domain));return;}
     if (route === '/imports/preview' && request.method === 'POST') {
       if (data.zipBase64 !== undefined) {
         if (data.text !== undefined || typeof data.zipBase64 !== 'string' || data.zipBase64.length > 1398104) throw new BookError('invalid_input', 'ZIP 编码无效或同时提供了文本。');
@@ -588,12 +695,22 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
     if(route==='/chat/policy'&&request.method==='POST'){
       json(response,200,{decision:options.runtime.replyStylePreview(scope,data.text,data.replyStyle??'inherit')});return;
     }
-    if (route === '/chat/history' && request.method === 'GET') { json(response, 200, { turns: options.runtime.repository.readSession(scope) }); return; }
+    if (route === '/chat/history' && request.method === 'GET') {
+      if(url.searchParams.has('limit')&&options.runtime.repository.readSessionPage){const before=url.searchParams.get('before');json(response,200,options.runtime.repository.readSessionPage(scope,before===null?null:Number(before),Number(url.searchParams.get('limit'))));}
+      else json(response, 200, { turns: options.runtime.repository.readSession(scope) });return;
+    }
     if(route==='/chat/incognito'&&request.method==='DELETE'){options.runtime.clearIncognito(scope);json(response,200,{cleared:true});return;}
     if (route === '/chat' && request.method === 'POST') {
+      let transcript:import('../contracts/book-message.js').TextTranscriptReceipt|undefined;
+      if(data.transcript!==undefined){
+        if(!data.transcript||typeof data.transcript!=='object'||Array.isArray(data.transcript)||Object.keys(data.transcript).some(key=>!['id','start'].includes(key))||typeof data.text!=='string')throw new BookError('invalid_input','转写来源参数无效。');
+        const prior=typeof data.turnId==='string'?options.runtime.turnStatus(scope,data.turnId,data.incognito===true).turn:null;
+        if(prior){if(!prior.transcript||prior.user!==data.text||prior.transcript.id!==data.transcript.id||prior.transcript.start!==data.transcript.start)throw new BookError('conflict','已保存轮次的转写来源不同。');transcript=prior.transcript;}
+        else transcript=voice.verifyTranscript(scope,data.transcript.id,data.text,data.transcript.start);
+      }
       if (data.replyStyle !== undefined && data.replyStyle !== null && !TURN_REPLY_STYLES.includes(data.replyStyle)) throw new BookError('invalid_input', '本轮回复风格必须为沿用设置、简短、适中或详细。');
       options.onChatState?.({state:'pending',scope,incognito:data.incognito===true});
-      try { const result=await options.runtime.chat(scope, data.text, signal, { ...(data.inputResources===undefined?{}:{inputResources:data.inputResources}), ...(data.turnId === undefined || data.turnId === null ? {} : {turnId:data.turnId}), ...(data.incognito===undefined?{}:{incognito:data.incognito}), ...(data.replyStyle===undefined||data.replyStyle===null?{}:{replyStyle:data.replyStyle}) });
+      try { const result=await options.runtime.chat(scope, data.text, signal, { ...(data.screenObservationId===undefined?{}:{screenObservationId:data.screenObservationId}),...(data.screenConfirmed===undefined?{}:{screenConfirmed:data.screenConfirmed}), ...(data.inputResources===undefined?{}:{inputResources:data.inputResources}), ...(data.turnId === undefined || data.turnId === null ? {} : {turnId:data.turnId}), ...(data.incognito===undefined?{}:{incognito:data.incognito}), ...(data.replyStyle===undefined||data.replyStyle===null?{}:{replyStyle:data.replyStyle}),...(data.replySurface===undefined?{}:{replySurface:data.replySurface}),...(data.dialogueMode===undefined?{}:{dialogueMode:data.dialogueMode}),...(transcript?{transcript}:{}) });
         options.onChatState?.({state:'completed',scope,...(data.incognito===true?{incognito:true}:{text:result.turn.assistant})});json(response,200,result);
       } catch(error) { options.onChatState?.({state:'failed',scope,incognito:data.incognito===true});throw error; } return; }
     if (route === '/chat/cancel' && request.method === 'POST') { options.runtime.cancel(scope); json(response, 200, { cancelled: true }); return; }
@@ -620,5 +737,5 @@ export async function startBookServer(options: { runtime: BookRuntime; uiRoot: s
   const bound = server.address(); if (!bound || typeof bound === 'string') throw Error('Invalid local server address');
   const address = { port: bound.port, origin: `http://127.0.0.1:${bound.port}` };
   return { server, token, url: `${address.origin}/#token=${token}`, runtimeIdentity,
-    close: () => new Promise<void>((done, reject) => { server.close(error => error ? reject(error) : done()); server.closeIdleConnections(); }) };
+    close: async () => {await bookTools?.close();return new Promise<void>((done, reject) => { voice.close();options.runtime.screen.close();server.close(error => error ? reject(error) : done()); server.closeIdleConnections(); });} };
 }

@@ -1,11 +1,631 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-20",
+  "updatedAt": "2026-10-22",
   "product": "ALLMIND",
-  "version": "0.1.0-beta.1",
-  "stage": "LOCAL_BETA_CANDIDATE",
+  "version": "0.1.0-beta.2",
+  "stage": "LOCAL_BETA_CANDIDATE_BLOCKED",
   "publicRelease": "NOT_RELEASED",
-  "publicReleaseNote": "Source repository is published to GitHub; no GitHub Release, installer, signing or auto-update is claimed. Historical Init-only records below describe the earlier freeze.",
+  "currentSummary": {
+    "date": "2026-10-22",
+    "version": "0.1.0-beta.2",
+    "status": "BLOCKED",
+    "implementation": "PASS: scoped engineering and user-operation regression; see validation/PRODUCT-COMPLETION.md",
+    "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff",
+    "sourceFiles": 1699,
+    "sourceExclusions": [
+      "validation/release-status.json",
+      "validation/source-manifest.json"
+    ],
+    "validation": {
+      "dependencies": {
+        "status": "NOT_RUN",
+        "scope": "No dependency source or lockfile change; no new cold npm ci claimed. Prior cold and CI records remain historical."
+      },
+      "build": {
+        "status": "PASS",
+        "scope": "Fresh backend and management UI builds",
+        "evidence": [
+          "build-02.log",
+          "ui-build-01.log"
+        ]
+      },
+      "core": {
+        "status": "PASS",
+        "tests": 517,
+        "fail": 0,
+        "skipped": 0,
+        "evidence": "core-01.log"
+      },
+      "browser": {
+        "status": "PASS",
+        "tests": 10,
+        "fail": 0,
+        "skipped": 0,
+        "scope": "Targeted screen4 plus production closure6, not old full54 suite",
+        "evidence": [
+          "browser-04.log",
+          "closure-01.log"
+        ]
+      },
+      "wpfNode": {
+        "status": "NOT_RUN",
+        "provenance": "Not rerun as a separate suite on screen-image candidate; original scoped result preserved in candidateHistory for9f1f5bf.",
+        "historicalStatus": "PASS"
+      },
+      "adapters": {
+        "status": "NOT_RUN",
+        "provenance": "Not rerun as a separate suite on screen-image candidate; original scoped result preserved in candidateHistory for9f1f5bf.",
+        "historicalStatus": "PASS"
+      },
+      "wpfComponents": {
+        "status": "NOT_RUN",
+        "provenance": "Not rerun as a separate suite on screen-image candidate; original scoped result preserved in candidateHistory for9f1f5bf.",
+        "historicalStatus": "PASS"
+      },
+      "portable": {
+        "status": "PASS",
+        "checks": 56,
+        "files": 1733,
+        "manifestSha256": "fcd31e7d9ac312baf279c26e4225bbfa38fb1dd87d717ca54bf6447c1d38ec6d",
+        "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff",
+        "evidence": "portable-report.json",
+        "scope": "Fresh56 run belonged to c150 production package; current README-only rebind has all1733 payload bytes identical. No rerun with new manifest claimed.",
+        "testedPackageManifestSha256": "7c40199ad02ff7a788e47f746fc819300f3a87f5c9a5377d86774a0bdd91128a",
+        "testedPackageSourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a"
+      },
+      "installedLifecycle": {
+        "status": "NOT_RUN",
+        "scope": "Prior22 check actual installer lifecycle is historical at prior source/package; this new production candidate was not rerun.",
+        "historicalChecks": 22,
+        "historicalCommit": "9f1f5bfc5ea4e7db2754e03eaf9ebe73ea9fbfc3"
+      },
+      "priorPackageDataUpgrade": {
+        "status": "NOT_RUN",
+        "scope": "Prior12 old-reader/schema byte rollback is historical at prior source/package; not rerun for this new candidate.",
+        "historicalChecks": 12,
+        "historicalCommit": "9f1f5bfc5ea4e7db2754e03eaf9ebe73ea9fbfc3"
+      },
+      "privacy": {
+        "status": "PASS",
+        "scope": "Read-only diff audit and cancellation regression verify explicit consent, capability opt-in, no incognito attachment save and no late-response auto-selection. No fresh exact-authorized-key source/package scan is claimed.",
+        "exactAuthorizedCredentialScan": "NOT_RUN",
+        "evidence": [
+          "browser-04.log",
+          "core-01.log"
+        ]
+      },
+      "windowsMedia": {
+        "status": "NOT_RUN",
+        "provenance": "Not rerun as a separate suite on screen-image candidate; original scoped result preserved in candidateHistory for9f1f5bf.",
+        "historicalStatus": "PASS"
+      },
+      "nativeSupplement": {
+        "status": "NOT_RUN",
+        "provenance": "Not rerun as a separate suite on screen-image candidate; original scoped result preserved in candidateHistory for9f1f5bf.",
+        "historicalStatus": "PASS"
+      },
+      "qqHttpSupplement": {
+        "status": "NOT_RUN",
+        "provenance": "Not rerun as a separate suite on screen-image candidate; original scoped result preserved in candidateHistory for9f1f5bf.",
+        "historicalStatus": "PASS"
+      },
+      "deviceEnumeration": {
+        "status": "NOT_RUN",
+        "provenance": "Not rerun as a separate suite on screen-image candidate; original scoped result preserved in candidateHistory for9f1f5bf.",
+        "historicalStatus": "PASS"
+      },
+      "roleArchiveUi": {
+        "status": "NOT_RUN",
+        "provenance": "Not rerun as a separate suite on screen-image candidate; original scoped result preserved in candidateHistory for9f1f5bf.",
+        "historicalStatus": "PASS"
+      },
+      "extensionRelay": {
+        "status": "NOT_RUN",
+        "provenance": "Not rerun as a separate suite on screen-image candidate; original scoped result preserved in candidateHistory for9f1f5bf.",
+        "historicalStatus": "PASS"
+      }
+    },
+    "releaseGates": [
+      {
+        "id": "source-binding",
+        "status": "PASS",
+        "reason": "Current documentation source and package binding verified; actual c150 production evidence reused only after complete runtime payload equality."
+      },
+      {
+        "id": "blank-install",
+        "status": "PASS",
+        "reason": "Fresh56 c150 production package checks apply to README-only source rebind via all1733 runtime payload equality; not rerun under new manifest."
+      },
+      {
+        "id": "upgrade",
+        "status": "NOT_RUN",
+        "reason": "Current changed production candidate not re-exercised with installer22/schema12; earlier results are history only."
+      },
+      {
+        "id": "real-service",
+        "status": "BLOCKED",
+        "reason": "Prior selected API429 remains blocked; supplement makes zero real model submissions, fixture image handling does not certify VLM quality."
+      },
+      {
+        "id": "restore",
+        "status": "PASS",
+        "reason": "Fresh517 core plus6 targeted closure browser regressions include backup/restore and archive behavior; local controlled data."
+      },
+      {
+        "id": "security",
+        "status": "PASS",
+        "reason": "Fresh core and screen browser cancellation/consent/capability checks plus reviewed source diff. Does not claim a fresh exact-secret scan."
+      },
+      {
+        "id": "file-integrity",
+        "status": "PASS",
+        "reason": "All current source manifest entries and1733 package entries hashed. No new ZIP or archive verification claimed."
+      }
+    ],
+    "eligibleForLocalBeta": false,
+    "publicDistributionReady": false,
+    "realService": {
+      "status": "BLOCKED",
+      "provider": "previously selected Minimax M3.1 Flash Free",
+      "modelSubmissions": 1,
+      "http": 429,
+      "retryAfterSeconds": 82947,
+      "automaticRetries": 0,
+      "fallbacks": 0,
+      "evidence": "live-current-report.json",
+      "history": "Earlier beta.1 real Wiki/recall success is preserved in priorUserClosure20261022 and is not promoted to fresh beta.2 acceptance.",
+      "phaseModelSubmissions": 0,
+      "readOnlyModelsList": "PASS",
+      "readinessEvidence": "real-service-readiness.json",
+      "retryWindowEvidence": "real-service-window.json"
+    },
+    "limits": {
+      "native": {
+        "status": "NOT_RUN",
+        "owner": "user",
+        "scope": "real pointer/touch, Chinese IME, system source picker, fullscreen/lock/sleep; automated components cannot replace physical acceptance"
+      },
+      "signing": {
+        "status": "DEFERRED",
+        "scope": "publisher signing and SmartScreen reputation; previously deferred"
+      },
+      "physicalAudio": {
+        "status": "DEFERRED",
+        "scope": "User explicitly deferred physical microphone/speaker, noise, device switching and actual listening quality; not PASS"
+      }
+    },
+    "remaining": [
+      "Current selected real service quota must recover before fresh real-service acceptance can PASS",
+      "User-owned native pointer/IME/picker/fullscreen/lock/sleep remains NOT_RUN; physical audio and signing explicitly DEFERRED",
+      "Official QQ bot, native mobile client, background cloud sync and continuous token-to-speech streaming are not implemented capabilities; current scope uses OneBot, manual selective file exchange and sentence audio chunks"
+    ],
+    "git": {
+      "branch": "codex/product-completion",
+      "pullRequest": "https://github.com/ZyfNO2/ALLMIND/pull/2",
+      "delivery": "Update existing Draft PR; no merge or public Release"
+    },
+    "workerCleanup": {
+      "status": "BLOCKED",
+      "scope": "older process-directory recursive cleanup was rejected by automatic approval; retained, no bypass"
+    },
+    "supplement": "Screen image/OCR optional paths, API explicit imageInput, manual-send only and cancellation/late-response regression verified. Physical audio deferred by user; real VLM/picker not claimed.",
+    "sourceIdentityScope": "Current README correction is documentation-only after ab4f432 production supplement; newly bound package1733 payload bytes verified identical to c150 production test package. Actual517/4+6/56 evidence retains tested production source/package; old22/12 remain historical only.",
+    "documentationRefresh": {
+      "date": "2026-10-22",
+      "status": "PASS",
+      "scope": "README, screenshot provenance, 15 README images and source/status metadata only; no production or dependency changes",
+      "baseTestedCommit": "c50b7ae1112c7a5c64aa7ff032a6ac7c675828ed",
+      "testedSourceHash": "78e8e01d2e22713035996b1214b2fb1ccb9fcbf68b995c0311846b4f9c0fe347",
+      "currentDocumentationSourceHash": "593785bce9f7907e9f20ba904234c71f24e41c671c6dc5ffa7836d7e9a2c6738",
+      "currentDocumentationSourceFiles": 1699,
+      "sourceExclusions": [
+        "validation/release-status.json",
+        "validation/source-manifest.json"
+      ],
+      "browserScreenshots": 13,
+      "wpfOffscreenRenders": 2,
+      "fixtureChatCalls": 1,
+      "fixtureWikiCalls": 1,
+      "realModelCalls": 0,
+      "pageErrors": 0,
+      "localLinkChecks": 25,
+      "imageHashChecks": 15,
+      "packageRebuilt": true,
+      "currentTreePackageAcceptance": "Documentation snapshot candidate passed; latest UI/tool repair and candidate are recorded in finalCandidate.",
+      "provenance": "Production browser UI in fresh isolated demo data; WPF production components rendered offscreen without native input; unretouched images checked against original captures. Not real-service or physical/native acceptance."
+    },
+    "previousTestedSnapshot": {
+      "sourceHash": "78e8e01d2e22713035996b1214b2fb1ccb9fcbf68b995c0311846b4f9c0fe347",
+      "commit": "c50b7ae1112c7a5c64aa7ff032a6ac7c675828ed",
+      "packageManifestSha256": "b70774b4592f11d62398b678d702b5ed8bdb629d7d19b463baed8982ff9dbe33",
+      "scope": "Preserved prior c50 tested package; unchanged payload is independently verified, not inferred from older failed equality record"
+    },
+    "finalCandidate": {
+      "date": "2026-10-22",
+      "status": "BLOCKED",
+      "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff",
+      "package": {
+        "manifestSha256": "fcd31e7d9ac312baf279c26e4225bbfa38fb1dd87d717ca54bf6447c1d38ec6d",
+        "files": 1733,
+        "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff"
+      },
+      "archive": {
+        "status": "NOT_RUN",
+        "scope": "No new ZIP generated for screen-image supplement"
+      },
+      "sourceDelta": {
+        "baselineCommit": "9f1f5bfc5ea4e7db2754e03eaf9ebe73ea9fbfc3",
+        "files": 11,
+        "productionPayloadChanged": true,
+        "dependencyChanges": 0
+      },
+      "freshCore": {
+        "status": "PASS",
+        "tests": 517,
+        "fail": 0,
+        "skipped": 0
+      },
+      "targetedBrowser": {
+        "status": "PASS",
+        "screenTests": 4,
+        "closureTests": 6
+      },
+      "portable": {
+        "status": "PASS",
+        "checks": 56
+      },
+      "installedLifecycle": {
+        "status": "NOT_RUN",
+        "historicalChecks": 22
+      },
+      "oldPackageUpgrade": {
+        "status": "NOT_RUN",
+        "historicalChecks": 12
+      },
+      "scope": "New production API-image and management UI payload. Older installer/upgrade/full-browser/WPF results kept with exact historical source; no false whole-payload identity reuse. New head CI reported by PR checks. Later README-only source rebinding independently proves all1733 runtime payloads identical to the fresh-tested c150 production package.",
+      "productionTestedPackage": {
+        "manifestSha256": "7c40199ad02ff7a788e47f746fc819300f3a87f5c9a5377d86774a0bdd91128a",
+        "files": 1733,
+        "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a"
+      },
+      "documentationCorrection": {
+        "sourceFiles": 1,
+        "productionChanges": 0,
+        "payloadFilesByteIdentical": 1733,
+        "testedProductionCommit": "ab4f4327c9cd9e19b1b5b883ae7b0f221dff8125",
+        "scope": "No tests rerun for README-only delta; CI exact current head is reported separately in PR."
+      }
+    },
+    "previousCandidate": {
+      "sourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
+      "packageManifestSha256": "8b907972bd807121fe7fbf43eb406c61f2e8cf5a01277d19aa1f71080cbc5b83",
+      "archiveSha256": "fa822bcb8190591862631f48c6be2239cca8628adc644cb03a48b4c46f633f9b",
+      "commit": "4cfef92ed67199ada20f2d8b0fdefb7899aa0781",
+      "scope": "Previous private-range fixture allocation: PR failed EACCES49702, same-head push passed; outcomes preserved, never rerun or relabelled."
+    },
+    "candidateHistory": [
+      {
+        "recordedAt": "2026-10-22",
+        "commit": "9f1f5bfc5ea4e7db2754e03eaf9ebe73ea9fbfc3",
+        "sourceHash": "136452fe48fc4126c7361bc55fda599da465238ea6850c156ef36e9127fabac3",
+        "finalCandidate": {
+          "date": "2026-10-22",
+          "status": "BLOCKED",
+          "sourceHash": "136452fe48fc4126c7361bc55fda599da465238ea6850c156ef36e9127fabac3",
+          "package": {
+            "manifestSha256": "95ec95a24f31e2fc9594acb908be9715e7321253ad2444edf474f1d1d763f10f",
+            "files": 1733,
+            "sourceHash": "136452fe48fc4126c7361bc55fda599da465238ea6850c156ef36e9127fabac3",
+            "archiveSha256": "40b951d2bfcc3cdb9bf4df982e12da56158f19e3aa8130d4ab238dfde02d38cc",
+            "archiveBytes": 207168011,
+            "archiveMembers": 1734
+          },
+          "sourceDelta": {
+            "baselineCommit": "4cfef92ed67199ada20f2d8b0fdefb7899aa0781",
+            "testFiles": 1,
+            "verificationToolFiles": 1,
+            "productionDependencyChanges": 0
+          },
+          "freshCore": {
+            "status": "PASS",
+            "tests": 515,
+            "fail": 0,
+            "skipped": 0
+          },
+          "freshExtension": {
+            "status": "PASS",
+            "processes": 10,
+            "testsPerProcess": 7
+          },
+          "portable": {
+            "status": "PASS",
+            "checks": 56,
+            "testedManifestSha256": "8b907972bd807121fe7fbf43eb406c61f2e8cf5a01277d19aa1f71080cbc5b83",
+            "provenance": "Fresh current verifier against prior manifest, all runtime payload bytes identical to current candidate"
+          },
+          "installedLifecycle": {
+            "status": "PASS",
+            "checks": 22,
+            "provenance": "Inherited9af, not rerun"
+          },
+          "oldPackageUpgrade": {
+            "status": "PASS",
+            "checks": 12,
+            "provenance": "Inherited9af, not rerun"
+          },
+          "runtimeIdentity": {
+            "status": "PASS",
+            "files": 1733,
+            "allPayloadBytesIdenticalTo4cfAnd9af": true,
+            "manifestChangedOnlySourceBinding": true,
+            "evidence": "source-package-identity.json"
+          },
+          "priorCi": {
+            "commit": "4cfef92ed67199ada20f2d8b0fdefb7899aa0781",
+            "pr": "FAIL: EACCES49702 at listen",
+            "push": "PASS",
+            "scope": "Original failed/success outcomes retained; no rerun. New head CI must independently validate latest fixture selection."
+          },
+          "scope": "OS allocation avoids manual reserved-port choice; non-business fetch probe filters only forbidden port before any generated request. Production/dependencies unchanged. Fresh core70+515 and portable56; inherited22/12 strictly byte identity. All real-service/native/signing limits unchanged."
+        },
+        "validation": {
+          "dependencies": {
+            "status": "PASS",
+            "mode": "two independent cold npm ci",
+            "provenance": "Prior completed beta.2 local regression at identical production source; no new dependency/production/UI code changes. See runtime-source-identity.json. New CI records current head separately."
+          },
+          "build": {
+            "status": "PASS",
+            "scope": "Fresh local build after two non-production fixture changes; all packaged runtime payload bytes verified identical to 4cf/9af candidate."
+          },
+          "core": {
+            "status": "PASS",
+            "tests": 515,
+            "fail": 0,
+            "skipped": 0,
+            "evidence": "core-01.log",
+            "provenance": "Fresh local full core with OS-allocated fetch-checked fixture ports."
+          },
+          "browser": {
+            "status": "PASS",
+            "files": 32,
+            "tests": 54,
+            "fail": 0,
+            "skipped": 0,
+            "evidence": "cold-browser-02.log",
+            "provenance": "Prior completed beta.2 local regression at identical production source; no new dependency/production/UI code changes. See runtime-source-identity.json. New CI records current head separately."
+          },
+          "wpfNode": {
+            "status": "PASS",
+            "tests": 27,
+            "evidence": "cold-wpf-node-02.log",
+            "provenance": "Prior completed beta.2 local regression at identical production source; no new dependency/production/UI code changes. See runtime-source-identity.json. New CI records current head separately."
+          },
+          "adapters": {
+            "status": "PASS",
+            "tests": 8,
+            "evidence": "cold-adapters-01.log",
+            "provenance": "Prior completed beta.2 local regression at identical production source; no new dependency/production/UI code changes. See runtime-source-identity.json. New CI records current head separately."
+          },
+          "wpfComponents": {
+            "status": "PASS",
+            "visibilityAssertions": 53,
+            "perchAssertions": 21,
+            "quickChatAssertions": 52,
+            "soundSequenceAssertions": 148,
+            "silentSoundPlayerStress": "PASS",
+            "headlessTimeoutChecks": 8,
+            "scope": "no real mouse/keyboard/audio input",
+            "evidence": "cold-wpf-components-01.log",
+            "provenance": "Prior completed beta.2 local regression at identical production source; no new dependency/production/UI code changes. See runtime-source-identity.json. New CI records current head separately."
+          },
+          "portable": {
+            "status": "PASS",
+            "checks": 56,
+            "files": 1733,
+            "manifestSha256": "95ec95a24f31e2fc9594acb908be9715e7321253ad2444edf474f1d1d763f10f",
+            "evidence": "portable-report.json",
+            "testedPackageManifestSha256": "8b907972bd807121fe7fbf43eb406c61f2e8cf5a01277d19aa1f71080cbc5b83",
+            "testedPackageSourceHash": "d1893a3339930a0c44ee81315c3f8c5ecde4ec127b89f6a94ff5b7ef68012b56",
+            "provenance": "Fresh current verifier56 used previous manifest-bound package with full byte-identical runtime payload. New source binding verified separately; no claim fresh run used new manifest.",
+            "identityEvidence": "source-package-identity.json"
+          },
+          "installedLifecycle": {
+            "status": "PASS",
+            "checks": 22,
+            "actualHost": true,
+            "model": "local HTTP fixture",
+            "evidence": "inherited-installed-lifecycle-beta2-final.json",
+            "provenance": "NOT RERUN: inherited prior9af actual runtime22/12 after full1733 payload byte identity; current changes only test/verification fixtures."
+          },
+          "priorPackageDataUpgrade": {
+            "status": "PASS",
+            "checks": 12,
+            "oldReaderRejected": true,
+            "exactRollback": true,
+            "evidence": "inherited-old-package-upgrade-final.json",
+            "provenance": "NOT RERUN: inherited prior9af actual runtime22/12 after full1733 payload byte identity; current changes only test/verification fixtures."
+          },
+          "privacy": {
+            "status": "PASS",
+            "exactAuthorizedCredentialLeaks": 0,
+            "productionSourceChanges": 0,
+            "verificationToolChanges": 1,
+            "dependencyChanges": 0,
+            "evidence": [
+              "inherited-artifact-security.json",
+              "source-package-identity.json"
+            ],
+            "testSourceChanges": 1,
+            "provenance": "Prior exact credential exclusion inherited for fully identical runtime payload; changed test/tool diff reviewed. No fresh exact-key scan claimed."
+          },
+          "windowsMedia": {
+            "status": "PASS",
+            "tests": 3,
+            "skipped": 0,
+            "evidence": "windows-media-01.log",
+            "scope": "real Windows Chinese synthesis/recognition and English/Chinese/blank WinRT OCR; file streams/synthetic pixels, no physical input"
+          },
+          "nativeSupplement": {
+            "status": "PASS",
+            "observerAssertions": 10,
+            "notificationAssertions": 5,
+            "desktopMode": "PASS",
+            "scope": "real Win32 hotkey conflict/rebind/release and monitor mapping; independent transparent windows; no native input/lock/sleep",
+            "evidence": [
+              "allmind-observer-01.log",
+              "allmind-notifications-01.log",
+              "desktop-mode-01.log"
+            ]
+          },
+          "qqHttpSupplement": {
+            "status": "PASS",
+            "tests": 2,
+            "model": "controlled local HTTP fixture through production BookHttpModel",
+            "evidence": "qq-http-02.log",
+            "scope": "same-group member/group-private/desktop isolation; non-whitelist denial, receipts, reconnect/restart dedup, pending HTTP cancellation, other-member concurrency"
+          },
+          "deviceEnumeration": {
+            "status": "PASS",
+            "scope": "Production settings enumerates actual Chromium/Windows devices without fake-media flags, grants, recording or playback; counts only, no device IDs or labels exported",
+            "physicalMicSpeaker": "NOT_RUN",
+            "checks": 4,
+            "deviceCounts": {
+              "audioinput": 0,
+              "audiooutput": 0
+            },
+            "enumerationCalls": 1,
+            "recordingCalls": 0,
+            "modelCalls": 0,
+            "note": "Browser without microphone permission may hide devices/labels; enumeration success does not certify physical availability, device switching, capture or listening.",
+            "evidence": "real-device-enumeration.json"
+          },
+          "roleArchiveUi": {
+            "status": "PASS",
+            "tests": 5,
+            "fail": 0,
+            "skipped": 0,
+            "evidence": "ui-regression-01.log",
+            "scope": "Production UI draft/request, document/search/backup, archive/restore and Wiki correction regressions after cancel label repair"
+          },
+          "extensionRelay": {
+            "status": "PASS",
+            "independentProcesses": 10,
+            "testsPerProcess": 7,
+            "fail": 0,
+            "skipped": 0,
+            "evidence": "extension-01.log through extension-10.log",
+            "scope": "OS listen0 then non-business web-origin403 fetch probe. Only exact TypeError cause bad port reallocates unused fixture; EACCES and all other errors throw. Authenticated pairing acknowledgement and all original assertions/timeouts retained.",
+            "historicalFailures": [
+              "9af PR relay failure with missing result details",
+              "targeted extension-06 bad port",
+              "4cf PR reconnect listen EACCES49702"
+            ],
+            "historicalCauseLimit": "The earliest remote assertion omitted result details; exact original relay failure cannot be established retrospectively."
+          }
+        },
+        "releaseGates": [
+          {
+            "id": "source-binding",
+            "status": "PASS",
+            "reason": "Current source, package and evidence identify the same inventory."
+          },
+          {
+            "id": "blank-install",
+            "status": "PASS",
+            "reason": "Fresh 56 checks used current verifier and exactly identical prior-bound runtime; complete payload identity proves applicability to newly bound package"
+          },
+          {
+            "id": "upgrade",
+            "status": "PASS",
+            "reason": "Inherited 9af actual lifecycle22 and beta.1 upgrade12; not rerun, full payload byte identity proven"
+          },
+          {
+            "id": "real-service",
+            "status": "BLOCKED",
+            "reason": "Existing selected API HTTP429 Retry-After active; zero new inference, no fallback"
+          },
+          {
+            "id": "restore",
+            "status": "PASS",
+            "reason": "Fresh full local515 core at current source; identical payload preserves prior real restore tests"
+          },
+          {
+            "id": "security",
+            "status": "PASS",
+            "reason": "Fresh full core plus current fixture transport checks; runtime credential exclusion inherited only for byte-identical payload; test/tool diff reviewed"
+          },
+          {
+            "id": "file-integrity",
+            "status": "PASS",
+            "reason": "New complete source/package inventory and ZIP individual member-byte hashes verified"
+          }
+        ],
+        "limits": {
+          "native": {
+            "status": "NOT_RUN",
+            "owner": "user",
+            "scope": "real pointer/touch, Chinese IME, source picker, fullscreen/lock/sleep and physical mic/speaker; component and enumeration results do not replace these"
+          },
+          "signing": {
+            "status": "DEFERRED",
+            "scope": "publisher signing and SmartScreen reputation; previously deferred"
+          }
+        },
+        "scope": "Historical verified OS-fixture-port candidate. Its runtime byte-identity and22/12 inheritance claims do not apply to the later screen-image production change."
+      }
+    ],
+    "screenImageSupplement": {
+      "date": "2026-10-22",
+      "status": "PASS",
+      "scope": "Single-frame screenshot may be confirmed as image attachment or local OCR; image path requires explicit consent, supported source and later manual chat send. API imageInput defaults off. No text-only fallback or auto-resend on image failure.",
+      "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff",
+      "package": {
+        "manifestSha256": "fcd31e7d9ac312baf279c26e4225bbfa38fb1dd87d717ca54bf6447c1d38ec6d",
+        "files": 1733,
+        "sourceHash": "8a7f2c0c01d084da72cf8a8959f9f04b0b650e948352450f04867035751ff3ff"
+      },
+      "coreTests": 517,
+      "screenBrowserTests": 4,
+      "closureBrowserTests": 6,
+      "portableChecks": 56,
+      "fixtures": true,
+      "realModelCalls": 0,
+      "realVlmQuality": "NOT_RUN",
+      "realSystemPicker": "NOT_RUN",
+      "physicalAudio": "DEFERRED",
+      "screenshots": "Existing README screenshots retain original2026-10-22 demo capture scope; no new screen-image screenshots captured.",
+      "cancellation": "Resource saved then response deliberately held; user cancels, late response released, next turn remains text-only. Cancellation may not remove an already saved local file; UI explains this.",
+      "firstFailures": [
+        "browser-01.log",
+        "browser-debug-02.log"
+      ],
+      "failureScope": "New browser fixture initially omitted resource service; production assertions unchanged, fixture corrected, browser03/04 passed.",
+      "historicalPackageChecks": {
+        "installation": 22,
+        "upgrade": 12,
+        "status": "NOT_RUN for current candidate",
+        "note": "Earlier scoped results retained in candidateHistory; no whole-payload equality or inheritance to changed production package claimed."
+      },
+      "archive": "NOT_RUN: no ZIP generated this supplement",
+      "testedProductionSourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a",
+      "testedProductionPackage": {
+        "manifestSha256": "7c40199ad02ff7a788e47f746fc819300f3a87f5c9a5377d86774a0bdd91128a",
+        "files": 1733,
+        "sourceHash": "c150d52b4603ed23bb586f9840d8e3fb7596806b3be54eafc90874f103e5048a"
+      },
+      "documentationCorrection": {
+        "status": "PASS",
+        "files": [
+          "README.md"
+        ],
+        "scope": "Capture date and historical docs-only paragraph clarified; no production changes or new screenshots",
+        "payloadByteIdentity": true,
+        "identityEvidence": "source-package-identity.json"
+      }
+    }
+  },
+  "publicReleaseNote": "Local portable package and installer/update/rollback/uninstall were verified. No GitHub Release, signing, unattended auto-update or new publication is claimed by this user-closure task. Historical Git/publication records are retained below.",
   "git": {
     "branch": "main",
     "remote": "https://github.com/ZyfNO2/ALLMIND.git",
@@ -493,7 +1113,7 @@
     "report": "CONNECTION-SETUP-REPAIR-20261018.md (local worker handover)"
   },
   "userAcceptance": "SCOPED_DEFECT_RECHECK_PASS_FULL_JOURNEY_NOT_REPEATED",
-  "currentValidation": "Sole Init release candidate (2026-10-20): main build and UI build PASS; L1 392/392 (58 files), fixed L2 28/28 (18 files). Blank-user role/persona/import/API/test/save/chat flow and 124-node WebGL graph verified with authored data and fixture HTTP model. Historical live/cold evidence not rerun; real API remains DEFERRED, web long-history failure remains, native pet OUT_OF_SCOPE.",
+  "currentValidation": "Current screen-image candidate: currentSummary/screenImageSupplement/finalCandidate. Previous detailed source/package/CI evidence remains in candidateHistory. New head CI must be read by exact head from PR checks.",
   "closedTabRecovery": {
     "date": "2026-10-18",
     "status": "PASS",
@@ -1217,5 +1837,991 @@
       "No native pet appearance redesign or native UI acceptance in this change.",
       "Full portable behavioral suite and fresh clone not rerun for this visual change."
     ]
+  },
+  "fullTavoPreset": {
+    "date": "2026-10-20",
+    "status": "PASS_WITH_SCOPE",
+    "scope": "User-provided preset imported into the existing local GPT-Niang role; original JSON not bundled in repository or blank release.",
+    "originalPrompts": 14,
+    "originalEnabled": 11,
+    "attachedAllmindSlots": 2,
+    "originalPreserved": true,
+    "compatibility": "date/time macros added with one timestamp per runtime compilation and configured timezone. Original prompt text, role, position, order and disabled state retained.",
+    "tests": {
+      "compiler": 10,
+      "browser": 2,
+      "fail": 0
+    },
+    "realWeb": {
+      "status": "PASS",
+      "thinking": "High level 2 read before sending",
+      "presetId": "preset-tavo-wechat-4",
+      "compilationStatus": "consumed",
+      "fullStyleBodyVerified": true,
+      "unexpandedTimeMacros": false
+    },
+    "limits": [
+      "No credentials or user-authored preset JSON included in source release.",
+      "Web uses ordered text transport; it cannot enforce API role priority or sampling parameters.",
+      "Unused SillyTavern impersonation/group/continue commands remain authoring data; this product has no matching modes.",
+      "Empty personality/user-profile/scenario/example slots remain empty and are explicitly reported."
+    ]
+  },
+  "p0BubbleReply": {
+    "date": "2026-10-20",
+    "status": "PASS_WITH_SCOPE",
+    "behavior": {
+      "scene": "bubble",
+      "softTargetChars": [
+        40,
+        80
+      ],
+      "requestedMaxChars": 120,
+      "lengthPolicy": "Scene instruction and independent measurement; overflow is retained and expandable, never auto-regenerated.",
+      "layout": "Three bounded sizes measured by WPF; long replies use a preview and full-chat action. Original quota layout restored on hide.",
+      "preset": "Complete imported prompt text/order retained; full-chat role length settings unchanged.",
+      "budget": "Reserve scene policy before complete-turn history trimming; one scene length instruction, no duplicate full-chat length boilerplate."
+    },
+    "tests": {
+      "core": {
+        "pass": 400,
+        "fail": 0
+      },
+      "connectionAndChatBrowser": {
+        "pass": 6,
+        "fail": 0
+      },
+      "wpfNode": {
+        "pass": 7,
+        "fail": 0
+      },
+      "wpfComponentAssertions": 52,
+      "build": "build:allmind passed; final backend TypeScript compilation and core regressions rerun after budget correction"
+    },
+    "realWeb": {
+      "status": "PASS",
+      "thinking": "High level 2 verified immediately before sending",
+      "actualChars": 36,
+      "fullPresetStyleBodyVerified": true,
+      "policyPresent": true,
+      "compilationStatus": "consumed",
+      "configUnchanged": true,
+      "restartPersistence": true
+    },
+    "firstFailures": [
+      "Native EXE build initially failed because the running host held it; resumed its old receipt without sending again, gracefully exited, then rebuilt.",
+      "Live preflight rejected the scene policy at the input budget before model submission; reserved its tokens before history trimming and removed duplicated full-chat length instructions. Budget and original preset text were not loosened."
+    ],
+    "limits": [
+      "Prompt length requests are not a guarantee of model compliance; overlength output is preserved and expandable.",
+      "WPF checks exercise production components and layout; real pointer/IME/fullscreen native acceptance was not rerun.",
+      "No new real API or full portable/cold-clone acceptance in this change."
+    ]
+  },
+  "remainingWorkGoal": {
+    "date": "2026-10-21",
+    "status": "IN_PROGRESS",
+    "userDeferred": [
+      "QQ/飞书接入",
+      "ACP 桥接",
+      "代码签名"
+    ],
+    "completedScope": [
+      "Unified tagged, author-scoped, organized and derived simulation recall isolation outside story-rp; shared classification simulation label.",
+      "Verified existing deterministic same-domain/same-title batch merge preserves source evidence, coverage and relation evidence.",
+      "Wiki page category suggestions with per-page reviewed overrides; category selection alone does not activate behavior.",
+      "Explicit derived core-persona activation, editing disable control, pairing-scoped 4 KiB guard, source revocation and preset-slot enforcement.",
+      "Same-name pages in distinct evidence domains are allowed; same-domain duplicates remain rejected. Product and task Python self-check agree.",
+      "Proven-dead writer lock recovery with identity rechecks, archived old lock, exclusive recovery coordination and live/invalid lock refusal.",
+      "Opt-in per-character local Windows speech settings, audio-only browser recording, transcript confirmation, manual/automatic reply reading, cancellation and scope invalidation; no audio/transcript store.",
+      "Manual screen/window selection, local preview and WinRT OCR; a separate next-turn send consent injects untrusted screen text through the desktop/material preset slot. Scoped, expiring, single-turn observations support cancel, deletion, source-name exclusion and exact replay identities.",
+      "Current portable candidate includes speech/OCR helpers and passes 1687-file hash verification plus 56 isolated runtime checks; no cold source rebuild claimed.",
+      "BookActivity uses the existing bounded atomic replacement helper; native temporary/persistent file-lock tests verify retry and failure preservation.",
+      "Browser interaction leases now suppress and cancel proactive generation during typing, voice, playback and screen operations; ordered updates, multi-page aggregation, monotonic TTL expiry and no-body storage."
+    ],
+    "tests": {
+      "corePass": 445,
+      "coreFail": 0,
+      "reviewAndWikiBrowserPass": 3,
+      "reviewAndWikiBrowserFail": 0,
+      "reviewWidths": [
+        320,
+        768,
+        1440
+      ],
+      "pythonSelfCheckCases": 2,
+      "voiceBrowserPass": 1,
+      "voiceAndReviewBrowserPass": 2,
+      "nativeVoiceAndMediaPass": 10,
+      "screenVoiceReviewBrowserPass": 3,
+      "screenReaderKeyboardAndPrivacyBrowserPass": 1,
+      "nativeOcrSpeechAndReplacePass": 3,
+      "portableChecks": 56,
+      "portableInventoryFiles": 1692
+    },
+    "notComplete": [
+      "Native pointer/IME and real source picker acceptance",
+      "Graph entity-level extraction and related model acceptance",
+      "ChatGPT long-history remediation and latest real API regression",
+      "Physical microphone/speaker device acceptance",
+      "User-configurable proactive frequency and native scenario acceptance",
+      "Cold source snapshot dependency installation and full rebuild",
+      "Installer and update workflow"
+    ],
+    "notes": [
+      "Goal remains active; roadmap items are not claimed as delivered.",
+      "Local progress and process documents are ignored and not included in source release."
+    ],
+    "currentRuntime": "Restored GPT-Niang instance is ready; WinRT OCR capabilities HTTP 200. Config plus six chat files retain pre-restart SHA-256 values."
+  },
+  "wikiClassificationReview": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "modelProtocol": "Optional category enum is accepted for backward compatibility; current prompt requests category. Model-generated corePersona is rejected as an extra field.",
+    "application": "Complete per-page category/core-persona selections are persisted with an immutable apply operation. Selection edits invalidate UI confirmation.",
+    "corePersona": "Explicitly activated derived Wiki remains source-bound; counted with persona entries under 4 KiB, mandatory character slot injection, disabling and revocation supported.",
+    "tests": {
+      "core": 411,
+      "browser": 3,
+      "selfCheckPython": 2
+    },
+    "liveModel": "NOT_RUN for new category output; no new real Wiki generation or personal data mutation.",
+    "nativeVoiceProbe": "Read-only probe found Chinese/English Windows synthesis voices and recognizers; voice product integration NOT_DONE.",
+    "limits": [
+      "Browser checks use a synthetic model through the actual HTTP/UI path, not a real provider.",
+      "No screen-reader, native pointer/IME, full portable or clean-clone acceptance for this increment."
+    ]
+  },
+  "writerRecovery": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "policy": "Only ESRCH proves the previous writer dead. Lock bytes and identity are rechecked under an exclusive recovery guard; previous lock archived. Live, invalid, changed or uninspectable locks fail closed.",
+    "tests": {
+      "terminatedRealChildRecovery": "PASS",
+      "threeConcurrentRecoverersOneWriter": "PASS",
+      "liveMalformedAndRecoveryGuardRefusal": "PASS",
+      "fullCore": 411,
+      "buildAllmind": "PASS"
+    },
+    "runtime": {
+      "oldDeadWriterRecovered": true,
+      "newBackendReady": true,
+      "unchangedConfigAndSessionHashes": 7,
+      "unchangedBookContentHashes": 1,
+      "wikiHttp": 200
+    },
+    "firstObservation": "The earlier full Book-file hash changed after startup; Book includes mutable companion state. Verified entries, Wiki sources, relationships and revision separately across a subsequent graceful restart; no knowledge-content change.",
+    "limits": [
+      "Recovery never infers death from elapsed time or PID reuse.",
+      "A malformed lock or abandoned recovery guard still requires explicit investigation; it is not automatically deleted."
+    ]
+  },
+  "localVoice": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "product": "Per-character Windows local speech, default off; microphone on click only, max 15 seconds. Recognition appends to draft and never sends chat. Manual reply reading and optional auto-reading of fresh non-replayed replies; stop on scope/settings/navigation change.",
+    "limits": [
+      "Windows installed language and voices required. No role voice cloning, streaming voice or native bubble voice controls.",
+      "Manual/automatic reading limit 2000 Unicode code points. Explicit failure instead of truncation.",
+      "Recording stays in memory; SAPI synthesis uses temporary text/WAV files cleaned after completion/cancellation.",
+      "Physical microphone noise, device switching and speaker listening are NOT_RUN."
+    ],
+    "verification": {
+      "coreFinal": "418/418",
+      "firstCoreRun": "417/418; existing BookActivity atomic rename EPERM in habit case, retained; file 6/6 and unchanged full-suite rerun 418/418. Root cause not established.",
+      "browser": "AudioWorklet + synthetic microphone + production HTTP/UI + controlled speech engine: opt-in save, no camera, transcript review, chat send, fresh-only auto reading, manual playback, stop, late navigation result rejection, permission refusal; 320/768/1440.",
+      "native": "Windows Chinese synthesis to file-stream recognition, two sentences verified; no user microphone or speaker used. Native/media tests 10/10; includes 5 existing SAPI and 4 capture cases.",
+      "firstNativeFailure": "Initial synchronous Recognize loop failed after EOF. Fixed with RecognizeAsync(Multiple) completion handling; current native regression asserts both sentences.",
+      "build": "TypeScript + desktop/UI stages passed. First WPF compile blocked by running executable; after verified zero pending requests and graceful exit, WPF rebuild passed, runtime restored.",
+      "runningHttp": "voice/capabilities HTTP 200, three voices and two recognizers",
+      "userData": "runtime config + six session hashes unchanged compared with prior stage; no voice option enabled in personal config."
+    },
+    "externalServices": "No cloud speech or LLM invoked by speech operations."
+  },
+  "localScreenOcr": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "transport": "Windows.Media.Ocr via PowerShell/.NET WinRT, direct local pixel recognition; not a cloud or synthetic production fallback.",
+    "flow": "OS selection -> one-frame local preview -> explicit local OCR consent -> review text -> independent current-model send consent -> manual chat send. No microphone/audio in screen selection.",
+    "lifecycle": "Images never enter a file or model request. Screen text is volatile for at most five minutes, scoped to role/pairing/session and bound to one turn. SavedTurn only stores ID/hash/time; generated replies may contain quoted screen text. Provider history is not revoked by local deletion.",
+    "prompt": "Dedicated allmindDesktopContext marker when present; older presets can use allmindMaterials. Source text is untrusted JSON data. Missing/disabled slots or budget omission fail before model submission. All selected materials now require a retained compilation slot, instead of inaccurate materialsUsed metadata.",
+    "permissions": "Default and user-added literal source-name exclusions checked before capture in UI and again before OCR on server. Whole-screen contents cannot be reliably excluded by their inner window names; preview confirmation remains required.",
+    "verification": {
+      "core": "425/425",
+      "browser": "Production UI/HTTP with synthetic canvas source and controlled OCR: two consents, normal chat without attached OCR, one-turn use, cancel/late result refusal, deny/sensitive/custom sources, invalid privacy settings 400, 320/768/1440; Escape and trigger focus restoration.",
+      "native": "Real WinRT OCR on English/Chinese pixel fixtures and blank fixture; actual Windows speech and atomic replacement tests 3/3.",
+      "portable": "Current package 1687 file hashes verified and 56 runtime checks passed, including packaged real speech/OCR helper execution and empty media chat history.",
+      "runtime": "Restored source instance ready; seven config/chat file hashes unchanged, OCR capabilities HTTP 200."
+    },
+    "limits": [
+      "Actual OS source-picker pointer interaction and real private desktop capture NOT_RUN; browser source was synthetic, no personal screen used.",
+      "No continuous observation, cloud visual reasoning or automatic screen-to-Wiki writing.",
+      "Physical microphone/speaker, clean-source reinstall, installer and update still pending."
+    ],
+    "firstErrors": [
+      "Legacy optional C++ OCR helper build failed because Windows SDK/windows.h is absent. Native OS WinRT available; current explicitly declared transport needs no SDK. Legacy C++ helper remains unbuilt.",
+      "New desktop-slot test initially used an invalid fixture preset ID prefix; corrected fixture ID, original validation and assertions unchanged.",
+      "Screenshot review found cramped inline OCR detail; moved to existing modal. New reader-height assertion then caught theme specificity overriding the intended textarea height; fixed scoped selector and retained >=120px assertion. Keyboard/privacy browser rerun passed."
+    ]
+  },
+  "currentPortableAcceptance": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "inventoryFiles": 1692,
+    "checks": 56,
+    "dependencyPackages": 53,
+    "fixtureModel": true,
+    "manifestSha256": "8a5fd948458b7b47ea4ce766ce236c5057237ce49cfb6238478a241aeba88c9f",
+    "sourceFreshness": "Current project-isolation candidate includes history cutoff fix and latest project role-lock UI fix. UI built; project browsers3/3 and connection browsers4/4; full packaged runtime56 PASS. Backend code unchanged from cold core445/445.",
+    "coldSourceRebuild": "Historical immediately preceding 1640-file cold snapshot: full build/core445/browsers3 PASS. Latest increment changed two UI source files and two browser tests, rebuilt UI and repackaged; no claim of a second cold install for that increment.",
+    "nativeSpeechAndOcr": "Real Windows helpers with synthetic file/pixel input. Physical devices and private screen capture NOT_RUN.",
+    "pointerImeFullscreenLockSleep": "NOT_RUN",
+    "installerUpdate": "PASS_WITH_SCOPE; see installationAndManualUpdate",
+    "signing": "DEFERRED by user; unattended update NOT_IMPLEMENTED"
+  },
+  "proactiveInteractionPresence": {
+    "status": "PASS_WITH_SCOPE",
+    "date": "2026-10-21",
+    "fix": "Native presence is OR-merged with leased browser interaction flags in both scheduling and claim paths. Wiki/model work is also busy. Accepted active updates cancel the sole in-flight producer.",
+    "privacy": "Only role/session/pairing, per-view UUID, monotonic sequence and four booleans; no input text, OCR, audio or persisted presence file. Extra payload fields rejected.",
+    "lifetime": "20 seconds active lease, 60 second ordering tombstone, monotonic clock. Only active views heartbeat every 4 seconds; idle views do not poll. Page shutdown sends ordered inactive release.",
+    "cancel": "Normal conflict cancellation remains in ledger/log but does not emit a misleading companion failure popup; actual upstream failures still surface.",
+    "tests": {
+      "fullCore": "429/429",
+      "schedulerAndPresence": "37/37",
+      "voiceAndScreenBrowser": "2/2",
+      "monotonicTargeted": "4/4",
+      "liveInactiveProbe": "HTTP 200",
+      "dataRetention": "Config + six session SHA-256 values unchanged after graceful restart"
+    },
+    "firstErrors": [
+      "Browser build caught an unused catch parameter; corrected before successful build.",
+      "New integration fixture first assumed cancellation resolved and status failed; pre-existing scheduler contract rejects conflict and persists cancelled. Fixture corrected to assert both explicitly, no production assertion relaxed.",
+      "The controller restart-backend operation correctly rejected a healthy backend; source instance then exited and restarted normally."
+    ],
+    "limits": [
+      "No real model was invoked by interaction-state tests.",
+      "Native pointer/IME, screen picker, physical audio devices and user-configurable proactive frequency remain pending."
+    ]
+  },
+  "coldSourceAcceptance": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "snapshotFiles": 1636,
+    "sourceHashMismatches": 0,
+    "installation": "Independent backend and frontend npm ci; project-local node_modules and Electron binary, no copied dependencies or Git.",
+    "build": "build:allmind PASS: Electron setup, TypeScript, desktop/UI, WPF",
+    "core": {
+      "first": {
+        "pass": 428,
+        "fail": 1
+      },
+      "final": {
+        "pass": 429,
+        "fail": 0
+      },
+      "fixtureFix": "Lost-ack test now proves authenticated relay pairing before pull; timeout=100ms and no-replay assertions unchanged."
+    },
+    "browsers": "3/3: synthesis review, voice, screen",
+    "native": "3/3: Windows OCR pixels, speech file round-trip, atomic replacement",
+    "audio": "PASS: SoundPlayer PCM preload/volume, silent rapid and ordinary clicks, mute/cancel/reinitialization/cleanup. Physical speaker listening NOT_RUN.",
+    "packaging": {
+      "files": 1688,
+      "checks": 56,
+      "runtimeDependencyPackages": 53,
+      "fixtureModel": true
+    },
+    "firstErrors": [
+      "Fresh Electron 44.4.1 dependency has no postinstall and no binary. Added explicit project-local locked-version installer using dependency bundled checksums; build:allmind invokes it.",
+      "Fresh UI npm ci reported esbuild approval required. Added exact esbuild@0.21.5 allowScripts entry.",
+      "First core 428/429: lost-ack fixture assumed relay pairing after 15ms. Added actual authenticated pairing check before scenario; unchanged full rerun 429/429.",
+      "Default press/release WAV clips were globally ignored and absent from fresh source. Matched both upstream pinned Git blobs and SHA-256, added two exact Git exceptions plus mandatory package preflight. Missing-release negative test rejects before creating output."
+    ],
+    "limits": [
+      "No real model requests in this cold suite.",
+      "Native pointer/IME, real screen source picker, fullscreen/lock/sleep and physical audio devices NOT_RUN.",
+      "Installer/update not implemented; signing deferred by user."
+    ]
+  },
+  "proactiveFrequency": {
+    "status": "PASS_WITH_SCOPE",
+    "date": "2026-10-21",
+    "settings": "Settings > Advanced > Companion rules; daily request limit 1..6, minimum interval 30..1440 minutes, legacy defaults 2/180. Explicit save, no automatic opt-in.",
+    "policy": "Local-date and rolling-24h attempt budgets, failures counted, unchanged two-unanswered pause and interaction avoidance; changed config invalidates pending greetings without refund or catch-up.",
+    "tests": {
+      "typecheck": "PASS",
+      "backendBuild": "PASS",
+      "productionUiBuild": "PASS",
+      "schedulerAndPresence": "42/42",
+      "productionBrowser": "1/1: draft/save/reload/invalid HTTP save/discard/responsive; synthetic model must never be called",
+      "fullCore": "438/438"
+    },
+    "firstError": "Initial new persistence test cleanup tried to close reopened repository after its temp directory was removed (ENOENT writer.lock). Corrected cleanup ordering using try/finally; no production assertions relaxed.",
+    "limits": [
+      "Actual native scenario interaction not covered by these fixture and browser tests.",
+      "Last portable candidate predates frequency changes; must be rebuilt before claiming current-source portable acceptance."
+    ]
+  },
+  "wikiPageTyping": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "bug": "Every synthesized title was copied into BookEntry.entities, incorrectly making topic pages appear as graph entities.",
+    "fix": "Model schema/prompt accepts entity/topic/event; explicit type is persisted after review and shown in review/graph. Only explicit entity pages populate entities. Legacy synthesis metadata defaults to topic regardless of historical title-as-entity. Conflicting same-domain same-title types across batches fail closed.",
+    "backwardCompatibility": "Optional pageType in v1 accepts existing task outputs and stored books; missing pageType is a topic, not a new extracted entity.",
+    "tests": {
+      "synthesisAndBatches": "19/19, including apply/restart, legacy classification, schema and metadata rejection, conflicting batch types",
+      "core": "439/439",
+      "browser": "2/2: synthesis review/type display and proactive-frequency UI",
+      "pythonSelfCheck": "Valid entity accepted; invalid type independently rejected by generated Python self-check and product validator",
+      "backendAndUiBuild": "PASS"
+    },
+    "limits": [
+      "No new live ChatGPT or API extraction request in this stage.",
+      "Types do not assert semantic correctness; source/relation evidence and manual review remain required.",
+      "Prior portable candidate predates these source changes."
+    ],
+    "generationContract": {
+      "status": "PASS",
+      "newTasks": "Model task package and product both use a stricter generation schema requiring pageType; stored legacy v1 drafts remain readable through the legacy schema. Prompt changes invalidate prepared/unapplied old tasks under the existing fingerprint guard.",
+      "promptCorrection": "Removed the preference for 1-3 theme pages, which conflicted with entity/event extraction. Requires grounded concrete pages and final coverage-set recomputation after all evidence edits.",
+      "tests": "25 synthesis/review cases, production review browser, generated Python check; full core 442/442."
+    }
+  },
+  "installationAndManualUpdate": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "flow": "External portable package installs a user-level versioned code tree, verifies all files before switching a stable launcher, requires user-supplied trusted manifest SHA-256 for updates, retains old versions, supports verified rollback and code-only uninstall. Data remains separate.",
+    "protection": [
+      "Rejects path traversal, Windows aliases/case collisions, junctions, unlisted or modified files, unmanaged roots and occupied maintenance locks.",
+      "No destructive fallback, forced exit, user-data deletion or silent download. Rollback/uninstall refuses live data owners; launcher refuses to start during maintenance.",
+      "CLI rejects unknown, duplicate and missing option values before mutation; result files are exclusively reserved and UTF-16 for VBScript dialogs."
+    ],
+    "tests": {
+      "controlledUnit": "10/10 including actual VBScript pointer parser and CLI Unicode result files",
+      "realPackagedLifecycle": [
+        "real 1692-file bundled package installs using bundled Node",
+        "real stable installed VBS launcher starts WPF/backend with isolated data",
+        "verified update switches pointer without killing the running old version",
+        "rollback refuses actual live installed controller",
+        "restart loads new slot with identical runtime config and user sentinel",
+        "rollback changes stable launcher back to verified prior slot and real runtime restarts",
+        "uninstall removes only managed code; config, sentinel survive and locks released"
+      ],
+      "updateFixture": "Same real runtime/code repackaged with synthetic update version; no real release version change",
+      "latestPortable": "1692 inventoried files and 56 isolated runtime checks PASS",
+      "wpfAndInstaller": "17/17 (10 installer cases + 7 existing WPF Node cases)"
+    },
+    "firstErrors": [
+      "First full installation copied and verified successfully but stable VBS launcher rejected its newline-terminated pointer: VBScript Trim does not strip CR/LF. Fixed explicit newline stripping and added real cscript regression; independent complete lifecycle rerun passed.",
+      "One portable verifier was incorrectly run concurrently with the installed lifecycle against shared extension port 17643; backend EADDRINUSE caused FAIL. Preserved the first log, confirmed both harnesses stopped, reran sequentially with unchanged assertions: PASS."
+    ],
+    "limits": [
+      "No signed publisher verification or unattended network updater; hashes prove integrity only. Signing deferred by user.",
+      "Interactive installation confirmation/result dialogs were not driven with native input; stable installed VBS launch and actual WPF/backend lifecycle were exercised.",
+      "Retained old versions consume disk; unknown/failed staging content is preserved for inspection, never automatically deleted."
+    ],
+    "cleanup": "Owned final lifecycle/portable processes stopped; both writer locks absent; user instance not touched."
+  },
+  "webResumeEmptyAndApiErrors": {
+    "date": "2026-10-21",
+    "status": "PASS",
+    "fixes": [
+      "Resumed web receipts independently reject empty text, including JSON mode, without another ask. Output cap remains enforced.",
+      "HTTP 429 is reported as throttling/quota with numeric Retry-After when available; upstream response bodies and arbitrary header text are not echoed; no automatic retry."
+    ],
+    "verification": {
+      "fullCore": "442/442",
+      "synthesisReviewBrowser": "1/1",
+      "typedGenerationAndReview": "25/25",
+      "pythonSelfCheck": "Valid typed result accepted and missing pageType rejected by generated Python and product schema"
+    },
+    "firstErrors": [
+      "New error callback test initially lacked an unknown-to-Error type guard; corrected before build passed.",
+      "Full-core first run 441/442: retry-listener fixture assumed a third random Windows port could not itself be unavailable. Final fixture bind now uses OS port allocation after the same two injected errors; exact-three-attempt and listener cleanup assertions unchanged, real high-port behavior covered separately. Full rerun 442/442."
+    ]
+  },
+  "liveApiLatest": {
+    "date": "2026-10-21",
+    "status": "FAIL",
+    "scope": "Real local OpenAI-compatible service with user-supplied authorization and user-selected models. Synthetic source material only; no user chat/history sent.",
+    "stages": {
+      "authorizedModelDiscovery": "PASS",
+      "bigPickleInitialChat": "FAIL: HTTP 429, not replayed and not counted as a valid response",
+      "minimaxFullPresetChat": "PASS: minimax-m3.1-flash-free, original Tavo 14 prompts / 11 enabled + 3 local slots; API_CONNECTION_OK received and turn persisted",
+      "wikiOriginal": "FAIL: non-JSON response, no draft applied; response hash retained, raw first reply not captured by original harness",
+      "wikiDiagnostic": "Schema-valid 6 pages / 6 relations / 4 materials covered under legacy optional-type contract; missing explicit node types, semantic concerns noted; NOT_APPLIED",
+      "wikiTyped": "FAIL: explicit 5 entities / 1 event / 1 topic and 9 relations, but coverage omitted an actual citation of source-event; NOT_APPLIED",
+      "wikiCoverageOrdered8192": "FAIL: output truncated at configured 8192-token reserve; NOT_APPLIED",
+      "wikiOutput16384": "FAIL: separate 16384-token task, model omitted required pageType; NOT_APPLIED",
+      "applyRecallRestart": "NOT_RUN because no current strict-schema result passed semantic/structural review"
+    },
+    "policy": "Each later diagnostic was an explicit new product task with its own identity. Earlier failures and original outputs when captured retained. No provider fallback, result rewriting, fabricated entity typing, assertion relaxation or partial application.",
+    "credentialScan": "1639 publishable files scanned: provided credential matches 0. Credential stored only in ignored ACL-restricted test data.",
+    "apiReasoning": "Provider default; no unsupported High claim."
+  },
+  "bubbleImePreeditTimer": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "fix": "A focused ongoing IME preedit prevents bubble timeout even when committed Input.Text is still empty. Stale unfocused composition does not prevent expiry.",
+    "checks": 8,
+    "windowsCreated": 0,
+    "nativeInput": "NOT_RUN; actual IME commit/send and pointer timeout remain unverified."
+  },
+  "webNetworkRestoredProbe": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "login": "signed-in",
+    "thinkingLevel": 2,
+    "thinkingLabel": "High",
+    "modelSends": 0,
+    "scope": "Production embedded host with existing app-owned partition; no profile export, source config/Book write or native UI input.",
+    "previousFailure": "ERR_CONNECTION_CLOSED while configured local proxy was unavailable; retained independently."
+  },
+  "webHighHistoryLatest": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "productionPath": "BookRuntime -> full Tavo preset compiler -> ChatgptWebModel -> embedded page bridge",
+    "thinking": "High, level 2 read back before send; requiredThinking=high on both calls",
+    "modelSelection": "current; no silent fallback",
+    "inputChars": 81042,
+    "window": 128000,
+    "history": "Six synthetic saved turns; all six distinct codes present in compiled messages with omissions=[], and returned in order.",
+    "restart": "Both isolated sessions retained; no additional model call.",
+    "limits": [
+      "Temporary web chats with synthetic history; no original Book writes or native pointer input.",
+      "Does not certify unlimited history or production project-thread continuation.",
+      "Runtime currently recalls at most six recent turns; earlier history depends on memory retrieval."
+    ],
+    "firstAttempts": [
+      {
+        "status": "HARNESS_FAIL",
+        "modelSends": 0,
+        "reason": "Harness used invalid web credentialId; production validator rejected; fixed to none in a fresh isolated run."
+      },
+      {
+        "status": "EXPECTED_BUDGET_OMISSION",
+        "modelSends": 1,
+        "reason": "64K configured window kept three of six large turns; inspector failed full-history assertion before sending that query. Successful short reply retained separately; 128K explicit new run kept all six."
+      }
+    ]
+  },
+  "webWikiLatest": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "path": "Product prepares complete prompt + ZIP -> embedded ChatGPT -> independent strict generation schema and semantic review -> explicit product apply -> graph -> real recall -> isolated repository restart",
+    "thinking": "High level 2 independently read back before Wiki and recall sends; ZIP digest matched prepared receipt",
+    "inputMaterials": 4,
+    "pages": 7,
+    "entityPages": 5,
+    "eventPages": 1,
+    "topicPages": 1,
+    "semanticRelations": 7,
+    "graph": {
+      "nodes": 12,
+      "edges": 25,
+      "semanticEdges": 7,
+      "entityNodes": 5
+    },
+    "coverage": "4/4, exact paragraph evidence sets",
+    "review": "Codex inspected all seven pages/relations and independently rechecked quotes and coverage; synthetic test approval, not a human UI acceptance. Model output unedited, core persona left disabled.",
+    "realRecall": "阿澄",
+    "restart": "Book revision, graph, applied job and saved reply unchanged; model calls unchanged",
+    "limits": [
+      "Small synthetic author-domain material set; does not certify a full personal role package or mixed-domain quality at arbitrary scale.",
+      "Temporary webpage transport; no project-thread continuation or native UI tested.",
+      "Does not turn failing Minimax API Wiki attempts into PASS.",
+      "User Book/config untouched; browser host closed."
+    ]
+  },
+  "coldLatestSource": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "snapshotFiles": 1640,
+    "initialHashMismatches": 0,
+    "independentInstall": "Fresh backend and frontend npm ci; no copied node_modules or Git",
+    "build": "build:allmind PASS",
+    "core": "442/442",
+    "browser": "3/3 synthesis review, local voice, screen",
+    "wpfNode": "17/17",
+    "sourceChangesAfterSnapshot": [
+      "README.md",
+      "validation/release-status.json"
+    ],
+    "runtimeSourceChangesAfterSnapshot": 0,
+    "limits": "No real model sends in cold suite; physical devices, native pointer/IME/fullscreen/lock/sleep NOT_RUN. Separate current-source package verification passed 56 checks."
+  },
+  "historyBudgetFix": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "fix": "Removed pre-compiler fixed six-turn cutoff from saved and private runtime histories. Preset compiler now sees available eligible history and trims complete oldest turns against effective input window. Revocation filter and private 64-turn volatile retention unchanged.",
+    "targetedTests": "18/18 preset and incognito tests, including three new runtime cases",
+    "realWeb": {
+      "status": "PASS",
+      "thinking": "High readback / requiredThinking=high",
+      "historyTurns": 12,
+      "inputChars": 75804,
+      "orderedCanaries": "12/12",
+      "omissions": [],
+      "restart": "PASS; no re-send"
+    },
+    "firstErrors": [
+      "Before fix: saved/private >6-turn regressions failed. Initial small-window fixture reserved too little for even one pair; adjusted only that synthetic window from 2000 to 5000 while keeping pair-integrity/budget assertions."
+    ],
+    "limits": [
+      "Default non-preset builder retains its existing bounded recent-history budget.",
+      "No guarantee of arbitrary length or model-side token accuracy."
+    ],
+    "fullColdAndPackage": {
+      "date": "2026-10-21",
+      "status": "PASS_WITH_SCOPE",
+      "snapshotFiles": 1640,
+      "initialHashMismatches": 0,
+      "independentInstall": "Fresh backend and frontend npm ci; no copied node_modules or Git",
+      "build": "build:allmind PASS",
+      "core": "445/445",
+      "browser": "3/3 synthesis review, local voice, screen",
+      "portable": "1692 inventoried files; 56 runtime checks PASS",
+      "sourceRuntimeHashChangesAfterBuild": 0,
+      "nativeInput": "NOT_RUN, user-owned manual acceptance",
+      "manifestSha256": "96e1d42218bfeb79600974117e1890045823af5e50fb9492eba12dfa87ca23fd"
+    },
+    "codeChanges": "app/book-runtime.ts + three runtime regression tests in prompt-presets.test.ts"
+  },
+  "nativeAcceptanceOwner": {
+    "date": "2026-10-21",
+    "status": "NOT_RUN",
+    "owner": "user",
+    "instruction": "原生交互仍由我手动测试",
+    "scope": "Pointer, Chinese IME commit/send, drag and scale; do not resume native input automation."
+  },
+  "projectContinuationLatest": {
+    "date": "2026-10-21",
+    "status": "PASS_WITH_SCOPE",
+    "realModel": {
+      "path": "Product project inspection/binding in isolated Book, BookRuntime preset compilation -> embedded ChatGPT page actions",
+      "syntheticTurns": 8,
+      "recallCanaries": "8/8 in order",
+      "High": "Read back before sends; prepared receipts verify High (English or Chinese label)",
+      "restart": "Real browser host and local repository closed/reopened; same project conversation and ancestry retained",
+      "duplicate": "Same local turn read back without extra model call",
+      "privacy": "No original Book/config write, cookie export or public account/project identifiers. Synthetic cloud test conversation intentionally retained.",
+      "memoryScope": "unverified; project-only memory not claimed"
+    },
+    "uiFix": "Project check/save now uses the global scoped action lock, preventing role changes while pending. Login/browser source actions remain separately nonblocking so API editing remains usable.",
+    "tests": {
+      "projectBrowsers": "3/3",
+      "connectionRecoveryBrowsers": "4/4",
+      "productionUiBuild": "PASS",
+      "portable": "1692 files / 56 checks PASS"
+    },
+    "firstErrors": [
+      "Two stale browser tests did not open the ChatGPT connection tab after the UI redesign; role selector moved from sidebar to header, language preferences became collapsible. Updated real navigation only, preserved original assertions.",
+      "After test navigation correction, project role-lock assertion exposed actual product regression: connectionAction did not lock the global role switch. Fixed with separate projectAction; unchanged role/draft/isolation checks then passed."
+    ],
+    "limits": [
+      "Synthetic controlled project thread only; not acceptance of all existing user threads or arbitrary history lengths.",
+      "Native UI remains user-owned manual acceptance."
+    ]
+  },
+  "qqChannelLocal20261021": {
+    "status": "PASS_WITH_SCOPE",
+    "entry": "Settings > QQ",
+    "uiFollowUp": {
+      "skill": "endfield-ui; existing neutral paper / yellow / tight cuts / calm motion",
+      "status": "PASS",
+      "scope": "Visible whitelist and login panels, reply status, pause-edit-save flow, folded publication/connection details; no redundant global save button",
+      "browser": "2/2; whitelist edits persisted after refresh without silently restarting; focus and reduced motion checked; no horizontal overflow at 375/768/1024/1440 in light and dark themes",
+      "portableNote": "The portable manifest below predates this frontend-only layout follow-up; current source UI is rebuilt and shown in the running instance."
+    },
+    "scope": [
+      "OneBot v11 Universal reverse WebSocket on loopback only",
+      "Explicit reviewed public role/preset/wiki evidence snapshot; independent recipient Books",
+      "Friend whitelist and real group at trigger; text only",
+      "Durable intake/outbox, bounded parallelism, persistent rate limit, emergency stop",
+      "Per-conversation new topic; explicit unknown segment review/retry with local vs platform confirmation provenance",
+      "Settings-managed standalone NapCat Windows directory, startup/stop, QR login, exact account verification, explicit rescan and bridge configuration; no bundled NapCat or QQ"
+    ],
+    "tests": {
+      "fullCore": "477/477 after NapCat management integration",
+      "previousQqTargeted": "27/27 before NapCat management integration",
+      "previousBrowserRegression": "5/5",
+      "finalQqBrowser": "2/2 including QR, account mismatch, rescan, lifecycle, role defaults and per-conversation new topic",
+      "build": "backend and build:desktop PASS",
+      "portable": "1719 inventoried files; 56 runtime checks PASS; native pointer/IME not run",
+      "portableManifestSha256": "fd4a5d994aea3b3a2ca033d893443e30e2d16689cbede72d245b79c00d3e54bc"
+    },
+    "live": {
+      "NapCat": "PASS: real v4.18.41, correct account online, existing installation reused without another process",
+      "realQqFriend": "PASS: one explicitly authorized friend; incoming message, current GPT-Niang with complete Tavo preset, web reply and positive platform message receipt",
+      "recipientConfirmation": "PASS: user confirmed receiving the exact automatic reply, matching the persisted text and platform receipt",
+      "realQqGroup": "NOT_RUN: no groups authorized",
+      "apiViaQq": "NOT_RUN",
+      "chatgptHighViaQq": "PASS_WITH_SCOPE: production pre-submit High guard; actual High level 2 read back after completion; one exact web completion receipt and one local turn; projectId null",
+      "restart": "PASS: graceful ALLMIND exit/restart restored binding, listener and same sent delivery; exact web request occurs once and local turn once; no resend",
+      "freshQrScanInSettings": "NOT_RUN: controlled browser QR/rescan passed; existing real login retained"
+    },
+    "environment": "User logged into a dedicated local NapCat installation and authorized one friend. Standalone connection test was also confirmed received by the user. No personal identifiers or credentials included here.",
+    "limits": [
+      "QQ automatic long-term extraction is not enabled; public knowledge and isolated chat history are provided.",
+      "Real group at, additional friend isolation and API via QQ remain NOT_RUN; one web-backed friend acceptance does not cover these paths.",
+      "No proactive group chat, media, proactive private messages, cross-channel memory merge, Feishu or ACP.",
+      "A new blank portable was built and verified; it excludes NapCat binaries, QQ accounts, login state, role publication, private plans and logs."
+    ],
+    "publication": "No commit or push performed in this change; process plans and reports remain ignored."
+  },
+  "codeReviewFixes20261021": {
+    "date": "2026-10-21",
+    "status": "PASS",
+    "scope": "Review of the current working changes, focused on lifecycle concurrency, screen capture contracts and installation data ownership; not an exhaustive audit of all legacy code.",
+    "fixes": [
+      "QQ startup acquires its lifecycle exclusion before asynchronous account checks; concurrent save/start cannot restore stale settings or create competing listeners.",
+      "Browser displaySurface monitor is mapped to the screen API sourceKind; whole-monitor OCR follows the same preview, local recognition and explicit send confirmations as windows and browser tabs.",
+      "Managed installations persist and pass their data directory, including Unicode paths. Maintenance uses the saved binding when omitted, rejects an explicit different directory and checks the bound pointer. Legacy installation migration retains rollback."
+    ],
+    "tests": {
+      "backendBuild": "PASS",
+      "frontendBuild": "PASS",
+      "memoryBook": {
+        "status": "PASS",
+        "pass": 478,
+        "fail": 0
+      },
+      "screenBrowser": {
+        "status": "PASS",
+        "pass": 3,
+        "fail": 0,
+        "surfaces": [
+          "window",
+          "browser",
+          "monitor"
+        ]
+      },
+      "installer": {
+        "status": "PASS",
+        "pass": 15,
+        "fail": 0
+      },
+      "whitespaceCheck": "PASS"
+    },
+    "firstErrors": [
+      "New QQ lifecycle exclusion regression failed before the fix: concurrent settings save was accepted.",
+      "New monitor browser regression failed before the fix: backend rejected the source type and no OCR result appeared.",
+      "New installer regressions failed before the fix: no saved dataRoot and no --data argument in the installed launch command.",
+      "Initial Unicode command inspection via cscript //U produced no output on Node pipes; the harness now reads an actual UTF-16 file emitted by the same VBScript. The path assertion is unchanged. Original failure logs are retained outside the release tree."
+    ],
+    "limits": {
+      "realServices": "NOT_RUN; model, NapCat and OCR responses in these regressions are controlled fixtures; no external messages sent.",
+      "nativeInput": "NOT_RUN; remains user-owned manual acceptance.",
+      "portableRebuild": "NOT_RUN; earlier portable manifest predates these fixes."
+    }
+  },
+  "historicalCurrentValidation": "Sole Init release candidate (2026-10-20): main build and UI build PASS; L1 392/392 (58 files), fixed L2 28/28 (18 files). Blank-user role/persona/import/API/test/save/chat flow and 124-node WebGL graph verified with authored data and fixture HTTP model. Historical live/cold evidence not rerun; real API remains DEFERRED, web long-history failure remains, native pet OUT_OF_SCOPE.",
+  "priorUserClosure20261022": {
+    "date": "2026-10-22",
+    "status": "PASS",
+    "scope": "Authorized user-operation engineering closure; exclusions are explicitly listed below. This is a local beta candidate, not a public release.",
+    "interpretation": "Use this section for current status. Preserve prior failures and dated evidence; do not upgrade historical fixture/native/service claims.",
+    "features": [
+      {
+        "name": "私人备份恢复",
+        "status": "PASS",
+        "implementation": "v2 校验和；完整枚举全部会话；v1 显式缺失信息警告；预览后恢复到空目标；恢复日志与崩溃恢复；排除凭据/登录态/外观和附件文件"
+      },
+      {
+        "name": "请求失败恢复",
+        "status": "PASS",
+        "implementation": "先查原请求结果；保留失败/未知身份；明确重复与费用确认后准备新请求；已完成回复恢复不重发"
+      },
+      {
+        "name": "API Wiki 与批任务",
+        "status": "PASS",
+        "implementation": "显式 structured output 模式；严格来源/覆盖验证；持久检查点；成功批次复用；明确同意后将原失败输出和错误反馈给原模型修正；审核后应用"
+      },
+      {
+        "name": "首次使用与资料",
+        "status": "PASS",
+        "implementation": "工具栏首次使用清单；Markdown/TXT 导入预览与来源域选择；不会自动写入核心人格"
+      },
+      {
+        "name": "会话与角色",
+        "status": "PASS",
+        "implementation": "全文/标题/ID 检索、分页、重命名、角色归档和恢复；普通草稿刷新恢复；隐私模式不保存草稿；40轮完整历史分页"
+      },
+      {
+        "name": "可用性与运行维护",
+        "status": "PASS",
+        "implementation": "固定回复风格预览槽；后台操作共享角色锁；日志5MiB与3个归档；旧托管版本按清单与哈希预览清理，保护当前/回滚/用户数据"
+      },
+      {
+        "name": "交付",
+        "status": "PASS",
+        "implementation": "README/RUNBOOK/编纂协议/CI 同步；独立 npm ci、完整构建、回归、便携包和真实安装生命周期验证"
+      }
+    ],
+    "validation": {
+      "coldDependencies": "PASS: independent main/UI npm ci; no dependency changes afterward",
+      "sourceAndColdBuild": "PASS: build:allmind (backend, desktop UI, WPF)",
+      "core": {
+        "status": "PASS",
+        "tests": 489,
+        "fail": 0,
+        "skipped": 0,
+        "evidence": "cold-core-correction-final.log"
+      },
+      "browser": {
+        "status": "PASS",
+        "files": 31,
+        "tests": 50,
+        "fail": 0,
+        "skipped": 0,
+        "evidence": "cold-browser-complete.log"
+      },
+      "wpfNode": {
+        "status": "PASS",
+        "tests": 24,
+        "evidence": "cold-wpf-node-final.log"
+      },
+      "wpfComponents": {
+        "status": "PASS",
+        "visibilityAssertions": 53,
+        "quickChatAssertions": 52,
+        "soundSequenceAssertions": 148,
+        "silentSoundPlayerStress": "PASS",
+        "headlessTimeoutChecks": 8,
+        "evidence": "cold-wpf-components-final.log"
+      },
+      "portable": {
+        "status": "PASS",
+        "checks": 56,
+        "files": 1720,
+        "bytes": 510452619,
+        "manifestSha256": "18410a57c5a63933d560570dc3493092c88f52793f478503e46bd25fb8554cce",
+        "evidence": "portable-verification-provenance-final.json"
+      },
+      "installedLifecycle": {
+        "status": "PASS",
+        "checks": 22,
+        "actualHost": true,
+        "model": "local HTTP fixture",
+        "scope": [
+          "install",
+          "actual stable VBS launch",
+          "persist fixture chat",
+          "update while old runtime alive",
+          "live rollback rejection",
+          "new slot restart and original history",
+          "rollback restart",
+          "code-only uninstall with data retained"
+        ],
+        "evidence": "installed-lifecycle-provenance-final.json"
+      }
+    },
+    "realApiWiki": {
+      "status": "PASS",
+      "scope": "Bounded four-record synthetic external-domain example, not a general model quality certification",
+      "model": "minimax-m3.1-flash-free",
+      "materials": 4,
+      "pages": 5,
+      "semanticRelations": 6,
+      "entities": 4,
+      "events": 1,
+      "answer": "林澄",
+      "generationAttempts": 3,
+      "recallCalls": 1,
+      "automaticRetries": 0,
+      "failuresRetained": [
+        "First strict-schema response rejected after semantic review: unsupported public-office/ownership/gender claims; never applied",
+        "Next attempt failed exact-source/coverage/references; raw output and checkpoint retained"
+      ],
+      "correction": "Explicit failed retry with untouched rejected output and original validation error; strict validation and independent semantic review before apply",
+      "restart": "Same applied graph, Book and reply; same turn replay did not resubmit",
+      "evidence": "real-api-wiki-closure-final.json"
+    },
+    "limits": [
+      {
+        "status": "NOT_RUN",
+        "owner": "user",
+        "scope": "Native pointer/Chinese IME/drag/scale, actual fullscreen/lock/sleep and physical microphone/speaker acceptance; component/synthetic helper tests do not cover these"
+      },
+      {
+        "status": "NOT_RUN",
+        "scope": "New real QQ recipients/groups and API-via-QQ live messages were not authorized; controlled transport fixtures only in this task"
+      },
+      {
+        "status": "DEFERRED",
+        "scope": "Previously deferred publisher signing; no unattended auto-update implementation or public release in this task"
+      }
+    ],
+    "git": "No commit, push, remote or history mutation performed by this task",
+    "evidenceLocation": "Local worker handoff outside the source tree; see final REPORT.md",
+    "housekeeping": {
+      "status": "BLOCKED",
+      "engineeringAndArtifactVerification": "PASS",
+      "remaining": "Remove only this task's cold-source and redundant worker candidate/update directories after evidence preservation",
+      "review": "Automatic approval rejected batch cleanup and then a single literal absolute-path cold-source cleanup. Tool reason: blocked by policy; no further explanation supplied. No deletion executed and no alternate tool used to bypass the rejection.",
+      "ownedRuntimes": "No worker Node/Electron/WPF process or final fixture writer lock was present at the final read-only check",
+      "coldSourceRemoved": false,
+      "goalComplete": false
+    },
+    "goalStatus": "BLOCKED: implementation and final acceptance passed; required temporary-directory cleanup was rejected by automatic approval for three consecutive goal turns"
+  },
+  "priorProductCompletion20261022": {
+    "date": "2026-10-22",
+    "version": "0.1.0-beta.2",
+    "status": "BLOCKED",
+    "implementation": "PASS: scoped engineering and user-operation regression; see validation/PRODUCT-COMPLETION.md",
+    "sourceHash": "3db0a0584779c3520caa20c9689cdd163561a32fe7e7e93817eca5f378149daa",
+    "sourceFiles": 1694,
+    "sourceExclusions": [
+      "validation/release-status.json",
+      "validation/source-manifest.json"
+    ],
+    "validation": {
+      "dependencies": {
+        "status": "PASS",
+        "mode": "two independent cold npm ci"
+      },
+      "build": {
+        "status": "PASS",
+        "scope": "cold build:allmind + backend rebuild after QQ route fix + SPA rebuild after low-height fix + current source build:allmind"
+      },
+      "core": {
+        "status": "PASS",
+        "tests": 513,
+        "fail": 0,
+        "skipped": 0,
+        "evidence": "cold-core-01.log"
+      },
+      "browser": {
+        "status": "PASS",
+        "files": 32,
+        "tests": 54,
+        "fail": 0,
+        "skipped": 0,
+        "evidence": "cold-browser-02.log"
+      },
+      "wpfNode": {
+        "status": "PASS",
+        "tests": 27,
+        "evidence": "cold-wpf-node-02.log"
+      },
+      "adapters": {
+        "status": "PASS",
+        "tests": 8,
+        "evidence": "cold-adapters-01.log"
+      },
+      "wpfComponents": {
+        "status": "PASS",
+        "visibilityAssertions": 53,
+        "perchAssertions": 21,
+        "quickChatAssertions": 52,
+        "soundSequenceAssertions": 148,
+        "silentSoundPlayerStress": "PASS",
+        "headlessTimeoutChecks": 8,
+        "scope": "no real mouse/keyboard/audio input",
+        "evidence": "cold-wpf-components-01.log"
+      },
+      "portable": {
+        "status": "PASS",
+        "checks": 56,
+        "files": 1733,
+        "manifestSha256": "0dcf4bf2401a7f9120f0d33e8567c361cf4cff1538ee8fa304888816f39fbb31",
+        "evidence": "portable-report-final.json"
+      },
+      "installedLifecycle": {
+        "status": "PASS",
+        "checks": 22,
+        "actualHost": true,
+        "model": "local HTTP fixture",
+        "evidence": "installed-lifecycle-beta2-final.json"
+      },
+      "priorPackageDataUpgrade": {
+        "status": "PASS",
+        "checks": 12,
+        "oldReaderRejected": true,
+        "exactRollback": true,
+        "evidence": "old-package-upgrade-final.json"
+      },
+      "privacy": {
+        "status": "PASS",
+        "exactAuthorizedCredentialLeaks": 0,
+        "sourceColdMismatches": 0,
+        "evidence": "final-source-security-audit.json"
+      }
+    },
+    "releaseGates": [
+      {
+        "id": "source-binding",
+        "status": "PASS",
+        "reason": "Current source, package and evidence identify the same inventory."
+      },
+      {
+        "id": "blank-install",
+        "status": "PASS",
+        "reason": "fresh cold dependencies/build and actual final portable runtime in a new empty data directory"
+      },
+      {
+        "id": "upgrade",
+        "status": "PASS",
+        "reason": "actual prior beta.1 packaged data to beta.2, byte-exact conditional schema rollback and real installed host update/rollback/uninstall using a synthetic next-version package"
+      },
+      {
+        "id": "real-service",
+        "status": "BLOCKED",
+        "reason": "one current-source synthetic Smart/preset request failed HTTP 429; Retry-After about23h. No retries, fallback, real QQ messages or false PASS"
+      },
+      {
+        "id": "restore",
+        "status": "PASS",
+        "reason": "production private backup >256 sessions, metadata restore, tamper rejection, empty target, crash recovery and UI confirmation"
+      },
+      {
+        "id": "security",
+        "status": "PASS",
+        "reason": "API/IPC denial, per-member QQ isolation, credential lifecycle, mandatory data trust policy, scoped tools and exact credential exclusion from publishable source/package"
+      },
+      {
+        "id": "file-integrity",
+        "status": "PASS",
+        "reason": "exact final source/cold byte comparison and complete final package inventory"
+      }
+    ],
+    "eligibleForLocalBeta": false,
+    "publicDistributionReady": false,
+    "realService": {
+      "status": "BLOCKED",
+      "provider": "previously selected Minimax M3.1 Flash Free",
+      "modelSubmissions": 1,
+      "http": 429,
+      "retryAfterSeconds": 82947,
+      "automaticRetries": 0,
+      "fallbacks": 0,
+      "evidence": "live-current-report.json",
+      "history": "Earlier beta.1 real Wiki/recall success is preserved in priorUserClosure20261022 and is not promoted to fresh beta.2 acceptance."
+    },
+    "limits": {
+      "native": {
+        "status": "NOT_RUN",
+        "owner": "user",
+        "scope": "real pointer/touch, Chinese IME, source picker, fullscreen/lock/sleep and physical mic/speaker"
+      },
+      "signing": {
+        "status": "DEFERRED",
+        "scope": "publisher signing and SmartScreen reputation; previously deferred"
+      }
+    },
+    "remaining": [
+      "Current selected real service quota must recover before fresh real-service acceptance can PASS",
+      "User-owned physical/native acceptance remains NOT_RUN; signing remains DEFERRED",
+      "Official QQ bot, native mobile client, background cloud sync and continuous token-to-speech streaming are not implemented capabilities; current scope uses OneBot, manual selective file exchange and sentence audio chunks"
+    ],
+    "git": {
+      "branch": "codex/product-completion",
+      "delivery": "Draft PR on the reviewed current engineering work; no merge or public Release"
+    },
+    "workerCleanup": {
+      "status": "BLOCKED",
+      "scope": "older process-directory recursive cleanup was rejected by automatic approval; retained, no bypass"
+    }
   }
 }

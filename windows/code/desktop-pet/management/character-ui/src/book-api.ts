@@ -32,3 +32,9 @@ export function releaseIncognito(characterId:string,sessionId:string):void {
   const token=sessionStorage.getItem(tokenKey);if(!token)return
   void fetch('/api/memory-book/v1/chat/incognito',{method:'DELETE',keepalive:true,credentials:'omit',redirect:'error',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({characterId,sessionId})}).catch(error=>console.error('无痕上下文释放失败',error instanceof Error?error.name:'network_error'))
 }
+
+/** Exact observation cleanup survives page shutdown; no image, OCR text or scope-wide cancellation. */
+export function releaseScreenObservation(characterId:string,sessionId:string,id:string):void{
+ const token=sessionStorage.getItem(tokenKey);if(!token)return
+ void fetch('/api/memory-book/v1/screen/observations/'+encodeURIComponent(id)+'?'+new URLSearchParams({characterId,sessionId}),{method:'DELETE',keepalive:true,credentials:'omit',redirect:'error',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}'}).catch(error=>console.error('屏幕观察释放失败',error instanceof Error?error.name:'network_error'))
+}

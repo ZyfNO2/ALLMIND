@@ -1,4 +1,5 @@
-import {mkdirSync,existsSync,readFileSync,writeFileSync,renameSync,appendFileSync,readdirSync,unlinkSync} from 'node:fs';
+import {replaceResourceFile} from '../memory/resource-atomic-replace.js';
+import {mkdirSync,existsSync,readFileSync,writeFileSync,appendFileSync,readdirSync,unlinkSync} from 'node:fs';
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {CollectionHelperClient,collectionHelperPaths,type HelperEvent,type CollectionHelperClientOptions} from './collection-helper-client.js';
@@ -37,7 +38,7 @@ export class BookActivity {
     this.data.deletedBefore??={};
     this.prune();this.recoverRaw();
   }
-  private save(){const path=join(this.directory,'activity.json'),temp=path+'.next';writeFileSync(temp,JSON.stringify(this.data),{flush:true});renameSync(temp,path);}
+  private save(){const path=join(this.directory,'activity.json'),temp=path+'.next';writeFileSync(temp,JSON.stringify(this.data),{flush:true});replaceResourceFile(temp,path);}
   private prune(){const now=this.clock();this.lastPrune=now;this.data.rows=this.data.rows.filter(row=>now-row.updatedAt<30*DAY);for(const file of readdirSync(this.directory)){
     const match=/^raw\.([\w.-]+)\.(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(file);
     if(match){const path=join(this.directory,file),lines=readFileSync(path,'utf8').trim().split('\n').filter(Boolean),kept=lines.filter(line=>now-JSON.parse(line).end<7*DAY);if(!kept.length)unlinkSync(path);else if(kept.length!==lines.length)writeFileSync(path,kept.join('\n')+'\n');}

@@ -3,7 +3,7 @@ import { DEFAULT_CHATGPT_WEB_SOURCE, type RuntimeConfig, type ModelBinding } fro
 import { api } from '../book-api'
 import ChatgptProjectSettings from './ChatgptProjectSettings'
 
-export default function ChatgptSourceSettings({ config, onChange, action, saveProjects, bind }: { config: RuntimeConfig; onChange: (config: RuntimeConfig) => void; action: (work: () => Promise<void>) => Promise<void>; saveProjects:(next:RuntimeConfig)=>Promise<void>; bind:(next:RuntimeConfig)=>Promise<void> }) {
+export default function ChatgptSourceSettings({ config, onChange, action, saveProjects, projectAction, bind }: { config: RuntimeConfig; onChange: (config: RuntimeConfig) => void; action: (work: () => Promise<void>) => Promise<void>; saveProjects:(next:RuntimeConfig)=>Promise<void>; projectAction:(work:()=>Promise<void>)=>Promise<void>; bind:(next:RuntimeConfig)=>Promise<void> }) {
   const source = config.chatgptWeb ?? DEFAULT_CHATGPT_WEB_SOURCE
   const [status, setStatus] = useState('')
   const [pairing, setPairing] = useState<string | null>(null)
@@ -48,7 +48,7 @@ export default function ChatgptSourceSettings({ config, onChange, action, savePr
     <label className="mb-toggle">连接测试使用临时聊天<input type="checkbox" checked={source.temporaryChatTests} onChange={event => onChange({ ...config, chatgptWeb: { ...source, temporaryChatTests: event.target.checked } })} /></label>
     <label>正式聊天模式<select aria-label="正式聊天模式" value={source.conversationMode ?? 'regular'} onChange={event => onChange({ ...config, chatgptWeb: { ...source, conversationMode: event.target.value as 'temporary' | 'regular' } })}><option value="temporary">临时聊天</option><option value="regular">非临时聊天（默认）</option></select></label>
     <p className="mb-muted">临时模式不进入 ChatGPT 网页历史；ALLMIND 本地记忆仍由记忆权限控制。非临时模式会保留网页聊天记录，每次调用仍使用独立对话。</p>
-    <ChatgptProjectSettings config={config} save={saveProjects} action={action}/>
+    <ChatgptProjectSettings config={config} save={saveProjects} action={projectAction}/>
     {!source.temporaryChatTests && <p>连接测试会进入账号聊天历史。</p>}
     <div className="mb-row"><button type="button" onClick={() => void action(async () => { const result = await api<{ state: string; detail?: string; activeRequest?: { requestId: string } }>('/chatgpt-web/status'); setRequestId(result.activeRequest?.requestId ?? null); setStatus(result.state + ' · ' + (result.detail ?? '')) })}>检查已保存来源状态</button><button type="button" onClick={() => void action(async () => { const result = await api<{ note: string }>('/chatgpt-web/login', { method: 'POST', body: {} }); setStatus(result.note) })}>{source.transport === 'embedded' ? '打开独立登录面板' : '复用已有登录'}</button></div>
     {config.wikiModel?.kind === 'chatgpt-web' && <p>整理模型：{config.wikiModel.model} · 普通 Chat</p>}

@@ -18,7 +18,12 @@ test('automatic Book management ports are browser-accessible high ports, indepen
 });
 test('automatic port selection retries occupied or Windows-reserved ports without leaving listening callbacks',async t=>{
  const original=Server.prototype.listen;let calls=0,baseListening=0,baseErrors=0;
- const mocked=t.mock.method(Server.prototype,'listen',function(this:Server,...args:any[]){calls++;if(calls===1){baseListening=this.listenerCount('listening')-1;baseErrors=this.listenerCount('error')-1;}if(calls<=2){queueMicrotask(()=>this.emit('error',Object.assign(Error('reserved fixture'),{code:calls===1?'EADDRINUSE':'EACCES'})));return this;}return (original as any).apply(this,args);});
+ const mocked=t.mock.method(Server.prototype,'listen',function(this:Server,...args:any[]){calls++;if(calls===1){baseListening=this.listenerCount('listening')-1;baseErrors=this.listenerCount('error')-1;}if(calls<=2){queueMicrotask(()=>this.emit('error',Object.assign(Error('reserved fixture'),{code:calls===1?'EADDRINUSE':'EACCES'})));return this;}
+  // This case measures exactly two synthetic failures and listener cleanup. Let
+  // Windows allocate the final fixture port so another reserved random port cannot
+  // introduce an unrelated fourth attempt. The real high-port range is tested above.
+  const finalArgs=[...args];finalArgs[0]=0;return (original as any).apply(this,finalArgs);
+ });
  const server=await fixture(t);mocked.mock.restore();t.after(()=>server.close());assert.equal(calls,3);assert.equal(server.server.listenerCount('listening'),baseListening);assert.equal(server.server.listenerCount('error'),baseErrors);
 });
 test('an explicitly requested occupied Book port fails instead of silently changing its endpoint',async t=>{

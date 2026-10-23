@@ -40,9 +40,9 @@ function fixture(t: test.TestContext) {
 function response(task: SynthesisTask): SynthesisResult {
   const evidence=(id:string)=>[{entryId:id,quote:task.materials.find(row=>row.id===id)!.body}];
   return {schemaVersion:'allmind-wiki/v1',inputHash:task.inputHash,pages:[
-    {id:'allmind',title:'支援身份与整合邀请',domain:'canon',paragraphs:[{text:'综合测试专用词：ALLMIND以佣兵支援身份邀请621参与整合。',evidence:evidence('material-a')}]},
-    {id:'raven',title:'621参与整合',domain:'canon',paragraphs:[{text:'621接受了来自ALLMIND的邀请。',evidence:evidence('material-b')}]},
-    {id:'simulated-focus',title:'模拟专注约定',domain:'simulated',paragraphs:[{text:'测试包模拟过25分钟专注约定，不是真人历史。',evidence:evidence('simulation-c')}]},
+    {id:'allmind',title:'支援身份与整合邀请',domain:'canon',pageType:'topic',paragraphs:[{text:'综合测试专用词：ALLMIND以佣兵支援身份邀请621参与整合。',evidence:evidence('material-a')}]},
+    {id:'raven',title:'621参与整合',domain:'canon',pageType:'topic',paragraphs:[{text:'621接受了来自ALLMIND的邀请。',evidence:evidence('material-b')}]},
+    {id:'simulated-focus',title:'模拟专注约定',domain:'simulated',pageType:'topic',paragraphs:[{text:'测试包模拟过25分钟专注约定，不是真人历史。',evidence:evidence('simulation-c')}]},
   ],relations:[{from:'allmind',to:'raven',label:'邀请参与整合',evidence:[...evidence('material-a'),...evidence('material-b')]}],coverage:task.materials.map(row=>({entryId:row.id,pageIds:[row.id==='material-a'?'allmind':row.id==='material-b'?'raven':'simulated-focus'],reason:''}))};
 }
 function model(calls: SynthesisTask[]=[]): BookModelPort {return {async complete(_binding,messages,_signal,options){assert.equal(options?.purpose,'wiki');assert.match(messages[0]!.content,/完整 JSON Schema/);assert.doesNotMatch(messages[0]!.content,/https:\/\/(?:github|gist)/);const task=JSON.parse(messages[1]!.content);calls.push(task);return JSON.stringify(response(task));}};}
@@ -72,6 +72,23 @@ test('strict output validation rejects false quotes, wrong domains, invented lin
     r=>{(r as any).links=[]},r=>{r.inputHash='0'.repeat(64)},
   ];
   for(const change of changes){const value=response(task);change(value);assert.throws(()=>validateSynthesisResult(value,task),{code:'invalid_input'});}
+});
+
+test('fresh generation requires explicit node types while the legacy v1 validator remains readable',async t=>{
+ const repository=fixture(t),{service,job}=prepared(repository,{async complete(_binding,messages){const value=response(JSON.parse(messages[1]!.content));for(const page of value.pages)delete page.pageType;return JSON.stringify(value);}});
+ const bundle=service.package(scope,job.id),schema=JSON.parse(bundle.files['response.schema.json']!),task=JSON.parse(bundle.files['materials.json']!) as SynthesisTask;
+ assert.ok(schema.properties.pages.items.required.includes('pageType'));
+ assert.match(bundle.files['PROMPT.md']!,/不预设1～3页/);
+ const legacy=response(task);for(const page of legacy.pages)delete page.pageType;assert.equal(validateSynthesisResult(legacy,task).pages.length,3);
+ await assert.rejects(service.run(scope,job.id,signal(),600000,true),/缺少 pageType/);
+ assert.equal(service.get(scope,job.id).status,'failed');assert.equal(repository.snapshot(scope).revision,job.expectedRevision);
+});
+
+test('same title across separated domains stays distinct while duplicates within one domain are rejected',t=>{
+  const repository=fixture(t),{service,job}=prepared(repository),task=JSON.parse(service.package(scope,job.id).files['materials.json']!) as SynthesisTask;
+  const value=response(task);value.pages[2]!.title=value.pages[0]!.title;
+  assert.equal(validateSynthesisResult(value,task).pages.length,3);
+  value.pages[1]!.title=value.pages[0]!.title;assert.throws(()=>validateSynthesisResult(value,task),/同域标题重复/);
 });
 
 test('review is read-only; explicit atomic apply exposes semantic graph, recall and survives restart',async t=>{
@@ -205,4 +222,38 @@ test('recoverable Wiki completion survives bridge restart and explicit forget re
   const restarted=new ChatgptBackgroundBridge({config,receiptPath,pageHost,intervalMs:0,pollMs:1});
   const result=await restarted.resume('wiki-retain',1000);assert.equal(result.kind,'completed');assert.equal(submits,1);
   restarted.forgetCompleted(['wiki-retain']);assert.doesNotMatch(readFileSync(receiptPath,'utf8'),/privateWiki/);await assert.rejects(restarted.resume('wiki-retain',1000),{code:'not_found'});
+});
+
+
+test('reviewed entity/topic/event types survive apply and restart; legacy synthesis titles are not entity claims',async t=>{
+  let repository=fixture(t);
+  const {service,job}=prepared(repository,{async complete(_binding,messages){
+    const task=JSON.parse(messages[1]!.content) as SynthesisTask,value=response(task);
+    value.pages[0]!.pageType='entity'; value.pages[1]!.pageType='topic'; value.pages[2]!.pageType='event';
+    return JSON.stringify(value);
+  }});
+  const task=JSON.parse(service.package(scope,job.id).files['materials.json']!) as SynthesisTask;
+  for(const invalid of [null,'person',{},1]){
+    const value=response(task);(value.pages[0] as any).pageType=invalid;
+    assert.throws(()=>validateSynthesisResult(value,task),{code:'invalid_input'});
+  }
+  await service.run(scope,job.id,signal(),600000,true);
+  assert.equal(repository.snapshot(scope).entries.filter(row=>row.synthesis).length,0);
+  service.apply(scope,job.id,job.expectedRevision,'apply-typed',true);
+  const check=()=>{
+    const book=repository.snapshot(scope),graph=new FactWikiService(repository).graph(scope,{worldId:'ac6',branch:'main',cutoff:5});
+    for(const pageType of ['entity','topic','event']){
+      const entry=book.entries.find(row=>row.synthesis?.pageType===pageType)!;
+      assert.ok(entry);assert.deepEqual(entry.entities,pageType==='entity'?[entry.title]:[]);
+      assert.equal(graph.nodes.find(node=>node.title===entry.title)?.pageType,pageType);
+    }
+    assert.equal(graph.edges.filter(edge=>edge.kind==='semantic').length,1);
+  };
+  check();const directory=repository.directory;repository.close();repository=new FileBookRepository(directory);t.after(()=>repository.close());check();
+  const before=repository.snapshot(scope),old=structuredClone(before.entries.find(row=>row.synthesis?.pageType==='topic')!);
+  delete old.synthesis!.pageType;old.entities=[old.title];
+  repository.commit(scope,{upsert:[old]},before.revision,'legacy-typed-title');
+  assert.equal(new FactWikiService(repository).graph(scope,{worldId:'ac6',branch:'main',cutoff:5}).nodes.find(node=>node.title===old.title)?.pageType,'topic');
+  const invalid=structuredClone(old);(invalid.synthesis as any).pageType='person';
+  assert.throws(()=>repository.commit(scope,{upsert:[invalid]},repository.snapshot(scope).revision,'invalid-type'),{code:'invalid_input'});
 });

@@ -43,6 +43,7 @@ import { relationshipFor } from '../core/companion-relationship.js';
 import { bookReplyExpression } from '../core/book-reply-expression.js';
 import { BookProactiveScheduler, type ProactivePresence } from '../core/book-proactive.js';
 import {BookActivity} from '../core/book-activity.js';
+import {QqChannelManager} from './qq-channel-manager.js';
 
 /** New default composition root. Only file Book, text model, management and appearance are loaded. */
 export async function runBookBackend(directory: string, options: { clock?:()=>number } = {}) {
@@ -77,6 +78,11 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
     http: new BookHttpModel(id => credentials.get(id)),
     chatgpt: () => chatgptModel,
   }),{resources:resourceService,artifacts:{readArtifact:(candidate,signal)=>chatgptModel.readArtifact({projectId:candidate.scope?repository.loadConfig().chatgptProjects?.find(row=>row.enabled&&row.characterId===candidate.scope!.characterId&&row.pairingId===candidate.scope!.pairingId)?.projectId??null:null,...(candidate.requestId?{requestId:candidate.requestId}:{}),handleId:candidate.candidateId,nameHint:candidate.nameHint,messageId:candidate.messageId,...(candidate.mimeHint?{mimeHint:candidate.mimeHint}:{})},signal)}});
+  const qq=new QqChannelManager({directory:join(directory,'channels','qq'),source:repository,credentials,model:externalConfig=>{
+    const web=new ChatgptWebModel({bridge:chatgptBridge,config:()=>externalConfig().chatgptWeb??DEFAULT_CHATGPT_WEB_SOURCE,runtime:externalConfig,artifacts:chatgptBridge});
+    const router=createModelRouter({http:new BookHttpModel(id=>credentials.get(id)),chatgpt:()=>web});
+    return {complete:(binding,messages,signal,callOptions)=>router.complete(binding,messages,signal,{...callOptions,...(binding.kind==='chatgpt-web'?{requiredThinking:'high' as const}:{})})};
+  }});
   // The desktop pet shares ONE addressable session with the full chat window: a stable id keeps the
   // conversation discoverable and continuable across restarts instead of orphaning a random UUID
   // session nobody can reopen. Per-character isolation comes from the scope, not from a fresh id.
@@ -104,6 +110,10 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
     if(!closing)send({channel:'book_activity',characterId:activeCharacter,view:activity.view(activeCharacter)});
   },()=>{if(!closing)send({channel:'book_activity_pulse',characterId:activeCharacter});});
   let behavior: CompanionBehavior | null = null, lifeSequence = 0, lastLifeSave = 0, lifeTimer: ReturnType<typeof setInterval> | undefined;
+  const effectivePresence=():ProactivePresence=>{
+    const web=runtime.interactionPresence.read();
+    return {...presence,typing:presence.typing||web.typing,recording:presence.recording||web.recording,busy:presence.busy||web.busy||web.speaking||!!activeController||runtime.isConversing(activeCharacter)||runtime.synthesis.processing||runtime.organization.processing||!!runtime.wikiMaintenance?.processing||!!runtime.automaticMemory?.processing,quiet:presence.quiet||web.roleplay===true||repository.loadConfig().dialogueRouting?.defaultMode==='rp'||(behavior?.snapshot().quiet??false)||activity.view(activeCharacter).quietCompanion};
+  };
   let currentManifest:SkinManifest|null=null,interactionAppearanceChanging=false,appearanceAcknowledged=false,currentAppearanceRequestId:string|null=null,interactionRequest:{id:string;characterId:string;controller:AbortController}|null=null;
   let portraits:PortraitStore|undefined;
   const appearanceWaiters=new Map<string,{resolve:()=>void;reject:(error:Error)=>void}>();
@@ -252,7 +262,7 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
         return { width: sprite.width, height: sprite.height, minAlpha: sprite.alpha?.min ?? 0, maxAlpha: sprite.alpha?.max ?? 255, touchesEdge: bounds.x <= 1 || bounds.y <= 1 || bounds.x + bounds.width >= sprite.width - 1 || bounds.y + bounds.height >= sprite.height - 1 };
       } finally { unlinkSync(file); }
     }, async (scope, skinId) => {if(scope.characterId!==activeCharacter||currentManifest?.skinId!==skinId||process.env.AIKI_BOOK_WEB_ONLY!=='1'&&!appearanceAcknowledged)throw new BookError('conflict','当前角色或宿主载入状态已变化。');});
-    server = await startBookServer({ runtime, credentials,...(process.env.AIKI_WPF_HOST==='1'?{onChatState:(value:{state:'pending'|'completed'|'failed';scope:BookScope;text?:string;incognito?:boolean})=>send({channel:'book_chat_notice',...value})}:{}), uiRoot: join(petRoot, 'management'), onConfig: applyCharacter,activity,...(process.env.AIKI_BOOK_WEB_ONLY==='1'?{}:{companionInteractions:interactionControls}),
+    server = await startBookServer({ runtime, credentials,qq,...(process.env.AIKI_WPF_HOST==='1'?{onChatState:(value:{state:'pending'|'completed'|'failed';scope:BookScope;text?:string;incognito?:boolean})=>send({channel:'book_chat_notice',...value})}:{}), uiRoot: join(petRoot, 'management'), onConfig: applyCharacter,onInteractionPresence:()=>proactive.cancel(),activity,...(process.env.AIKI_BOOK_WEB_ONLY==='1'?{}:{companionInteractions:interactionControls}),
       companionLife:{
         read(characterId){if(!behavior||characterId!==activeCharacter)throw new BookError('unavailable','请切换到当前桌面角色后操作。');return behavior.snapshot();},
         change(characterId,action,expectedRevision,enabled){
@@ -276,20 +286,22 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
       ...(process.env.AIKI_BOOK_WEB_ONLY === '1' ? {} : {chatgptEmbedded:{login:()=>host.request('chatgpt-page',{action:'login'}),probe:()=>host.request('chatgpt-page',{action:'probe'})}}),
       chatgptPairing: reset => reset ? extension.resetPairing() : extension.pairing(),
       ...(process.env.AIKI_BOOK_PORT ? { port: Number(process.env.AIKI_BOOK_PORT) } : {}) });
+    try{await qq.restore();}catch(error){process.stderr.write('QQ channel restore failed; channel remains unavailable: '+(error instanceof BookError?error.message:'check channel settings and listener port')+'\n');}
     const sessionFile = join(directory, 'management-session.json');
     writeFileSync(sessionFile, JSON.stringify({ version: 1, url: server.url, ...server.runtimeIdentity }) + '\n', { mode: 0o600 }); restrictPrivatePathSync(sessionFile);
-    process.stderr.write('Memory Book backend ready: local-file storage; optional memory and proactive companion services; voice deferred.\n');
+    process.stderr.write('Memory Book backend ready: local-file storage; optional memory and proactive companion services; local Windows speech and OCR are opt-in.\n');
     for(const role of repository.loadConfig().characters){const scope={characterId:role.id,pairingId:'local-user',sessionId};runtime.automaticMemory?.recover(scope);runtime.wikiMaintenance?.recover(scope);}
     if (process.env.AIKI_BOOK_WEB_ONLY !== '1') await applyCharacter(repository.loadConfig());
     if (process.env.AIKI_BOOK_WEB_ONLY !== '1') lifeTimer = setInterval(() => {
       try { publishLife(); if (Date.now() - lastLifeSave >= 60000) saveLife(); } catch (error) { lifeFailure(error); }
     }, 1000);
     if (process.env.AIKI_BOOK_WEB_ONLY !== '1') proactiveTimer=setInterval(()=>{
-      void proactive.tick(lifeScope(),{...presence,busy:!!activeController||runtime.isConversing(activeCharacter)||!!runtime.automaticMemory?.processing,recording:false,quiet:(behavior?.snapshot().quiet??false)||activity.view(activeCharacter).quietCompanion}).catch(error=>{
+      void proactive.tick(lifeScope(),effectivePresence()).catch(error=>{
+        if(error instanceof BookError&&error.code==='conflict'){process.stderr.write(JSON.stringify({diagnostic:'proactive-cancelled',code:error.code})+'\n');return;}
         process.stderr.write(`Proactive scheduler failed: ${error instanceof Error?error.stack:String(error)}\n`);send({channel:'companion_error',message:error instanceof BookError?error.message:'主动交流失败，请检查账本与本机日志。'});
       });
     },10000);
-  } catch (error) { clearInterval(resourceSweepTimer);await extension.close(); await server?.close(); repository.close(); throw error; }
+  } catch (error) { clearInterval(resourceSweepTimer);await qq.close();await extension.close(); await server?.close(); repository.close(); throw error; }
   const lines = createInterface({ input: process.stdin, crlfDelay: Infinity });
   lines.on('line', line => {
     let message: DesktopToBackend;
@@ -347,7 +359,7 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
     }
     if(message.channel==='companion_claim'){
       if(message.characterId!==activeCharacter||message.sessionId!==sessionId||typeof message.id!=='string'||message.id.length>128)return;
-      const delivery=proactive.claim(lifeScope(),message.id,{...presence,busy:!!activeController||runtime.isConversing(activeCharacter)||!!runtime.automaticMemory?.processing,recording:false,quiet:behavior?.snapshot().quiet??false});
+      const delivery=proactive.claim(lifeScope(),message.id,effectivePresence());
       if(delivery)send({channel:'companion_message',characterId:activeCharacter,sessionId,delivery});return;
     }
     if(message.channel==='companion_ack'){if(message.characterId===activeCharacter)try{proactive.ack(lifeScope(),message.id);}catch(error){process.stderr.write(`Proactive ack failed: ${String(error)}\n`);}return;}
@@ -420,7 +432,7 @@ export async function runBookBackend(directory: string, options: { clock?:()=>nu
     });
   });
   const close = async () => { if (closing) return; closing = true;clearInterval(resourceSweepTimer);cancelInteraction();if (lifeTimer) clearInterval(lifeTimer);if(proactiveTimer)clearInterval(proactiveTimer);proactive.cancel(); host.close(); activeController?.abort();
-    await activity.close();await runtime.wikiMaintenance?.stopActive();
+    await qq.close();await activity.close();await runtime.wikiMaintenance?.stopActive();
     for(const role of repository.loadConfig().characters)runtime.automaticMemory?.cancel(role.id);await runtime.automaticMemory?.flush();
     try { saveLife(); } finally { for (const role of repository.loadConfig().characters) runtime.invalidate(role.id); await extension.close(); await server!.close(); repository.close(); } };
   lines.once('close', () => { void close().catch(error => { process.stderr.write(String(error) + '\n'); process.exitCode = 1; }); });

@@ -102,11 +102,11 @@ test('built minimal UI imports real file, edits Entry, inspects recall and sends
   await page.waitForFunction(() => !document.querySelector('.mb-page-fieldset').disabled);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: join(evidence, 'settings-live2d.png'), fullPage: true });
-  await page.getByRole('button',{name:'管理角色',exact:true}).click();await page.getByRole('button', { name: '删除当前角色', exact: true }).click();
-  await page.getByRole('button', { name: '确认删除角色', exact: true }).click();
+  await page.getByRole('button',{name:'管理角色',exact:true}).click();await page.getByRole('button', { name: '归档当前角色', exact: true }).click();
+  await page.getByRole('button', { name: '确认归档角色', exact: true }).click();
   await page.waitForFunction(() => document.querySelector('label select')?.selectedOptions[0]?.textContent === 'Aika');
   assert.equal(repository.loadConfig().characters.length, 1);
-  await page.getByRole('button', { name: '删除当前角色', exact: true }).isDisabled().then(value => assert.equal(value, true));
+  await page.getByRole('button', { name: '归档当前角色', exact: true }).isDisabled().then(value => assert.equal(value, true));
   await page.getByRole('button',{name:'关闭管理角色',exact:true}).click();await page.getByRole('link', { name: '设置', exact: true }).click();
   await page.getByRole('button',{name:'高级工具',exact:true}).click();await page.getByText('Legacy · 暂未启用', { exact: true }).click();
   assert.ok(await page.getByText('TTS / 语音输出（暂缓）', { exact: true }).getAttribute('aria-disabled') === 'true');

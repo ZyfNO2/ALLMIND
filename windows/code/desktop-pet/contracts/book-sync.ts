@@ -1,0 +1,5 @@
+import type {BookEntry,WikiSource} from './memory-book.js';
+export interface SyncItem {key:string;kind:'entry'|'source';id:string;baseHash:string|null;value:BookEntry|WikiSource|null}
+export interface BookSyncPayload {schemaVersion:'allmind-selective-sync/v1';packageId:string;deviceId:string;recipientId:string|null;characterId:string;pairingId:string;createdAt:string;includePrivate:boolean;role?:{id:string;name:string;intro:string};items:SyncItem[];exclusions:string[]}
+export interface SyncPreview {hash:string;packageId:string;deviceId:string;sourceCharacterId:string;targetCharacterId:string;configRevision:number;role?:{local:{name:string;intro:string};incoming:{name:string;intro:string}};revision:number;ledgerRevision:number;rows:{key:string;id:string;kind:'entry'|'source';action:'add'|'update'|'same'|'delete'|'conflict';localHash:string|null;remoteHash:string|null;title:string;localContent:string;remoteContent:string}[];exclusions:string[]}
+export type SyncChoices=Record<string,'local'|'incoming'>;

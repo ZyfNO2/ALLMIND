@@ -27,6 +27,10 @@ export function mergeSynthesisBatches(task:SynthesisTask,parts:{task:SynthesisTa
       const id=titles.get(key)??existing?.id??`b${index+1}.${page.id}`.slice(0,64);ids.set(page.id,id);titles.set(key,id);
       let target=result.pages.find(row=>row.id===id);
       if(!target){target={...page,id,paragraphs:[]};result.pages.push(target);}
+      else {
+        if ((target.pageType ?? 'topic') !== (page.pageType ?? 'topic')) throw new BookError('invalid_input', '同域同名页面类型冲突，请重新编纂。');
+        if(target.category!==page.category)target.category='knowledge'; // conflicting suggestions remain neutral for explicit review
+      }
       for(const paragraph of page.paragraphs)if(!target.paragraphs.some(row=>JSON.stringify(row)===JSON.stringify(paragraph)))target.paragraphs.push(paragraph);
     }
     for(const relation of validated.relations){

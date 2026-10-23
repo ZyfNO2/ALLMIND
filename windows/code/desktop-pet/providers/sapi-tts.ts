@@ -51,41 +51,43 @@ export function renderSapiScript(job: SapiSynthesisJob): string {
 
 /** One PowerShell process per synthesis; rejects with a stderr tail when the job fails. */
 export function runSapiJob(job: SapiSynthesisJob, signal?: AbortSignal): Promise<void> {
+  signal?.throwIfAborted();
   return new Promise((resolveJob, reject) => {
     const child = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', renderSapiScript(job)], { windowsHide: true });
     let stderr = '';
-    child.stderr.on('data', chunk => { stderr += String(chunk); });
-    const onAbort = () => { child.kill(); reject(new DOMException('Turn cancelled', 'AbortError')); };
+    child.stderr.on('data', chunk => { stderr = (stderr + String(chunk)).slice(-8192); });
+    const onAbort = () => { child.kill(); };
     signal?.addEventListener('abort', onAbort, { once: true });
     child.on('error', error => { signal?.removeEventListener('abort', onAbort); reject(error); });
-    child.on('exit', code => {
+    child.on('close', code => {
       signal?.removeEventListener('abort', onAbort);
-      if (code === 0) resolveJob();
+      if(signal?.aborted)reject(new DOMException('Turn cancelled','AbortError'));
+      else if (code === 0) resolveJob();
       else reject(new Error(`SAPI synthesis failed (exit ${code}): ${stderr.trim().slice(-400)}`));
     });
+    if(signal?.aborted)onAbort();
   });
 }
 
-export class SapiTtsProvider implements TtsProvider {
-  constructor(private readonly store: MediaStorePort, private readonly options: SapiTtsOptions = {}) {}
+/** Shared offline WAV synthesis; transport and media-store ownership stay with the caller. */
+export async function synthesizeSapiWav(text:string,signal:AbortSignal,options:SapiTtsOptions={}):Promise<{bytes:Buffer;durationMs:number}>{
+  checkAbort(signal);
+  if(!text.trim())throw new Error('Cannot synthesize empty reply');
+  const dir=await mkdtemp(join(tmpdir(),'next-sapi-'));
+  try{
+    const job:SapiSynthesisJob={textPath:join(dir,'text.txt'),outPath:join(dir,'speech.wav'),...(options.voiceName?{voiceName:options.voiceName}:{})};
+    await writeFile(job.textPath,text,'utf8');checkAbort(signal);
+    if(options.execute)await options.execute(job);else await runSapiJob(job,signal);
+    checkAbort(signal);const bytes=await readFile(job.outPath),wav=inspectPcmWav(bytes);
+    return {bytes,durationMs:wav.durationMs};
+  }finally{await rm(dir,{recursive:true,force:true});}
+}
 
-  async synthesize(input: TtsRequest, signal: AbortSignal): Promise<TtsResult> {
-    checkAbort(signal);
-    if (!input.text.trim()) throw new Error('Cannot synthesize empty reply');
-    const dir = await mkdtemp(join(tmpdir(), 'next-sapi-'));
-    try {
-      const job: SapiSynthesisJob = { textPath: join(dir, 'text.txt'), outPath: join(dir, 'speech.wav'), ...(this.options.voiceName ? { voiceName: this.options.voiceName } : {}) };
-      await writeFile(job.textPath, input.text, 'utf8');
-      checkAbort(signal);
-      if (this.options.execute) await this.options.execute(job);
-      else await runSapiJob(job, signal);
-      checkAbort(signal);
-      const bytes = await readFile(job.outPath);
-      const wav = inspectPcmWav(bytes);
-      const audio = await this.store.put(input.scope, bytes, 'audio/wav');
-      return { scope: input.scope, audio, expression: input.expression, durationMs: wav.durationMs, synchronization: 'none' };
-    } finally {
-      await rm(dir, { recursive: true, force: true });
-    }
+export class SapiTtsProvider implements TtsProvider {
+  constructor(private readonly store:MediaStorePort,private readonly options:SapiTtsOptions={}){}
+  async synthesize(input:TtsRequest,signal:AbortSignal):Promise<TtsResult>{
+    const {bytes,durationMs}=await synthesizeSapiWav(input.text,signal,this.options);checkAbort(signal);
+    const audio=await this.store.put(input.scope,bytes,'audio/wav');
+    return {scope:input.scope,audio,expression:input.expression,durationMs,synchronization:'none'};
   }
 }

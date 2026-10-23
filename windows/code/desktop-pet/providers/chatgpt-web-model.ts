@@ -105,7 +105,9 @@ export class ChatgptWebModel implements BookModelPort {
     signal.throwIfAborted();const result=await this.bridge.resume(requestId,Math.min(options.budgetMs??120000,900000));signal.throwIfAborted();
     if(result.kind!=='completed')throw new BookError('unavailable',result.kind==='cancelled'?result.message:result.message);
     if(result.text.length>Math.min(REPLY_HARD_CAP_CHARS,binding.outputTokens*CHARS_PER_TOKEN))throw new BookError('budget','接续结果超过输出预算，未截断。');
-    return options.json?extractJsonText(result.text):result.text;
+    const text=options.json?extractJsonText(result.text):result.text;
+    if(!text.trim())throw new BookError('unavailable','接续网页回复为空，不冒充成功；未重新发送请求。');
+    return text;
   }
 
   /**

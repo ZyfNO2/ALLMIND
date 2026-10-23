@@ -18,7 +18,7 @@ test('project links are discoverable before source selection and check-save-read
    async probe(){return {state:'signed-in',checkedAt:new Date().toISOString()}},async openLoginPage(){},
    async inspectProject(id){checks++;assert.equal(id,projectId);return {projectId:id,name:'链接测试项目',account:'b'.repeat(64)}}
  }});
- const browser=await chromium.launch({headless:true});t.after(async()=>{await browser.close();await server.close();repository.close()});const page=await browser.newPage();page.setDefaultTimeout(7000);await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();
+ const browser=await chromium.launch({headless:true});t.after(async()=>{await browser.close();await server.close();repository.close()});const page=await browser.newPage();page.setDefaultTimeout(7000);await page.goto(server.url);await page.getByRole('link',{name:'设置',exact:true}).click();await page.getByRole('button',{name:'ChatGPT 网页接入',exact:true}).click();
  const section=page.getByRole('region',{name:'对话所属 ChatGPT 项目',exact:true});await section.getByLabel('已有项目链接',{exact:true}).waitFor();
  assert.equal(await section.getByRole('button',{name:'检查项目链接',exact:true}).isDisabled(),true);
  await page.getByLabel('ChatGPT 连接方式',{exact:true}).selectOption('embedded');await page.getByRole('button',{name:'保存设置',exact:true}).click();await page.getByText(/设置已保存并生效/).waitFor();
@@ -26,5 +26,5 @@ test('project links are discoverable before source selection and check-save-read
  await input.fill('https://chatgpt.com/g/'+projectId+'/project');await section.getByRole('button',{name:'检查项目链接',exact:true}).click();await section.getByText(/待绑定：链接测试项目/).waitFor();
  await section.getByRole('button',{name:'保存项目绑定',exact:true}).click();await section.getByText('项目绑定已保存并回读。',{exact:true}).waitFor();
  const saved=repository.loadConfig().chatgptProjects[0];assert.equal(saved.projectId,projectId);assert.equal(saved.characterId,'aika');assert.equal(checks,1);
- await page.reload();await section.getByText(/项目：链接测试项目/).waitFor();
+ await page.reload();await page.getByRole('button',{name:'ChatGPT 网页接入',exact:true}).click();await section.getByText(/项目：链接测试项目/).waitFor();
 });

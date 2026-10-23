@@ -8,13 +8,18 @@ import {validateInteractionSettings,type InteractionSettings} from './companion-
 export interface CompanionSettings {
   autoMemory: boolean; extraction: 'declarations' | 'model'; cloudMemoryConsent: boolean;
   proactive: boolean; timezone: string; quietStart: number; quietEnd: number;
+  /** Omitted by older configs: two attempts per day/rolling 24h, three-hour spacing. */
+  dailyLimit?: number; minimumIntervalMinutes?: number;
   /** Explicit hour for date-only events; null means ask for a time, never infer an end. */
   followUpHour: number | null;
 }
 export const DEFAULT_COMPANION_SETTINGS: CompanionSettings = {
   autoMemory: false, extraction: 'declarations', cloudMemoryConsent: false,
-  proactive: false, timezone: 'Asia/Singapore', quietStart: 22, quietEnd: 8, followUpHour: null,
+  proactive: false, timezone: 'Asia/Singapore', quietStart: 22, quietEnd: 8, followUpHour: null, dailyLimit: 2, minimumIntervalMinutes: 180,
 };
+export function companionFrequency(settings: CompanionSettings) {
+  return {dailyLimit: settings.dailyLimit ?? 2, minimumIntervalMinutes: settings.minimumIntervalMinutes ?? 180};
+}
 export interface MemoryJob {
   id: string; scope: BookScope; turnId: string; strategy: 'declarations' | 'model'; configRevision: number;
   status: 'pending' | 'running' | 'review' | 'done' | 'failed' | 'cancelled'; attempts: number;
@@ -73,6 +78,9 @@ export interface CompanionRepository {
 export function validateCompanionSettings(value: CompanionSettings): void {
   if (!value || ['autoMemory', 'cloudMemoryConsent', 'proactive'].some(key => typeof value[key as keyof CompanionSettings] !== 'boolean')
     || !['declarations', 'model'].includes(value.extraction) || typeof value.timezone !== 'string' || value.timezone.length>100 || value.quietStart===null || value.quietEnd===null) throw Error('Invalid companion settings');
+  for (const [setting, min, max] of [[value.dailyLimit, 1, 6], [value.minimumIntervalMinutes, 30, 1440]] as const) {
+    if (setting !== undefined && (typeof setting !== 'number' || !Number.isInteger(setting) || setting < min || setting > max)) throw Error('Invalid proactive frequency');
+  }
   new Intl.DateTimeFormat('en', { timeZone: value.timezone });
   for (const hour of [value.quietStart, value.quietEnd, value.followUpHour]) if (hour !== null && (!Number.isInteger(hour) || hour < 0 || hour > 23)) throw Error('Invalid companion hour');
 }
